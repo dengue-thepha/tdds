@@ -24,6 +24,9 @@
   <!-- SweetAlert2 CDN -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+  <!-- html2canvas CDN (Screenshot & Image Generation) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
   <!-- html2pdf.js CDN (PDF Generation) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
@@ -391,6 +394,13 @@
             <button onclick="refreshData()" class="text-xs bg-white text-teal-800 hover:bg-teal-50 font-bold px-3.5 py-2 rounded-xl shadow-sm transition active:scale-95 flex items-center gap-1.5">
               <span>🔄</span>
               <span>อัปเดตข้อมูล</span>
+            </button>
+
+            <!-- Daily Auto-Report Status Badge (ADMIN ONLY) -->
+            <button onclick="openSendSituationReportModal()" class="admin-only hidden text-xs bg-sky-50 text-sky-800 hover:bg-sky-100 border border-sky-300 font-semibold px-3 py-2 rounded-xl transition active:scale-95 flex items-center gap-1.5 shadow-xs" title="ระบบตั้งเวลาส่งรายงานอัตโนมัติทุกวัน เวลา 15.00 น. (คลิกเพื่อดูหรือปรับแต่ง)">
+              <span>⏰</span>
+              <span>ส่งอัตโนมัติทุกวัน 15:00 น.</span>
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" id="autoReportIndicatorDot"></span>
             </button>
 
             <!-- Telegram Situation Report Button (ADMIN ONLY: สิทธิ์เฉพาะแอดมินอำเภอ) -->
@@ -1850,6 +1860,39 @@
         </div>
       </div>
 
+      <!-- Daily 15:00 Auto-Report Schedule Card -->
+      <div class="bg-gradient-to-r from-amber-50 to-orange-50/60 p-4 rounded-2xl border border-amber-200/80 space-y-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <span class="text-2xl">⏰</span>
+            <div>
+              <div class="text-xs font-bold text-amber-950 flex items-center gap-2">
+                <span>ระบบส่งรายงานอัตโนมัติประจำวัน (Daily Auto-Report)</span>
+                <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-300">ทำงานอัตโนมัติ</span>
+              </div>
+              <div class="text-[11px] text-slate-600 mt-0.5">
+                กำหนดเวลาส่ง: <b>ทุกวัน เวลา 15.00 น.</b> ส่งเข้ากลุ่มงานระบาด อ.เทพา
+              </div>
+            </div>
+          </div>
+          <!-- Toggle switch -->
+          <label class="relative inline-flex items-center cursor-pointer" title="เปิด/ปิด การส่งรายงานอัตโนมัติ">
+            <input type="checkbox" id="tgAutoReportToggle" checked onchange="toggleAutoDailyReportSetting(this.checked)" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+          </label>
+        </div>
+        <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-600 pt-2 border-t border-amber-200/60">
+          <div>
+            <span>สถานะระบบ: </span>
+            <b id="tgAutoReportTodayStatus" class="text-emerald-700">กำลังรอเวลา 15:00 น. วันนี้</b>
+          </div>
+          <button type="button" onclick="testAutoDailyReportTriggerNow()" class="text-amber-800 hover:text-amber-950 font-bold underline hover:no-underline flex items-center gap-1">
+            <span>⚡</span>
+            <span>ทดสอบรันคิว 15:00 น. ทันที</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Report Options (รูปแบบและขอบเขต) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <!-- ขอบเขตรายงาน -->
@@ -1914,10 +1957,18 @@
 
       <!-- Action Buttons -->
       <div class="pt-3 border-t flex flex-wrap items-center justify-between gap-2">
-        <div class="flex items-center gap-2">
-          <button type="button" onclick="previewSituationReportDocument()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button type="button" onclick="previewSituationReportDocument()" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium transition flex items-center gap-1">
             <span>🔍</span>
-            <span>ดูหน้าตาเอกสาร/รูปภาพ</span>
+            <span>ดูหน้าตา</span>
+          </button>
+          <button type="button" onclick="downloadSituationReportImage()" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-medium transition flex items-center gap-1">
+            <span>📥</span>
+            <span>โหลดรูปภาพ (.JPG)</span>
+          </button>
+          <button type="button" onclick="downloadSituationReportPDF()" class="px-2.5 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 rounded-xl text-xs font-medium transition flex items-center gap-1">
+            <span>📥</span>
+            <span>โหลด PDF (.PDF)</span>
           </button>
         </div>
         <div class="flex items-center gap-2">
@@ -4614,13 +4665,19 @@
       const reportHtml = buildPatientReportHtml(patient);
 
       const tempContainer = document.createElement('div');
+      tempContainer.id = 'tempPatientPdfCapture';
       tempContainer.style.position = 'fixed';
-      tempContainer.style.left = '-9999px';
+      tempContainer.style.left = '0';
       tempContainer.style.top = '0';
+      tempContainer.style.zIndex = '-99999';
+      tempContainer.style.opacity = '1';
+      tempContainer.style.pointerEvents = 'none';
       tempContainer.style.width = '794px'; // ~A4 at 96 DPI
       tempContainer.style.backgroundColor = '#ffffff';
       tempContainer.innerHTML = reportHtml;
       document.body.appendChild(tempContainer);
+
+      await new Promise(resolve => setTimeout(resolve, 250));
 
       let pdfBlob = null;
       let pdfBase64 = null;
@@ -4630,7 +4687,23 @@
           margin: [8, 8, 8, 8],
           filename: fileName,
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, logging: false },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: 850,
+            onclone: (clonedDoc) => {
+              const el = clonedDoc.getElementById('tempPatientPdfCapture');
+              if (el) {
+                el.style.position = 'relative';
+                el.style.zIndex = '99999';
+                el.style.display = 'block';
+                el.style.visibility = 'visible';
+              }
+            }
+          },
           jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
@@ -4643,7 +4716,9 @@
         }
       }
 
-      document.body.removeChild(tempContainer);
+      if (tempContainer.parentNode) {
+        document.body.removeChild(tempContainer);
+      }
       return { blob: pdfBlob, base64: pdfBase64, filename: fileName };
     }
 
@@ -4881,7 +4956,7 @@
       }
     }
 
-        // -------------------------------------------------------------
+    // -------------------------------------------------------------
     // 9.6 SITUATION REPORT TO TELEGRAM (ADMIN ONLY)
     // -------------------------------------------------------------
     function openSendSituationReportModal() {
@@ -5093,7 +5168,7 @@ ${topHcText}${noteBlock}
       }
 
       return `
-        <div style="font-family:'Kanit', sans-serif; background:#ffffff; color:#1e293b; width:794px; padding:24px; box-sizing:border-box;">
+        <div style="font-family:'Kanit', -apple-system, sans-serif; background:#ffffff; color:#1e293b; width:794px; padding:24px; box-sizing:border-box;">
           
           <!-- Header Banner -->
           <div style="background:linear-gradient(135deg, #1e3a8a 0%, #0f766e 100%); color:#ffffff; padding:16px 20px; border-radius:12px; margin-bottom:16px;">
@@ -5172,7 +5247,7 @@ ${topHcText}${noteBlock}
           ${noteHtml}
 
           <!-- Footer Signature -->
-          <div style="margin-top:16px; pt:8px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; font-size:10px; color:#64748b;">
+          <div style="margin-top:16px; padding-top:8px; border-top:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; font-size:10px; color:#64748b;">
             <div>ผู้จัดทำรายงาน: <b>${adminName}</b> (งานระบาดวิทยา สสอ.เทพา)</div>
             <div>@ 2026|ระบบสารสนเทศงานระบาดอำเภอเทพา จังหวัดสงขลา</div>
           </div>
@@ -5204,7 +5279,6 @@ ${topHcText}${noteBlock}
     async function previewSituationReportDocument() {
       const scope = document.getElementById('tgReportScope')?.value || 'all';
       const customNote = document.getElementById('tgReportCustomNote')?.value || '';
-      const format = document.querySelector('input[name="tgReportFormat"]:checked')?.value || 'image';
 
       const metrics = getSituationReportMetrics(scope);
       const reportHtml = buildSituationReportHTML(metrics, customNote);
@@ -5215,10 +5289,11 @@ ${topHcText}${noteBlock}
           <!DOCTYPE html>
           <html>
           <head>
+            <meta charset="UTF-8">
             <title>ตัวอย่างรายงานสถานการณ์ไข้เลือดออก อ.เทพา</title>
             <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
             <style>
-              body { margin: 20px auto; max-width: 800px; background: #f1f5f9; }
+              body { margin: 20px auto; max-width: 820px; background: #f1f5f9; display: flex; justify-content: center; }
             </style>
           </head>
           <body>
@@ -5233,6 +5308,133 @@ ${topHcText}${noteBlock}
           title: 'เบราว์เซอร์บล็อกป็อปอัป',
           text: 'โปรดอนุญาตป็อปอัปของเบราว์เซอร์เพื่อดูหน้าตาเอกสาร'
         });
+      }
+    }
+
+    // ฟังก์ชันดาวน์โหลดภาพ JPG
+    async function downloadSituationReportImage() {
+      const scope = document.getElementById('tgReportScope')?.value || 'all';
+      const customNote = document.getElementById('tgReportCustomNote')?.value || '';
+      const metrics = getSituationReportMetrics(scope);
+      const reportHtml = buildSituationReportHTML(metrics, customNote);
+
+      showLoading('กำลังสร้างและดาวน์โหลดรูปภาพ .JPG...');
+
+      const tempContainer = document.createElement('div');
+      tempContainer.id = 'tempDownloadCapture';
+      tempContainer.style.position = 'fixed';
+      tempContainer.style.left = '0';
+      tempContainer.style.top = '0';
+      tempContainer.style.zIndex = '-99999';
+      tempContainer.style.opacity = '1';
+      tempContainer.style.pointerEvents = 'none';
+      tempContainer.style.width = '794px';
+      tempContainer.style.backgroundColor = '#ffffff';
+      tempContainer.innerHTML = reportHtml;
+      document.body.appendChild(tempContainer);
+
+      await new Promise(r => setTimeout(r, 300));
+
+      try {
+        if (!window.html2canvas) {
+          throw new Error('ไม่พบไลบรารี html2canvas ในระบบ โปรดรีเฟรชหน้าเว็บ');
+        }
+        const canvas = await html2canvas(tempContainer, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: 850,
+          onclone: (clonedDoc) => {
+            const el = clonedDoc.getElementById('tempDownloadCapture');
+            if (el) {
+              el.style.position = 'relative';
+              el.style.zIndex = '99999';
+              el.style.display = 'block';
+              el.style.visibility = 'visible';
+            }
+          }
+        });
+
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL('image/jpeg', 0.95);
+        a.download = `รายงานสถานการณ์ไข้เลือดออก_เทพา_${new Date().toISOString().split('T')[0]}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        hideLoading();
+        Swal.fire({ icon: 'success', title: 'ดาวน์โหลดรูปภาพสำเร็จ', timer: 1500, showConfirmButton: false });
+      } catch (err) {
+        hideLoading();
+        Swal.fire({ icon: 'error', title: 'ดาวน์โหลดรูปภาพไม่สำเร็จ', text: err.toString() });
+      } finally {
+        if (tempContainer.parentNode) document.body.removeChild(tempContainer);
+      }
+    }
+
+    // ฟังก์ชันดาวน์โหลดเอกสาร PDF
+    async function downloadSituationReportPDF() {
+      const scope = document.getElementById('tgReportScope')?.value || 'all';
+      const customNote = document.getElementById('tgReportCustomNote')?.value || '';
+      const metrics = getSituationReportMetrics(scope);
+      const reportHtml = buildSituationReportHTML(metrics, customNote);
+
+      showLoading('กำลังสร้างและดาวน์โหลดไฟล์เอกสาร .PDF...');
+
+      const tempContainer = document.createElement('div');
+      tempContainer.id = 'tempDownloadPdfCapture';
+      tempContainer.style.position = 'fixed';
+      tempContainer.style.left = '0';
+      tempContainer.style.top = '0';
+      tempContainer.style.zIndex = '-99999';
+      tempContainer.style.opacity = '1';
+      tempContainer.style.pointerEvents = 'none';
+      tempContainer.style.width = '794px';
+      tempContainer.style.backgroundColor = '#ffffff';
+      tempContainer.innerHTML = reportHtml;
+      document.body.appendChild(tempContainer);
+
+      await new Promise(r => setTimeout(r, 300));
+
+      try {
+        if (!window.html2pdf) {
+          throw new Error('ไม่พบไลบรารี html2pdf ในระบบ โปรดรีเฟรชหน้าเว็บ');
+        }
+        const opt = {
+          margin: [6, 6, 6, 6],
+          filename: `รายงานสถานการณ์ไข้เลือดออก_เทพา_${new Date().toISOString().split('T')[0]}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: 850,
+            onclone: (clonedDoc) => {
+              const el = clonedDoc.getElementById('tempDownloadPdfCapture');
+              if (el) {
+                el.style.position = 'relative';
+                el.style.zIndex = '99999';
+                el.style.display = 'block';
+                el.style.visibility = 'visible';
+              }
+            }
+          },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        await html2pdf().from(tempContainer).set(opt).save();
+        hideLoading();
+        Swal.fire({ icon: 'success', title: 'ดาวน์โหลด PDF สำเร็จ', timer: 1500, showConfirmButton: false });
+      } catch (err) {
+        hideLoading();
+        Swal.fire({ icon: 'error', title: 'ดาวน์โหลด PDF ไม่สำเร็จ', text: err.toString() });
+      } finally {
+        if (tempContainer.parentNode) document.body.removeChild(tempContainer);
       }
     }
 
@@ -5260,75 +5462,147 @@ ${topHcText}${noteBlock}
 
       // สร้าง Offscreen DOM Container สำหรับการ Render
       const tempContainer = document.createElement('div');
+      tempContainer.id = 'tempReportCapture';
       tempContainer.style.position = 'fixed';
-      tempContainer.style.left = '-9999px';
+      tempContainer.style.left = '0';
       tempContainer.style.top = '0';
       tempContainer.style.width = '794px';
+      tempContainer.style.zIndex = '-99999';
+      tempContainer.style.opacity = '1';
+      tempContainer.style.pointerEvents = 'none';
       tempContainer.style.backgroundColor = '#ffffff';
       tempContainer.innerHTML = reportHtml;
       document.body.appendChild(tempContainer);
 
+      // รอ Browser คำนวณ Layout และเรนเดอร์ฟอนต์
+      await new Promise(resolve => setTimeout(resolve, 350));
+
       let sendSuccess = false;
+      let actualSentFormat = '';
       let errorMsg = '';
       const nowTs = new Date().toISOString().replace(/[:.]/g, '-');
       const filenameBase = `Thepha_Dengue_Situation_${nowTs}`;
 
+      // รักษาความปลอดภัย: จำกัด Caption ไม่เกิน 1000 ตัวอักษร
+      let captionText = messageText;
+      if (captionText.length > 1000) {
+        captionText = captionText.substring(0, 995) + '...';
+      }
+
       try {
         if (format === 'image') {
           // 1. ส่งเป็นรูปภาพผ่าน sendPhoto
-          if (window.html2canvas) {
-            const canvas = await html2canvas(tempContainer, { scale: 2, useCORS: true, logging: false });
-            const imgBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+          if (!window.html2canvas) {
+            throw new Error('ไม่พบไลบรารี html2canvas ในระบบ');
+          }
 
-            if (imgBlob) {
-              const formData = new FormData();
-              formData.append('chat_id', TELEGRAM_CONFIG.chatId);
-              formData.append('caption', messageText);
-              formData.append('photo', imgBlob, `${filenameBase}.jpg`);
-
-              const tgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendPhoto`, {
-                method: 'POST',
-                body: formData
-              });
-              const tgData = await tgRes.json();
-              if (tgData && tgData.ok) {
-                sendSuccess = true;
-              } else {
-                errorMsg = tgData?.description || 'Telegram sendPhoto rejected';
+          const canvas = await html2canvas(tempContainer, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff',
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: 850,
+            onclone: (clonedDoc) => {
+              const el = clonedDoc.getElementById('tempReportCapture');
+              if (el) {
+                el.style.position = 'relative';
+                el.style.zIndex = '99999';
+                el.style.display = 'block';
+                el.style.visibility = 'visible';
               }
             }
+          });
+
+          let imgBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+          if (!imgBlob) {
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+            const arr = dataUrl.split(',');
+            const mime = arr[0].match(/:(.*?);/)[1];
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) {
+              u8arr[n] = bstr.charCodeAt(n);
+            }
+            imgBlob = new Blob([u8arr], { type: mime });
+          }
+
+          if (imgBlob && imgBlob.size > 0) {
+            const formData = new FormData();
+            formData.append('chat_id', TELEGRAM_CONFIG.chatId);
+            formData.append('caption', captionText);
+            formData.append('photo', imgBlob, `${filenameBase}.jpg`);
+
+            const tgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendPhoto`, {
+              method: 'POST',
+              body: formData
+            });
+            const tgData = await tgRes.json();
+            if (tgData && tgData.ok) {
+              sendSuccess = true;
+              actualSentFormat = 'image';
+            } else {
+              console.error('Telegram sendPhoto error:', tgData);
+              errorMsg = tgData?.description || 'Telegram sendPhoto rejected';
+            }
+          } else {
+            errorMsg = 'ไม่สามารถสร้างข้อมูลไบนารีรูปภาพได้';
           }
         } else if (format === 'pdf') {
           // 2. ส่งเป็นไฟล์ PDF ผ่าน sendDocument
-          if (window.html2pdf) {
-            const opt = {
-              margin: [6, 6, 6, 6],
-              filename: `${filenameBase}.pdf`,
-              image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true, logging: false },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
+          if (!window.html2pdf) {
+            throw new Error('ไม่พบไลบรารี html2pdf ในระบบ');
+          }
 
-            const worker = html2pdf().from(tempContainer).set(opt);
-            const pdfBlob = await worker.outputPdf('blob');
-
-            if (pdfBlob) {
-              const formData = new FormData();
-              formData.append('chat_id', TELEGRAM_CONFIG.chatId);
-              formData.append('caption', messageText);
-              formData.append('document', pdfBlob, `${filenameBase}.pdf`);
-
-              const tgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendDocument`, {
-                method: 'POST',
-                body: formData
-              });
-              const tgData = await tgRes.json();
-              if (tgData && tgData.ok) {
-                sendSuccess = true;
-              } else {
-                errorMsg = tgData?.description || 'Telegram sendDocument rejected';
+          const opt = {
+            margin: [6, 6, 6, 6],
+            filename: `${filenameBase}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: {
+              scale: 2,
+              useCORS: true,
+              logging: false,
+              scrollX: 0,
+              scrollY: 0,
+              windowWidth: 850,
+              onclone: (clonedDoc) => {
+                const el = clonedDoc.getElementById('tempReportCapture');
+                if (el) {
+                  el.style.position = 'relative';
+                  el.style.zIndex = '99999';
+                  el.style.display = 'block';
+                  el.style.visibility = 'visible';
+                }
               }
+            },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          };
+
+          const worker = html2pdf().from(tempContainer).set(opt);
+          const pdfBlob = await worker.outputPdf('blob');
+
+          if (pdfBlob && pdfBlob.size > 0) {
+            const formData = new FormData();
+            formData.append('chat_id', TELEGRAM_CONFIG.chatId);
+            formData.append('caption', captionText);
+            formData.append('document', pdfBlob, `${filenameBase}.pdf`);
+
+            const tgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendDocument`, {
+              method: 'POST',
+              body: formData
+            });
+            const tgData = await tgRes.json();
+            if (tgData && tgData.ok) {
+              sendSuccess = true;
+              actualSentFormat = 'pdf';
+            } else {
+              console.error('Telegram sendDocument error:', tgData);
+              errorMsg = tgData?.description || 'Telegram sendDocument rejected';
             }
+          } else {
+            errorMsg = 'ไม่สามารถสร้างไฟล์เอกสาร PDF ได้';
           }
         }
 
@@ -5345,6 +5619,7 @@ ${topHcText}${noteBlock}
           const tgMsgData = await tgMsgRes.json();
           if (tgMsgData && tgMsgData.ok) {
             sendSuccess = true;
+            actualSentFormat = 'text';
           } else {
             errorMsg = tgMsgData?.description || errorMsg || 'Telegram sendMessage rejected';
           }
@@ -5361,20 +5636,23 @@ ${topHcText}${noteBlock}
       hideLoading();
 
       if (sendSuccess) {
-        addAuditLog('SEND_TELEGRAM_REPORT', `ส่งรายงานสถานการณ์โรคผ่าน Telegram (${format.toUpperCase()} - ${metrics.scopeTitle})`);
+        addAuditLog('SEND_TELEGRAM_REPORT', `ส่งรายงานสถานการณ์โรคผ่าน Telegram (${actualSentFormat.toUpperCase()} - ${metrics.scopeTitle})`);
         closeTelegramReportModal();
 
+        const isExactMatch = actualSentFormat === format;
+
         Swal.fire({
-          icon: 'success',
-          title: 'ส่งรายงานสถานการณ์สำเร็จ!',
+          icon: isExactMatch ? 'success' : 'warning',
+          title: isExactMatch ? 'ส่งรายงานสถานการณ์สำเร็จ!' : 'ส่งเฉพาะข้อความสรุปแล้ว',
           html: `
             <div class="text-left text-xs space-y-2 mt-2">
-              <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-800">
+              <div class="p-3 ${isExactMatch ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-amber-50 border-amber-200 text-amber-800'} rounded-xl border">
                 <div class="font-bold flex items-center gap-1.5 text-sm mb-1">
-                  <span>✅</span> ส่งเข้ากลุ่ม Telegram งานระบาด อ.เทพา แล้ว
+                  <span>${isExactMatch ? '✅' : '⚠️'}</span> ส่งเข้ากลุ่ม Telegram งานระบาด อ.เทพา แล้ว
                 </div>
                 <div><b>Chat ID:</b> <code class="font-mono">${TELEGRAM_CONFIG.chatId}</code></div>
-                <div><b>รูปแบบ:</b> ${format === 'image' ? '🖼️ รูปภาพสรุปสถานการณ์ (.JPG)' : (format === 'pdf' ? '📄 เอกสารไฟล์ PDF (.PDF)' : '💬 ข้อความสรุปด่วน')}</div>
+                <div><b>รูปแบบที่ส่ง:</b> ${actualSentFormat === 'image' ? '🖼️ รูปภาพสรุปสถานการณ์ (.JPG)' : (actualSentFormat === 'pdf' ? '📄 เอกสารไฟล์ PDF (.PDF)' : '💬 ข้อความสรุปด่วน')}</div>
+                ${!isExactMatch ? `<div class="text-rose-600 font-semibold mt-1">⚠️ หมายเหตุ: การแนบไฟล์ ${format.toUpperCase()} พบข้อจำกัด (${errorMsg}) ระบบจึงส่งข้อความสรุปให้ทันที</div>` : ''}
                 <div><b>วันเวลาที่ส่ง:</b> ${new Date().toLocaleString('th-TH')}</div>
                 <div><b>ผู้ส่ง:</b> ${currentUser.fullName} (${currentUser.unit})</div>
               </div>
@@ -5391,6 +5669,237 @@ ${topHcText}${noteBlock}
           confirmButtonColor: '#EF5350'
         });
       }
+    }
+
+
+    // -------------------------------------------------------------
+    // DAILY AUTO-REPORT SCHEDULER (ทุกวัน เวลา 15:00 น.)
+    // -------------------------------------------------------------
+    let autoReportTimerInterval = null;
+
+    function initDailyAutoReportScheduler() {
+      // Default to enabled if not set
+      if (localStorage.getItem('tdds_auto_report_enabled') === null) {
+        localStorage.setItem('tdds_auto_report_enabled', 'true');
+      }
+      if (!localStorage.getItem('tdds_auto_report_time')) {
+        localStorage.setItem('tdds_auto_report_time', '15:00');
+      }
+
+      updateAutoReportUIStatus();
+
+      if (autoReportTimerInterval) clearInterval(autoReportTimerInterval);
+
+      // Check every 30 seconds
+      autoReportTimerInterval = setInterval(() => {
+        checkAndTriggerDailyReport();
+      }, 30000);
+
+      // Check immediately on launch
+      setTimeout(() => {
+        checkAndTriggerDailyReport();
+      }, 2000);
+    }
+
+    function updateAutoReportUIStatus() {
+      const enabled = localStorage.getItem('tdds_auto_report_enabled') !== 'false';
+      const toggle = document.getElementById('tgAutoReportToggle');
+      if (toggle) toggle.checked = enabled;
+
+      const statusEl = document.getElementById('tgAutoReportTodayStatus');
+      const dot = document.getElementById('autoReportIndicatorDot');
+      const now = new Date();
+      const todayStr = now.toISOString().split('T')[0];
+      const lastSentDate = localStorage.getItem('tdds_last_auto_report_date');
+
+      if (!enabled) {
+        if (statusEl) statusEl.innerHTML = '<span class="text-slate-400 font-semibold">ปิดการทำงาน (Manual เท่านั้น)</span>';
+        if (dot) {
+          dot.className = 'w-2 h-2 rounded-full bg-slate-300';
+          if (dot.parentElement) dot.parentElement.title = 'ระบบส่งรายงานอัตโนมัติ: ปิดอยู่';
+        }
+      } else if (lastSentDate === todayStr) {
+        const lastTs = localStorage.getItem('tdds_last_auto_report_timestamp');
+        const timeStr = lastTs ? new Date(lastTs).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '15:00';
+        if (statusEl) statusEl.innerHTML = `<span class="text-emerald-700 font-bold">✅ ส่งรายงานประจำวันแล้ว เมื่อ ${timeStr} น.</span>`;
+        if (dot) {
+          dot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+          if (dot.parentElement) dot.parentElement.title = `ระบบส่งรายงานอัตโนมัติประจำวันแล้ว (เมื่อ ${timeStr} น.)`;
+        }
+      } else {
+        if (statusEl) statusEl.innerHTML = '<span class="text-amber-700 font-bold">⏳ รอส่งอัตโนมัติ เวลา 15:00 น. วันนี้</span>';
+        if (dot) {
+          dot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
+          if (dot.parentElement) dot.parentElement.title = 'ระบบตั้งเวลาส่งรายงานอัตโนมัติ: รอเวลา 15:00 น. วันนี้';
+        }
+      }
+    }
+
+    function toggleAutoDailyReportSetting(isEnabled) {
+      localStorage.setItem('tdds_auto_report_enabled', isEnabled ? 'true' : 'false');
+      updateAutoReportUIStatus();
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: isEnabled ? 'success' : 'info',
+        title: isEnabled ? 'เปิดระบบส่งรายงานอัตโนมัติทุกวัน 15:00 น. แล้ว' : 'ปิดระบบส่งรายงานอัตโนมัติแล้ว',
+        showConfirmButton: false,
+        timer: 3000
+      });
+    }
+
+    function checkAndTriggerDailyReport() {
+      const enabled = localStorage.getItem('tdds_auto_report_enabled') !== 'false';
+      if (!enabled) return;
+
+      const targetTime = localStorage.getItem('tdds_auto_report_time') || '15:00';
+      const [targetH, targetM] = targetTime.split(':').map(Number);
+
+      const now = new Date();
+      const currentH = now.getHours();
+      const currentM = now.getMinutes();
+      const todayStr = now.toISOString().split('T')[0];
+      const lastSentDate = localStorage.getItem('tdds_last_auto_report_date');
+
+      // ตรวจสอบว่าถึงเวลา 15:00 น. หรือยัง และวันนี้ยังไม่ได้ส่งใช่หรือไม่
+      const isPastOrAtTargetTime = (currentH > targetH) || (currentH === targetH && currentM >= targetM);
+
+      if (isPastOrAtTargetTime && lastSentDate !== todayStr) {
+        console.log(`[AutoReport] ⏰ ถึงเวลา ${targetTime} น. ดำเนินการส่งรายงานสถานการณ์โรคประจำวันเข้า Telegram...`);
+        // บันทึกวันที่ส่งทันทีเพื่อป้องกันการส่งซ้ำ
+        localStorage.setItem('tdds_last_auto_report_date', todayStr);
+        localStorage.setItem('tdds_last_auto_report_timestamp', now.toISOString());
+        updateAutoReportUIStatus();
+
+        // ส่งรายงานเข้ากลุ่ม Telegram
+        triggerDaily1500AutoReport(todayStr);
+      }
+    }
+
+    async function triggerDaily1500AutoReport(todayStr, isManualTest = false) {
+      const format = localStorage.getItem('tdds_auto_report_format') || 'image';
+      const scope = 'all';
+      const customNote = 'ระบบส่งรายงานสถานการณ์โรคไข้เลือดออกประจำวัน อัตโนมัติ เวลา 15:00 น.';
+
+      const metrics = getSituationReportMetrics(scope);
+      const messageText = buildSituationReportTextMessage(metrics, customNote, format);
+      const reportHtml = buildSituationReportHTML(metrics, customNote);
+
+      // สร้าง container สำหรับ capture
+      const tempContainer = document.createElement('div');
+      tempContainer.id = 'tempAutoReportCapture';
+      tempContainer.style.position = 'fixed';
+      tempContainer.style.left = '0';
+      tempContainer.style.top = '0';
+      tempContainer.style.width = '794px';
+      tempContainer.style.zIndex = '-99999';
+      tempContainer.style.opacity = '1';
+      tempContainer.style.pointerEvents = 'none';
+      tempContainer.style.backgroundColor = '#ffffff';
+      tempContainer.innerHTML = reportHtml;
+      document.body.appendChild(tempContainer);
+
+      await new Promise(r => setTimeout(r, 350));
+
+      let sendSuccess = false;
+      const nowTs = new Date().toISOString().replace(/[:.]/g, '-');
+      const filenameBase = `Thepha_Daily_1500_${nowTs}`;
+
+      let captionText = messageText;
+      if (captionText.length > 1000) captionText = captionText.substring(0, 995) + '...';
+
+      try {
+        if (format === 'image' && window.html2canvas) {
+          const canvas = await html2canvas(tempContainer, {
+            scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0, windowWidth: 850,
+            onclone: (clonedDoc) => {
+              const el = clonedDoc.getElementById('tempAutoReportCapture');
+              if (el) { el.style.position = 'relative'; el.style.zIndex = '99999'; el.style.display = 'block'; }
+            }
+          });
+
+          let imgBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+          if (imgBlob && imgBlob.size > 0) {
+            const formData = new FormData();
+            formData.append('chat_id', TELEGRAM_CONFIG.chatId);
+            formData.append('caption', captionText);
+            formData.append('photo', imgBlob, `${filenameBase}.jpg`);
+
+            const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendPhoto`, { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data && data.ok) sendSuccess = true;
+          }
+        } else if (format === 'pdf' && window.html2pdf) {
+          const opt = {
+            margin: [6, 6, 6, 6], filename: `${filenameBase}.pdf`, image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 850 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          };
+          const pdfBlob = await html2pdf().from(tempContainer).set(opt).outputPdf('blob');
+          if (pdfBlob && pdfBlob.size > 0) {
+            const formData = new FormData();
+            formData.append('chat_id', TELEGRAM_CONFIG.chatId);
+            formData.append('caption', captionText);
+            formData.append('document', pdfBlob, `${filenameBase}.pdf`);
+
+            const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendDocument`, { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data && data.ok) sendSuccess = true;
+          }
+        }
+
+        // Fallback text if needed
+        if (!sendSuccess) {
+          const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: TELEGRAM_CONFIG.chatId, text: messageText })
+          });
+          const data = await res.json();
+          if (data && data.ok) sendSuccess = true;
+        }
+      } catch (err) {
+        console.error('Trigger daily 15:00 error:', err);
+      } finally {
+        if (tempContainer.parentNode) document.body.removeChild(tempContainer);
+      }
+
+      if (sendSuccess) {
+        addAuditLog('AUTO_REPORT_1500', `ส่งรายงานสถานการณ์โรคประจำวันเวลา 15:00 น. อัตโนมัติเข้ากลุ่ม Telegram เรียบร้อย`);
+        updateAutoReportUIStatus();
+
+        if (isManualTest) {
+          Swal.fire({
+            icon: 'success',
+            title: 'ทดสอบส่งรายงานอัตโนมัติ 15:00 น. สำเร็จ!',
+            text: 'ระบบได้ส่งรายงานสถานการณ์เข้ากลุ่ม Telegram เรียบร้อยแล้ว',
+            confirmButtonColor: '#26A69A'
+          });
+        } else {
+          // Toast notification
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: '⏰ รายงานประจำวันเวลา 15:00 น.',
+            text: 'ส่งรายงานสถานการณ์เข้ากลุ่ม Telegram งานระบาดแล้ว',
+            showConfirmButton: false,
+            timer: 5000,
+            timerProgressBar: true
+          });
+        }
+      }
+    }
+
+    function testAutoDailyReportTriggerNow() {
+      showLoading('กำลังทดสอบรันการส่งรายงานประจำวัน 15:00 น. ทันที...');
+      setTimeout(async () => {
+        const todayStr = new Date().toISOString().split('T')[0];
+        localStorage.setItem('tdds_last_auto_report_date', todayStr);
+        localStorage.setItem('tdds_last_auto_report_timestamp', new Date().toISOString());
+        hideLoading();
+        await triggerDaily1500AutoReport(todayStr, true);
+      }, 300);
     }
 
 
@@ -5619,6 +6128,7 @@ ${topHcText}${noteBlock}
       initStores();
       initMaps();
       updateAuthUI();
+      initDailyAutoReportScheduler();
 
       // Ensure view starts on dashboard
       navigateTo('dashboard');
