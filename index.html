@@ -892,18 +892,12 @@
           </div>
         </div>
 
-        <!-- Quick Demo Account Chips -->
+        <!-- Admin Account Quick Login -->
         <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 text-[11px] space-y-1.5">
-          <span class="font-bold text-slate-600 block">บัญชีทดสอบด่วน:</span>
+          <span class="font-bold text-slate-600 block">เข้าสู่ระบบผู้ดูแลระบบ:</span>
           <div class="flex flex-wrap gap-2">
-            <button type="button" onclick="fillDemoLogin('admin', 'admin1234')" class="px-2 py-1 rounded-lg bg-purple-100 hover:bg-purple-200 text-[#4A2C6D] font-medium transition">
-              👑 Admin (สสอ.เทพา)
-            </button>
-            <button type="button" onclick="fillDemoLogin('staff1', 'staff1234')" class="px-2 py-1 rounded-lg bg-teal-100 hover:bg-teal-200 text-teal-800 font-medium transition">
-              🏥 เจ้าหน้าที่ (รพ.สต.เกาะสะบ้า)
-            </button>
-            <button type="button" onclick="fillDemoLogin('staff2', 'staff2234')" class="px-2 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-medium transition">
-              🏥 เจ้าหน้าที่ (รพ.สต.ลำไพล)
+            <button type="button" onclick="fillDemoLogin('admin', 'admin1234')" class="px-3 py-1.5 rounded-lg bg-purple-100 hover:bg-purple-200 text-[#4A2C6D] font-bold transition flex items-center gap-1.5">
+              <span>👑</span> เข้าสู่ระบบ Admin (admin / admin1234)
             </button>
           </div>
         </div>
@@ -1656,10 +1650,10 @@
     // -------------------------------------------------------------
     // 1. DATA STORES & SEEDING (LocalStorage)
     // -------------------------------------------------------------
-    const STORAGE_PATIENTS_KEY = 'tdds_patients_v3';
-    const STORAGE_USERS_KEY = 'tdds_users_v3';
-    const STORAGE_AUDIT_KEY = 'tdds_audit_logs_v3';
-    const STORAGE_SESSION_KEY = 'tdds_current_user_v3';
+    const STORAGE_PATIENTS_KEY = 'tdds_patients_prod_v1';
+    const STORAGE_USERS_KEY = 'tdds_users_prod_v1';
+    const STORAGE_AUDIT_KEY = 'tdds_audit_logs_prod_v1';
+    const STORAGE_SESSION_KEY = 'tdds_current_user_prod_v1';
 
     let patientsData = [];
     let usersData = [];
@@ -1783,363 +1777,46 @@
       }
     }
 
-    // Default Seed Users
+    // Default Users: Only Admin as requested
     const defaultUsers = [
-      { id: 'u1', username: 'admin', password: 'admin1234', fullName: 'นายสมชาย ใจดี', position: 'นักวิชาการสาธารณสุขชำนาญการ', unit: 'สสอ.เทพา', role: 'admin', status: 'Active' },
-      { id: 'u2', username: 'staff1', password: 'staff1234', fullName: 'นางสาวสมหญิง รักดี', position: 'เจ้าพนักงานสาธารณสุขชำนาญงาน', unit: 'รพ.สต.เกาะสะบ้า', role: 'staff', status: 'Active' },
-      { id: 'u3', username: 'staff2', password: 'staff2234', fullName: 'นายประชา สุขใส', position: 'นักวิชาการสาธารณสุข', unit: 'รพ.สต.ลำไพล', role: 'staff', status: 'Active' },
-      { id: 'u4', username: 'hospital', password: 'hosp1234', fullName: 'พว.มาลี สุขเกษม', position: 'พยาบาลวิชาชีพชำนาญการ', unit: 'รพ.เทพา', role: 'staff', status: 'Active' }
+      { id: 'u1', username: 'admin', password: 'admin1234', fullName: 'ผู้ดูแลระบบ (Admin)', position: 'นักวิชาการสาธารณสุขชำนาญการ', unit: 'สสอ.เทพา', role: 'admin', status: 'Active' }
     ];
 
-    // Seed Patients across Thepha (lat: 6.75 - 6.95, lng: 100.80 - 100.95)
+    // Seed Patients: Empty by default (0 demo cases)
     function generateSeedPatients() {
-      const now = new Date();
-      const formatIsoDate = (daysAgo) => {
-        const d = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-        return d.toISOString().split('T')[0];
-      };
-      const formatIsoDateTime = (daysAgo, hoursAgo = 0) => {
-        const d = new Date(now.getTime() - (daysAgo * 24 + hoursAgo) * 60 * 60 * 1000);
-        return d.toISOString().slice(0, 16);
-      };
-
-      return [
-        {
-          id: 'p1',
-          year: '2569',
-          notifiedDatetime: formatIsoDateTime(0, 2),
-          notifiedFrom: 'IPD1',
-          notifiedOther: '',
-          fullName: 'ด.ช.ธนภัทร สุวรรณรัตน์',
-          gender: 'ชาย',
-          maritalStatus: 'โสด',
-          nationality: 'ไทย',
-          ageYear: 9,
-          ageMonth: 4,
-          phone: '0812345678',
-          addressNo: '45/2',
-          villageNo: '3',
-          subdistrict: 'เทพา',
-          healthCenter: 'รพ.เทพา',
-          zone: 'ศูนย์ประสานงาน',
-          occupation: 'นักเรียน/นักศึกษา',
-          workDesc: 'นักเรียนชั้นประถม',
-          workplace: 'โรงเรียนบ้านเทพา',
-          department: 'ป.4/2',
-          lat: 6.8285,
-          lng: 100.9654,
-          stayDomicile: true,
-          stayAddress: '',
-          illnessDate: formatIsoDate(3),
-          treatments: [
-            { round: 1, date: formatIsoDate(3), hospital: 'รพ.สต.ในพื้นที่', patientType: 'OPD', diagnosis: 'R/O DF' },
-            { round: 2, date: formatIsoDate(1), hospital: 'รพ.เทพา', patientType: 'IPD', diagnosis: 'DHF' }
-          ],
-          treatmentDate: formatIsoDate(1),
-          hospitalType: 'thepha',
-          hospitalOther: '',
-          patientType: 'IPD',
-          diagnosis: 'DHF',
-          travelHistory: 'ไม่ได้เดินทางออกนอกพื้นที่ตำบลเทพา',
-          symptoms: { fever: 'มี', eye_pain: 'มี', joint_pain: 'มี', bleeding: 'มี', headache: 'มี', muscle_pain: 'มี', rash: 'ไม่มี', liver_enlarged: 'มี', shock: 'ไม่มี' },
-          tourniquet: '(+)Positive',
-          treatmentOutcome: 'ยังรักษาอยู่',
-          symptomsOther: 'มีจุดเลือดออกตามแขนขา',
-          labResults: [
-            { round: 1, date: formatIsoDate(1), time: '09:30', hct: 42.0, wbc: 3400, plt: 89000, lym: 18.5, atyp: 4.0, rapidTested: true, rapidDate: formatIsoDate(1), ns1: 'Positive', igm: 'Negative', igg: 'Negative' }
-          ],
-          notifiedAreaDatetime: formatIsoDateTime(0, 1),
-          investigatorName: 'นายสมชาย ใจดี',
-          investigatorPosition: 'นักวิชาการสาธารณสุขชำนาญการ',
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'p2',
-          year: '2569',
-          notifiedDatetime: formatIsoDateTime(2, 4),
-          notifiedFrom: 'OPD',
-          notifiedOther: '',
-          fullName: 'นางสาวกานดา ช่วยมี',
-          gender: 'หญิง',
-          maritalStatus: 'โสด',
-          nationality: 'ไทย',
-          ageYear: 24,
-          ageMonth: 0,
-          phone: '0897654321',
-          addressNo: '102',
-          villageNo: '5',
-          subdistrict: 'เกาะสะบ้า',
-          healthCenter: 'รพ.สต.เกาะสะบ้า',
-          zone: 'บานชื่น',
-          occupation: 'รับจ้าง',
-          workDesc: 'พนักงานโรงงาน',
-          workplace: 'บ้านเกาะสะบ้า',
-          department: '-',
-          lat: 6.8824,
-          lng: 100.8932,
-          stayDomicile: true,
-          stayAddress: '',
-          illnessDate: formatIsoDate(5),
-          treatments: [
-            { round: 1, date: formatIsoDate(2), hospital: 'รพ.เทพา', patientType: 'OPD', diagnosis: 'DF' }
-          ],
-          treatmentDate: formatIsoDate(2),
-          hospitalType: 'thepha',
-          hospitalOther: '',
-          patientType: 'OPD',
-          diagnosis: 'DF',
-          travelHistory: 'เดินทางไปหาดใหญ่เมื่อ 10 วันก่อน',
-          symptoms: { fever: 'มี', eye_pain: 'มี', joint_pain: 'มี', bleeding: 'ไม่มี', headache: 'มี', muscle_pain: 'มี', rash: 'มี', liver_enlarged: 'ไม่มี', shock: 'ไม่มี' },
-          tourniquet: '(-)Negative',
-          treatmentOutcome: 'หาย',
-          symptomsOther: 'ปวดเมื่อยตัวมาก',
-          labResults: [
-            { round: 1, date: formatIsoDate(2), time: '10:00', hct: 37.0, wbc: 4200, plt: 145000, lym: 30.0, atyp: 1.0, rapidTested: true, rapidDate: formatIsoDate(2), ns1: 'Positive', igm: 'Negative', igg: 'Negative' }
-          ],
-          notifiedAreaDatetime: formatIsoDateTime(2, 3),
-          investigatorName: 'นางสาวสมหญิง รักดี',
-          investigatorPosition: 'เจ้าพนักงานสาธารณสุขชำนาญงาน',
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'p3',
-          year: '2569',
-          notifiedDatetime: formatIsoDateTime(7, 1),
-          notifiedFrom: 'ER',
-          notifiedOther: '',
-          fullName: 'นายสมพร บัวแก้ว',
-          gender: 'ชาย',
-          maritalStatus: 'สมรส',
-          nationality: 'ไทย',
-          ageYear: 45,
-          ageMonth: 2,
-          phone: '0623344556',
-          addressNo: '18/1',
-          villageNo: '2',
-          subdistrict: 'ลำไพล',
-          healthCenter: 'รพ.สต.ลำไพล',
-          zone: 'ชวนชม',
-          occupation: 'เกษตรกร',
-          workDesc: 'กรีดยางพารา',
-          workplace: 'สวนยาง ต.ลำไพล',
-          department: '-',
-          lat: 6.7752,
-          lng: 100.8654,
-          stayDomicile: true,
-          stayAddress: '',
-          illnessDate: formatIsoDate(10),
-          treatmentDate: formatIsoDate(7),
-          hospitalType: 'thepha',
-          hospitalOther: '',
-          patientType: 'IPD',
-          diagnosis: 'DF',
-          travelHistory: 'ไม่มี',
-          symptoms: { fever: 'มี', eye_pain: 'ไม่มี', joint_pain: 'มี', bleeding: 'ไม่มี', headache: 'มี', muscle_pain: 'มี', rash: 'ไม่มี', liver_enlarged: 'ไม่มี', shock: 'ไม่มี' },
-          tourniquet: '(-)Negative',
-          treatmentOutcome: 'หาย',
-          symptomsOther: '',
-          labResults: [],
-          notifiedAreaDatetime: formatIsoDateTime(7, 0),
-          investigatorName: 'นายประชา สุขใส',
-          investigatorPosition: 'นักวิชาการสาธารณสุข',
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'p4',
-          year: '2569',
-          notifiedDatetime: formatIsoDateTime(12, 6),
-          notifiedFrom: 'IPD2',
-          notifiedOther: '',
-          fullName: 'ด.ญ.อารียา หมะสู',
-          gender: 'หญิง',
-          maritalStatus: 'โสด',
-          nationality: 'ไทย',
-          ageYear: 11,
-          ageMonth: 6,
-          phone: '0845566778',
-          addressNo: '77',
-          villageNo: '4',
-          subdistrict: 'ปากบาง',
-          healthCenter: 'รพ.สต.ตูหยง',
-          zone: 'ทานตะวัน',
-          occupation: 'นักเรียน/นักศึกษา',
-          workDesc: 'นักเรียน',
-          workplace: 'โรงเรียนบ้านตูหยง',
-          department: 'ป.6',
-          lat: 6.8451,
-          lng: 100.9341,
-          stayDomicile: true,
-          stayAddress: '',
-          illnessDate: formatIsoDate(15),
-          treatmentDate: formatIsoDate(12),
-          hospitalType: 'thepha',
-          hospitalOther: '',
-          patientType: 'IPD',
-          diagnosis: 'DSS',
-          travelHistory: 'ไม่มี',
-          symptoms: { fever: 'มี', eye_pain: 'มี', joint_pain: 'มี', bleeding: 'มี', headache: 'มี', muscle_pain: 'มี', rash: 'มี', liver_enlarged: 'มี', shock: 'มี' },
-          tourniquet: '(+)Positive',
-          treatmentOutcome: 'หาย',
-          symptomsOther: 'ความดันโลหิตตกช่วงแรกรับ ปัจจุบันพ้นวิกฤต',
-          labResults: [],
-          notifiedAreaDatetime: formatIsoDateTime(12, 5),
-          investigatorName: 'นายสมชาย ใจดี',
-          investigatorPosition: 'นักวิชาการสาธารณสุขชำนาญการ',
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'p5',
-          year: '2569',
-          notifiedDatetime: formatIsoDateTime(20, 2),
-          notifiedFrom: 'OPD',
-          notifiedOther: '',
-          fullName: 'นายวินัย รัตนโชติ',
-          gender: 'ชาย',
-          maritalStatus: 'สมรส',
-          nationality: 'ไทย',
-          ageYear: 38,
-          ageMonth: 0,
-          phone: '0819988776',
-          addressNo: '9/4',
-          villageNo: '1',
-          subdistrict: 'ท่าม่วง',
-          healthCenter: 'รพ.สต.ท่าม่วง',
-          zone: 'ทานตะวัน',
-          occupation: 'ค้าขาย',
-          workDesc: 'ร้านชำในตลาด',
-          workplace: 'ตลาดท่าม่วง',
-          department: '-',
-          lat: 6.8123,
-          lng: 100.8876,
-          stayDomicile: true,
-          stayAddress: '',
-          illnessDate: formatIsoDate(22),
-          treatmentDate: formatIsoDate(20),
-          hospitalType: 'thepha',
-          hospitalOther: '',
-          patientType: 'OPD',
-          diagnosis: 'DF',
-          travelHistory: 'ไม่มี',
-          symptoms: { fever: 'มี', eye_pain: 'มี', joint_pain: 'มี', bleeding: 'ไม่มี', headache: 'มี', muscle_pain: 'มี', rash: 'ไม่มี', liver_enlarged: 'ไม่มี', shock: 'ไม่มี' },
-          tourniquet: '(-)Negative',
-          treatmentOutcome: 'หาย',
-          symptomsOther: '',
-          labResults: [],
-          notifiedAreaDatetime: formatIsoDateTime(20, 1),
-          investigatorName: 'นายสมชาย ใจดี',
-          investigatorPosition: 'นักวิชาการสาธารณสุขชำนาญการ',
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'p6',
-          year: '2569',
-          notifiedDatetime: formatIsoDateTime(25, 5),
-          notifiedFrom: 'OPD',
-          notifiedOther: '',
-          fullName: 'นางสุภาพร บัวงาม',
-          gender: 'หญิง',
-          maritalStatus: 'สมรส',
-          nationality: 'ไทย',
-          ageYear: 52,
-          ageMonth: 8,
-          phone: '0823344112',
-          addressNo: '33',
-          villageNo: '6',
-          subdistrict: 'สะกอม',
-          healthCenter: 'รพ.สต.สะกอม',
-          zone: 'บานชื่น',
-          occupation: 'ค้าขาย',
-          workDesc: 'ร้านอาหารริมหาด',
-          workplace: 'หาดสะกอม',
-          department: '-',
-          lat: 6.9012,
-          lng: 100.8523,
-          stayDomicile: true,
-          stayAddress: '',
-          illnessDate: formatIsoDate(28),
-          treatmentDate: formatIsoDate(25),
-          hospitalType: 'thepha',
-          hospitalOther: '',
-          patientType: 'OPD',
-          diagnosis: 'R/O DF',
-          travelHistory: 'ไม่มี',
-          symptoms: { fever: 'มี', eye_pain: 'ไม่มี', joint_pain: 'มี', bleeding: 'ไม่มี', headache: 'มี', muscle_pain: 'ไม่มี', rash: 'ไม่มี', liver_enlarged: 'ไม่มี', shock: 'ไม่มี' },
-          tourniquet: '(-)Negative',
-          treatmentOutcome: 'หาย',
-          symptomsOther: '',
-          labResults: [],
-          notifiedAreaDatetime: formatIsoDateTime(25, 4),
-          investigatorName: 'นายสมชาย ใจดี',
-          investigatorPosition: 'นักวิชาการสาธารณสุขชำนาญการ',
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: 'p7',
-          year: '2569',
-          notifiedDatetime: formatIsoDateTime(35, 3),
-          notifiedFrom: 'IPD1',
-          notifiedOther: '',
-          fullName: 'นายมูฮัมหมัด ซาและ',
-          gender: 'ชาย',
-          maritalStatus: 'โสด',
-          nationality: 'ไทย',
-          ageYear: 19,
-          ageMonth: 1,
-          phone: '0871122334',
-          addressNo: '54',
-          villageNo: '3',
-          subdistrict: 'วังใหญ่',
-          healthCenter: 'รพ.สต.วังใหญ่',
-          zone: 'ชวนชม',
-          occupation: 'เกษตรกร',
-          workDesc: 'ทำสวนผลไม้',
-          workplace: 'ต.วังใหญ่',
-          department: '-',
-          lat: 6.7456,
-          lng: 100.9124,
-          stayDomicile: true,
-          stayAddress: '',
-          illnessDate: formatIsoDate(38),
-          treatmentDate: formatIsoDate(35),
-          hospitalType: 'thepha',
-          hospitalOther: '',
-          patientType: 'IPD',
-          diagnosis: 'DF',
-          travelHistory: 'ไม่มี',
-          symptoms: { fever: 'มี', eye_pain: 'มี', joint_pain: 'มี', bleeding: 'ไม่มี', headache: 'มี', muscle_pain: 'มี', rash: 'ไม่มี', liver_enlarged: 'ไม่มี', shock: 'ไม่มี' },
-          tourniquet: '(-)Negative',
-          treatmentOutcome: 'หาย',
-          symptomsOther: '',
-          labResults: [],
-          notifiedAreaDatetime: formatIsoDateTime(35, 2),
-          investigatorName: 'นายสมชาย ใจดี',
-          investigatorPosition: 'นักวิชาการสาธารณสุขชำนาญการ',
-          createdAt: new Date().toISOString()
-        }
-      ];
+      return [];
     }
 
     // Initialize stores
     function initStores() {
-      // Patients
+      // Clear legacy test/demo keys
+      ['tdds_patients_v1', 'tdds_patients_v2', 'tdds_patients_v3', 'tdds_users_v1', 'tdds_users_v2', 'tdds_users_v3'].forEach(k => {
+        try { localStorage.removeItem(k); } catch(e) {}
+      });
+
+      // Patients: Default 0 cases
       const storedPatients = localStorage.getItem(STORAGE_PATIENTS_KEY);
       if (storedPatients) {
         try {
           patientsData = JSON.parse(storedPatients);
         } catch(e) {
-          patientsData = generateSeedPatients();
+          patientsData = [];
           savePatients();
         }
       } else {
-        patientsData = generateSeedPatients();
+        patientsData = [];
         savePatients();
       }
 
-      // Users
+      // Users: Default Admin Only
       const storedUsers = localStorage.getItem(STORAGE_USERS_KEY);
       if (storedUsers) {
         try {
           usersData = JSON.parse(storedUsers);
+          if (usersData.some(u => u.username === 'staff1' || u.username === 'staff2' || u.username === 'hospital')) {
+            usersData = defaultUsers;
+            saveUsers();
+          }
         } catch(e) {
           usersData = defaultUsers;
           saveUsers();
@@ -2160,7 +1837,7 @@
         }
       } else {
         auditData = [
-          { timestamp: new Date().toLocaleString('th-TH'), user: 'System', unit: 'สสอ.เทพา', action: 'INIT_SYSTEM', detail: 'ระบบเริ่มต้นใช้งาน TDDS Thepha' }
+          { timestamp: new Date().toLocaleString('th-TH'), user: 'System', unit: 'สสอ.เทพา', action: 'INIT_SYSTEM', detail: 'ระบบเริ่มต้นพร้อมใช้งาน (ล้างข้อมูลตัวอย่างแล้ว)' }
         ];
         saveAudit();
       }
@@ -2175,7 +1852,6 @@
         }
       }
     }
-
     function savePatients() {
       localStorage.setItem(STORAGE_PATIENTS_KEY, JSON.stringify(patientsData));
     }
