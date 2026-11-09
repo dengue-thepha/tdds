@@ -2407,14 +2407,6 @@
         savePatients();
         try { localStorage.setItem(LAB_DATA_VERSION, 'true'); } catch(e) {}
       }
-        } catch(e) {
-          patientsData = JSON.parse(JSON.stringify(currentDengueCasesData));
-          savePatients();
-        }
-      } else {
-        patientsData = JSON.parse(JSON.stringify(currentDengueCasesData));
-        savePatients();
-      }
 
       // Users: Default Admin Only
       const storedUsers = localStorage.getItem(STORAGE_USERS_KEY);
