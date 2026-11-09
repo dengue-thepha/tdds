@@ -1777,9 +1777,13 @@
       }
     }
 
-    // Default Users: Only Admin as requested
+    // Default Users: Master Admin & Sample OSM Users
     const defaultUsers = [
-      { id: 'u1', username: 'admin', password: 'admin1234', fullName: 'ผู้ดูแลระบบ (Admin)', position: 'นักวิชาการสาธารณสุขชำนาญการ', unit: 'สสอ.เทพา', role: 'admin', status: 'Active' }
+      { id: 'u1', username: 'admin', password: 'admin1234', fullName: 'ผู้ดูแลระบบ (Admin)', position: 'นักวิชาการสาธารณสุขชำนาญการ', unit: 'สสอ.เทพา', role: 'admin', status: 'Active' },
+      { id: 'u_osm1', username: '0849698397', phone: '0849698397', password: '123456789', fullName: 'อสม.อุดม ศิวรักษ์', position: 'อสม.', unit: 'รพ.สต.ท่าไทร', subdistrict: 'ลำไพล', villageNo: '7', role: 'OSM', status: 'Active' },
+      { id: 'u_osm2', username: '0856749705', phone: '0856749705', password: '310821', fullName: 'ฝาตีเหม๊าะ อิแอ', position: 'อสม.', unit: 'รพ.สต.ทุ่งโดน', subdistrict: 'ทุ่งโดน', villageNo: '1', role: 'OSM', status: 'Active' },
+      { id: 'u_osm3', username: '0869593576', phone: '0869593576', password: '291020', fullName: 'สมชาย ดารา', position: 'อสม.', unit: 'รพ.สต.ท่าม่วง', subdistrict: 'ท่าม่วง', villageNo: '2', role: 'OSM', status: 'Active' },
+      { id: 'u_osm4', username: '0980193095', phone: '0980193095', password: '929799', fullName: 'น.ส.อุลัยวรรณ มานะกิจไพศาล', position: 'อสม.', unit: 'รพ.สต.ลำไพล', subdistrict: 'ลำไพล', villageNo: '1', role: 'OSM', status: 'Active' }
     ];
 
     // Seed Patients: Empty by default (0 demo cases)
@@ -1969,10 +1973,24 @@
         document.getElementById('sbUserRole').innerText = currentUser.role === 'admin' ? 'ผู้ดูแลระบบ (Admin)' : 'เจ้าหน้าที่หน่วยบริการ';
         document.getElementById('sbUserUnit').innerText = currentUser.unit;
 
+        const isOsm = currentUser.position === 'อสม.' || currentUser.role === 'OSM' || currentUser.role === 'osm';
+        const roleTitle = currentUser.role === 'admin' 
+          ? 'Admin (ผู้ดูแลระบบ)' 
+          : (isOsm ? 'อสม. ประจำหมู่บ้าน' : 'เจ้าหน้าที่หน่วยบริการ');
+
+        document.getElementById('headerRoleBadge').innerText = roleTitle;
+        document.getElementById('sbUserRole').innerText = roleTitle;
+        if (isOsm && currentUser.villageNo) {
+          document.getElementById('headerUserUnit').innerText = `${currentUser.unit} (ม.${currentUser.villageNo})`;
+          document.getElementById('sbUserUnit').innerText = `${currentUser.unit} ม.${currentUser.villageNo}`;
+        }
+
         // Mode badge on Dashboard
         document.getElementById('dashboardModeBadge').innerText = currentUser.role === 'admin' 
           ? `โหมดผู้ดูแลระบบ (Admin) • ทุกหน่วยบริการ` 
-          : `โหมดเจ้าหน้าที่ • ${currentUser.unit}`;
+          : (isOsm 
+              ? `โหมด อสม. • ${currentUser.unit} (เฉพาะหมู่ที่ ${currentUser.villageNo || '-'})` 
+              : `โหมดเจ้าหน้าที่ • ${currentUser.unit}`);
 
         authOnlyElements.forEach(el => el.classList.remove('hidden'));
 
@@ -1984,7 +2002,9 @@
 
         document.getElementById('patientTableScopeNotice').innerText = currentUser.role === 'admin'
           ? 'แสดงข้อมูลผู้ป่วยทุกตำบล/ทุกหน่วยบริการทั่วทั้งอำเภอเทพา'
-          : `แสดงข้อมูลเฉพาะผู้ป่วยในเขตรับผิดชอบของ: ${currentUser.unit}`;
+          : (isOsm 
+              ? `🔒 จำกัดสิทธิ์ อสม.: แสดงเฉพาะผู้ป่วย ${currentUser.unit} หมู่ที่ ${currentUser.villageNo || '-'} เท่านั้น` 
+              : `แสดงข้อมูลเฉพาะผู้ป่วยในเขตรับผิดชอบของ: ${currentUser.unit}`);
 
       } else {
         // Public / Guest
@@ -2033,7 +2053,7 @@
       showLoading('กำลังตรวจสอบความถูกต้องบัญชีผู้ใช้...');
 
       setTimeout(() => {
-        const found = usersData.find(user => user.username === u && user.password === p);
+        const found = usersData.find(user => (user.username === u || (user.phone && user.phone === u)) && user.password === p);
         hideLoading();
 
         if (found) {
@@ -2102,9 +2122,22 @@
     // 5. DASHBOARD CALCULATIONS & METRICS (14 & 28 Days)
     // -------------------------------------------------------------
     function getFilteredPatientsForUser() {
-      // If Staff, restrict to user's unit
-      if (currentUser && currentUser.role === 'staff') {
-        return patientsData.filter(p => p.healthCenter === currentUser.unit);
+      if (currentUser) {
+        const isOsm = currentUser.position === 'อสม.' || currentUser.role === 'OSM' || currentUser.role === 'osm';
+        // 1. อสม. -> จำกัดสิทธิ์เฉพาะ รพ.สต. นั้น > หมู่นั้น เท่านั้น
+        if (isOsm) {
+          return patientsData.filter(p => {
+            const matchUnit = !currentUser.unit || p.healthCenter === currentUser.unit;
+            const matchVillage = currentUser.villageNo 
+              ? String(p.villageNo).trim() === String(currentUser.villageNo).trim() 
+              : true;
+            return matchUnit && matchVillage;
+          });
+        }
+        // 2. เจ้าหน้าที่ รพ.สต. -> จำกัดสิทธิ์เฉพาะ รพ.สต. ตนเอง (ทุกหมู่บ้านในเขต)
+        if (currentUser.role !== 'admin' && currentUser.unit && currentUser.unit !== 'สสอ.เทพา' && currentUser.unit !== 'รพ.เทพา') {
+          return patientsData.filter(p => p.healthCenter === currentUser.unit);
+        }
       }
       return patientsData;
     }
