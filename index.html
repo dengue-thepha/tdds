@@ -8,7 +8,7 @@
   <!-- Google Fonts: Kanit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,300;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -576,24 +576,24 @@
         <!-- DEMOGRAPHIC CHARTS SECTION: กราฟร้อยละแยกกลุ่มอายุ + กราฟร้อยละแยกอาชีพ -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-          <!-- Chart A: กราฟแท่งร้อยละผู้ป่วยจำแนกตามกลุ่มอายุ -->
+          <!-- Chart A: กราฟแท่งอัตราป่วยต่อแสนประชากร จำแนกตามกลุ่มอายุ -->
           <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-            <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center justify-between mb-3 gap-2">
               <div>
                 <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
                   <span class="text-base">👥</span>
-                  <span>ร้อยละผู้ป่วยจำแนกตามกลุ่มอายุ</span>
+                  <span>อัตราป่วยต่อแสนประชากร จำแนกตามกลุ่มอายุ</span>
                 </h3>
-                <p class="text-xs text-slate-400">สัดส่วนร้อยละ (%) และจำนวนผู้ป่วยตามกลุ่มอายุมาตรฐาน DDC</p>
+                <p class="text-xs text-slate-400">คำนวณต่อประชากร 100,000 คน จากฐานข้อมูลประชากรที่นำเข้า (person)</p>
               </div>
-              <span class="text-[11px] bg-purple-50 text-purple-700 border border-purple-200 px-2.5 py-1 rounded-lg font-medium">9 กลุ่มอายุ</span>
+              <span id="ageGroupPopSourceBadge" class="text-[11px] bg-purple-50 text-purple-700 border border-purple-200 px-2.5 py-1 rounded-lg font-medium shrink-0">9 กลุ่มอายุ</span>
             </div>
             <div class="h-64 relative w-full">
               <canvas id="ageGroupChart"></canvas>
             </div>
-            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-              <span>กลุ่มเสี่ยงสูงสุด: <b id="topAgeGroupText" class="text-purple-700">10-14 ปี (24.2%)</b></span>
-              <span>รองลงมา: <b id="secondAgeGroupText" class="text-purple-700">15-24 ปี (21.2%)</b></span>
+            <div class="mt-3 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs text-slate-500">
+              <span>อัตราป่วยสูงสุด: <b id="topAgeGroupText" class="text-purple-700">-</b></span>
+              <span>รองลงมา: <b id="secondAgeGroupText" class="text-purple-700">-</b></span>
             </div>
           </div>
 
@@ -647,13 +647,13 @@
                   <span class="text-base">🍩</span>
                   <span>การวินิจฉัยโรค (Diagnosis)</span>
                 </h3>
-                <p class="text-xs text-slate-400">สัดส่วน R/O DF, DF, DHF, DSS</p>
+                <p class="text-xs text-slate-400">สัดส่วน DF, DHF, DSS (ไม่รวมเคส R/O)</p>
               </div>
             </div>
             <div class="h-48 relative flex items-center justify-center my-auto">
               <canvas id="diagnosisChart"></canvas>
             </div>
-            <div class="grid grid-cols-2 gap-2 text-center pt-3 border-t border-slate-100 text-xs">
+            <div class="grid grid-cols-3 gap-2 text-center pt-3 border-t border-slate-100 text-xs">
               <div class="flex items-center justify-center gap-1.5">
                 <span class="w-2.5 h-2.5 rounded-full bg-[#0288D1]"></span>
                 <span class="text-slate-600">DF</span>
@@ -665,10 +665,6 @@
               <div class="flex items-center justify-center gap-1.5">
                 <span class="w-2.5 h-2.5 rounded-full bg-[#EF5350]"></span>
                 <span class="text-slate-600">DSS</span>
-              </div>
-              <div class="flex items-center justify-center gap-1.5">
-                <span class="w-2.5 h-2.5 rounded-full bg-[#FFCA28]"></span>
-                <span class="text-slate-600">R/O DF</span>
               </div>
             </div>
           </div>
@@ -861,10 +857,16 @@
               <p class="text-xs text-slate-500" id="patientTableScopeNotice">แสดงข้อมูลผู้ป่วยทั้งหมดตามสิทธิ์การเข้าถึง</p>
             </div>
             
-            <button onclick="openPatientModal('new')" class="bg-[#EF5350] hover:bg-[#D32F2F] text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-rose-500/20 transition active:scale-95 flex items-center gap-2">
-              <span class="text-base">⚡</span>
-              <span>บันทึกผู้ป่วยรายใหม่</span>
-            </button>
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" onclick="exportPatientsCsv()" id="btnExportPatientsCsv" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold px-3.5 py-2.5 rounded-xl shadow-xs transition active:scale-95 flex items-center gap-1.5" title="ส่งออกทะเบียนผู้ป่วยเป็นไฟล์ CSV ตามสิทธิ์หน่วยบริการ">
+                <span>📥</span>
+                <span>ส่งออก CSV</span>
+              </button>
+              <button onclick="openPatientModal('new')" class="bg-[#EF5350] hover:bg-[#D32F2F] text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl shadow-md shadow-rose-500/20 transition active:scale-95 flex items-center gap-2">
+                <span class="text-base">⚡</span>
+                <span>บันทึกผู้ป่วยรายใหม่</span>
+              </button>
+            </div>
           </div>
 
           <!-- Filters Container -->
@@ -1072,6 +1074,7 @@
               <span class="text-base">👥</span>
               <h2 class="text-base sm:text-lg font-bold text-slate-900">จัดการผู้ใช้งานระบบ (User Management)</h2>
               <span id="userCountBadge" class="text-xs bg-purple-100 text-[#4A2C6D] px-2.5 py-0.5 rounded-full font-bold">35 บัญชี</span>
+              <span id="pendingUserBadge" class="hidden text-xs bg-amber-100 text-amber-800 border border-amber-200 px-2.5 py-0.5 rounded-full font-bold">⏳ รออนุมัติ 0 บัญชี</span>
             </div>
             <p class="text-xs text-slate-500 mt-0.5">บัญชีเจ้าหน้าที่ รพ.สต./PCU/รพ./สสอ. และ อสม. ทั้งหมดในอำเภอเทพา</p>
           </div>
@@ -1429,73 +1432,198 @@
   </footer>
 
   <!-- ============================================================== -->
-  <!-- MODAL 1: LOGIN MODAL                                           -->
+  <!-- MODAL 1: LOGIN & REGISTRATION MODAL                            -->
   <!-- ============================================================== -->
-  <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden transition-opacity">
-    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden transform transition-all p-6 space-y-5">
+  <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop hidden transition-opacity overflow-y-auto">
+    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden transform transition-all my-6 flex flex-col max-h-[92vh]">
       
-      <!-- Modal Header -->
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-teal-50 text-[#26A69A] flex items-center justify-center text-lg">
-            <span class="text-xl">🔒</span>
+      <!-- Gorgeous Gradient Modal Header -->
+      <div class="bg-gradient-to-br from-[#0F766E] via-[#0D9488] to-[#10B981] px-6 py-5 text-white relative overflow-hidden shrink-0">
+        <div class="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10 blur-xl pointer-events-none"></div>
+        <div class="absolute -left-6 -bottom-10 w-28 h-28 rounded-full bg-teal-300/15 blur-xl pointer-events-none"></div>
+
+        <div class="flex items-start justify-between relative z-10">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-xs border border-white/30 flex items-center justify-center text-2xl shadow-sm">
+              <span>🛡️</span>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold tracking-tight" id="authModalHeading">เข้าสู่ระบบ TDDS Thepha</h3>
+              <p class="text-xs text-teal-50/90 mt-0.5">ระบบสารสนเทศงานระบาดวิทยาไข้เลือดออก อ.เทพา จ.สงขลา</p>
+            </div>
           </div>
-          <div>
-            <h3 class="text-base font-bold text-slate-900">เข้าสู่ระบบ TDDS</h3>
-            <p class="text-xs text-slate-400">ระบบบันทึกข้อมูลไข้เลือดออก อ.เทพา</p>
-          </div>
+          <button type="button" onclick="closeLoginModal()" class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-sm transition">
+            ✕
+          </button>
         </div>
-        <button onclick="closeLoginModal()" class="text-slate-400 hover:text-slate-600 text-lg p-1">
-          ✕
-        </button>
+
+        <!-- Mode Switcher Tabs -->
+        <div class="mt-4 bg-black/15 p-1 rounded-2xl grid grid-cols-2 gap-1 relative z-10">
+          <button type="button" id="authTabBtn-login" onclick="switchAuthModalTab('login')" class="py-2 px-3 rounded-xl text-xs font-bold bg-white text-teal-800 shadow-xs transition flex items-center justify-center gap-1.5">
+            <span>🔑</span>
+            <span>เข้าสู่ระบบ</span>
+          </button>
+          <button type="button" id="authTabBtn-register" onclick="switchAuthModalTab('register')" class="py-2 px-3 rounded-xl text-xs font-bold text-white/90 hover:text-white hover:bg-white/10 transition flex items-center justify-center gap-1.5">
+            <span>📝</span>
+            <span>สมัครเข้าใช้งาน</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Form -->
-      <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อผู้ใช้งาน หรือ เบอร์โทรศัพท์ *</label>
-          <div class="relative">
-            <span class="absolute left-3 top-2.5 text-slate-400 text-sm">👤</span>
-            <input type="text" id="loginUsername" required placeholder="เบอร์โทรศัพท์ (เช่น 0807911371) หรือ admin" class="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
-          </div>
-        </div>
+      <!-- Modal Body (Scrollable) -->
+      <div class="p-5 sm:p-6 overflow-y-auto space-y-4">
 
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">รหัสผ่าน (Password) *</label>
-          <div class="relative">
-            <span class="absolute left-3 top-2.5 text-slate-400 text-sm">🔑</span>
-            <input type="password" id="loginPassword" required placeholder="กรอกรหัสผ่าน" class="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+        <!-- TAB 1: LOGIN FORM -->
+        <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">ชื่อผู้ใช้งาน (Username) หรือ เบอร์โทรศัพท์ *</label>
+            <div class="relative">
+              <span class="absolute left-3.5 top-3 text-slate-400 text-sm">👤</span>
+              <input type="text" id="loginUsername" required placeholder="กรอก Username หรือเบอร์โทรศัพท์ (เช่น 0807911371)" class="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition">
+            </div>
           </div>
-        </div>
 
-        <!-- Staff Accounts Quick Login Examples -->
-        <div class="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 text-[11px] space-y-1.5">
-          <span class="font-bold text-slate-600 block">เข้าสู่ระบบด้วยบัญชี staff_accounts (เบอร์โทร + รหัสผ่านเดิม):</span>
-          <div class="flex flex-wrap gap-1.5">
-            <button type="button" onclick="fillDemoLogin('admin', 'admin1234')" class="px-2 py-1 rounded-lg bg-purple-100 hover:bg-purple-200 text-[#4A2C6D] font-bold transition flex items-center gap-1 text-[10px]">
-              <span>👑</span> Admin
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1.5">รหัสผ่าน (Password) *</label>
+            <div class="relative">
+              <span class="absolute left-3.5 top-3 text-slate-400 text-sm">🔑</span>
+              <input type="password" id="loginPassword" required placeholder="กรอกรหัสผ่านของท่าน" class="w-full pl-10 pr-10 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition">
+              <button type="button" onclick="togglePasswordVisibility('loginPassword', this)" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 text-sm p-0.5" title="แสดง/ซ่อนรหัสผ่าน">👁️</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+            <button type="submit" class="w-full bg-gradient-to-r from-[#0D9488] to-[#0F766E] hover:from-[#0F766E] hover:to-[#115E59] text-white font-bold text-xs sm:text-sm py-3 rounded-xl shadow-md shadow-teal-600/20 transition active:scale-95 flex items-center justify-center gap-2">
+              <span>🔓</span>
+              <span>เข้าสู่ระบบ</span>
             </button>
-            <button type="button" onclick="fillDemoLogin('0807911371', 'Nuntita9864#')" class="px-2 py-1 rounded-lg bg-teal-100 hover:bg-teal-200 text-teal-800 font-bold transition flex items-center gap-1 text-[10px]">
-              <span>🏥</span> รพ.สต.ตูหยง
-            </button>
-            <button type="button" onclick="fillDemoLogin('0904783605', '1234')" class="px-2 py-1 rounded-lg bg-teal-100 hover:bg-teal-200 text-teal-800 font-bold transition flex items-center gap-1 text-[10px]">
-              <span>🏥</span> PCU1
-            </button>
-            <button type="button" onclick="fillDemoLogin('0872992760', '09499')" class="px-2 py-1 rounded-lg bg-teal-100 hover:bg-teal-200 text-teal-800 font-bold transition flex items-center gap-1 text-[10px]">
-              <span>🏥</span> รพ.สต.สะกอม
-            </button>
-            <button type="button" onclick="fillDemoLogin('0849698397', '123456789')" class="px-2 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold transition flex items-center gap-1 text-[10px]">
-              <span>🧑‍⚕️</span> อสม.อุดม
+            <button type="button" onclick="switchAuthModalTab('register')" class="w-full bg-purple-50 hover:bg-purple-100 text-[#4A2C6D] border border-purple-200 font-bold text-xs sm:text-sm py-3 rounded-xl transition active:scale-95 flex items-center justify-center gap-2">
+              <span>📝</span>
+              <span>สมัครเข้าใช้งาน</span>
             </button>
           </div>
-        </div>
+        </form>
 
-        <button type="submit" class="w-full bg-[#26A69A] hover:bg-[#00897B] text-white font-bold text-sm py-2.5 rounded-xl shadow-md shadow-teal-500/20 transition active:scale-95 flex items-center justify-center gap-2">
-          <span>🔑</span>
-          <span>เข้าสู่ระบบ</span>
-        </button>
-      </form>
+        <!-- TAB 2: REGISTER FORM -->
+        <form id="registerForm" onsubmit="handleRegisterSubmit(event)" class="hidden space-y-3.5">
+          <div class="bg-amber-50/80 border border-amber-200 rounded-xl px-3.5 py-2.5 text-[11px] text-amber-900 font-medium">
+            ⏳ บัญชีที่สมัครเข้าใช้งานใหม่จะต้องรอ <b>ผู้ดูแลระบบ (Admin)</b> อนุมัติก่อนจึงจะสามารถเข้าสู่ระบบได้
+          </div>
 
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Username *</label>
+              <input type="text" id="reg_username" required placeholder="เบอร์โทร หรือ ชื่อผู้ใช้" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Password *</label>
+              <div class="relative">
+                <input type="password" id="reg_password" required minlength="4" placeholder="ตั้งรหัสผ่าน (อย่างน้อย 4 ตัว)" class="w-full text-xs pl-3 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500">
+                <button type="button" onclick="togglePasswordVisibility('reg_password', this)" class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 text-sm">👁️</button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อ-สกุล *</label>
+            <input type="text" id="reg_fullname" required placeholder="เช่น นายสมชาย ใจดี" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">ตำแหน่ง *</label>
+            <select id="reg_position" required class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500">
+              <option value="">-- เลือกตำแหน่ง --</option>
+              <option value="นักวิชาการสาธารณสุขปฏิบัติการ">นักวิชาการสาธารณสุขปฏิบัติการ</option>
+              <option value="นักวิชาการสาธารณสุขชำนาญการ">นักวิชาการสาธารณสุขชำนาญการ</option>
+              <option value="นักสาธารณสุขปฏิบัติการ">นักสาธารณสุขปฏิบัติการ</option>
+              <option value="นักสาธารณสุขชำนาญการ">นักสาธารณสุขชำนาญการ</option>
+              <option value="พยาบาลวิชาชีพชำนาญการ">พยาบาลวิชาชีพชำนาญการ</option>
+              <option value="แพทย์ชำนาญการ">แพทย์ชำนาญการ</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">หน่วยบริการ *</label>
+              <select id="reg_unit" required onchange="onRegUnitChange()" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500">
+                <option value="">-- เลือกหน่วยบริการ --</option>
+                <option value="รพ.สต.ตูหยง">09491 - รพ.สต.ตูหยง</option>
+                <option value="รพ.สต.ตาแปด">09492 - รพ.สต.ตาแปด</option>
+                <option value="รพ.สต.เกาะสะบ้า">09493 - รพ.สต.เกาะสะบ้า</option>
+                <option value="รพ.สต.ลำไพล">09494 - รพ.สต.ลำไพล</option>
+                <option value="รพ.สต.ท่าไทร">09495 - รพ.สต.ท่าไทร</option>
+                <option value="รพ.สต.ท่าม่วง">09496 - รพ.สต.ท่าม่วง</option>
+                <option value="รพ.สต.พรุชิง">09497 - รพ.สต.พรุชิง</option>
+                <option value="รพ.สต.วังใหญ่">09498 - รพ.สต.วังใหญ่</option>
+                <option value="รพ.สต.สะกอม">09499 - รพ.สต.สะกอม</option>
+                <option value="รพ.สต.ท่าแมงลัก">09500 - รพ.สต.ท่าแมงลัก</option>
+                <option value="รพ.สต.ทุ่งโดน">11915 - รพ.สต.ทุ่งโดน</option>
+                <option value="PCU1">15109 - PCU1</option>
+                <option value="PCU2">15107 - PCU2</option>
+                <option value="สสอ.เทพา">99901 - สสอ.เทพา</option>
+                <option value="รพ.เทพา">10729 - รพ.เทพา</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">ตำบล *</label>
+              <select id="reg_subdistrict" required class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500">
+                <option value="">-- เลือกตำบล --</option>
+                <option value="เทพา">ต.เทพา</option>
+                <option value="ปากบาง">ต.ปากบาง</option>
+                <option value="เกาะสะบ้า">ต.เกาะสะบ้า</option>
+                <option value="ลำไพล">ต.ลำไพล</option>
+                <option value="ท่าม่วง">ต.ท่าม่วง</option>
+                <option value="วังใหญ่">ต.วังใหญ่</option>
+                <option value="สะกอม">ต.สะกอม</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">หมู่ที่ *</label>
+              <select id="reg_village_no" required class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500">
+                <option value="">-- เลือกหมู่ที่ (1-14) --</option>
+                <option value="1">หมู่ที่ 1</option>
+                <option value="2">หมู่ที่ 2</option>
+                <option value="3">หมู่ที่ 3</option>
+                <option value="4">หมู่ที่ 4</option>
+                <option value="5">หมู่ที่ 5</option>
+                <option value="6">หมู่ที่ 6</option>
+                <option value="7">หมู่ที่ 7</option>
+                <option value="8">หมู่ที่ 8</option>
+                <option value="9">หมู่ที่ 9</option>
+                <option value="10">หมู่ที่ 10</option>
+                <option value="11">หมู่ที่ 11</option>
+                <option value="12">หมู่ที่ 12</option>
+                <option value="13">หมู่ที่ 13</option>
+                <option value="14">หมู่ที่ 14</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">สิทธิ์การใช้งาน *</label>
+              <select id="reg_role" required class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500">
+                <option value="staff">เจ้าหน้าที่หน่วยบริการ (User / Staff)</option>
+                <option value="OSM">อสม. ประจำหมู่บ้าน (OSM)</option>
+                <option value="admin">ผู้ดูแลระบบ (Admin)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="pt-2 flex items-center gap-2.5">
+            <button type="button" onclick="switchAuthModalTab('login')" class="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition">
+              ← กลับไปหน้าเข้าสู่ระบบ
+            </button>
+            <button type="submit" class="flex-1 bg-gradient-to-r from-[#4A2C6D] to-[#6B3FA0] hover:from-[#3B2158] hover:to-[#4A2C6D] text-white font-bold text-xs sm:text-sm py-2.5 rounded-xl shadow-md shadow-purple-600/20 transition active:scale-95 flex items-center justify-center gap-2">
+              <span>✅</span>
+              <span>ยืนยันสมัครเข้าใช้งาน</span>
+            </button>
+          </div>
+        </form>
+
+      </div>
     </div>
   </div>
 
@@ -13046,6 +13174,7 @@
         document.getElementById('patientTableScopeNotice').innerText = 'ข้อมูลระดับอำเภอเทพา (PDPA Protected)';
       }
 
+      if (typeof syncPatientHealthCenterFilterLock === 'function') syncPatientHealthCenterFilterLock();
       applyDashboardFilters();
       renderPatientTable();
       renderUserTable();
@@ -13058,56 +13187,282 @@
     // -------------------------------------------------------------
     // 4. AUTHENTICATION & LOGIN/LOGOUT
     // -------------------------------------------------------------
-    function openLoginModal() {
+    function openLoginModal(defaultTab = 'login') {
       document.getElementById('loginModal').classList.remove('hidden');
-      document.getElementById('loginUsername').focus();
+      switchAuthModalTab(defaultTab);
+      if (defaultTab === 'login') {
+        document.getElementById('loginUsername')?.focus();
+      } else {
+        document.getElementById('reg_username')?.focus();
+      }
     }
     function closeLoginModal() {
       document.getElementById('loginModal').classList.add('hidden');
-      document.getElementById('loginForm').reset();
+      document.getElementById('loginForm')?.reset();
+      document.getElementById('registerForm')?.reset();
     }
-    function fillDemoLogin(u, p) {
-      document.getElementById('loginUsername').value = u;
-      document.getElementById('loginPassword').value = p;
+    function switchAuthModalTab(tab) {
+      const loginForm = document.getElementById('loginForm');
+      const regForm = document.getElementById('registerForm');
+      const btnLogin = document.getElementById('authTabBtn-login');
+      const btnReg = document.getElementById('authTabBtn-register');
+      const heading = document.getElementById('authModalHeading');
+      if (!loginForm || !regForm) return;
+
+      if (tab === 'register') {
+        loginForm.classList.add('hidden');
+        regForm.classList.remove('hidden');
+        if (heading) heading.innerText = 'สมัครเข้าใช้งานระบบ TDDS';
+        if (btnReg) btnReg.className = 'py-2 px-3 rounded-xl text-xs font-bold bg-white text-teal-800 shadow-xs transition flex items-center justify-center gap-1.5';
+        if (btnLogin) btnLogin.className = 'py-2 px-3 rounded-xl text-xs font-bold text-white/90 hover:text-white hover:bg-white/10 transition flex items-center justify-center gap-1.5';
+      } else {
+        regForm.classList.add('hidden');
+        loginForm.classList.remove('hidden');
+        if (heading) heading.innerText = 'เข้าสู่ระบบ TDDS Thepha';
+        if (btnLogin) btnLogin.className = 'py-2 px-3 rounded-xl text-xs font-bold bg-white text-teal-800 shadow-xs transition flex items-center justify-center gap-1.5';
+        if (btnReg) btnReg.className = 'py-2 px-3 rounded-xl text-xs font-bold text-white/90 hover:text-white hover:bg-white/10 transition flex items-center justify-center gap-1.5';
+      }
+    }
+    function togglePasswordVisibility(inputId, btnEl) {
+      const inp = document.getElementById(inputId);
+      if (!inp) return;
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        if (btnEl) btnEl.innerText = '🙈';
+      } else {
+        inp.type = 'password';
+        if (btnEl) btnEl.innerText = '👁️';
+      }
+    }
+    function onRegUnitChange() {
+      const unitVal = document.getElementById('reg_unit')?.value;
+      const subEl = document.getElementById('reg_subdistrict');
+      if (!unitVal || !subEl) return;
+      const hc = getHealthCenterInfo(unitVal);
+      if (hc && hc.subdistrict) {
+        subEl.value = hc.subdistrict;
+      }
+    }
+    async function fetchUsersFromSupabase() {
+      const cfg = typeof getSupabasePersonConfig === 'function' ? getSupabasePersonConfig() : null;
+      if (!cfg || !cfg.url || !cfg.key) return;
+      try {
+        const res = await fetch(`${cfg.url}/rest/v1/staff_accounts?select=*`, {
+          headers: buildSupabaseHeaders(cfg.key)
+        });
+        if (!res.ok) return;
+        const rows = await res.json();
+        if (!Array.isArray(rows) || rows.length === 0) return;
+
+        const existingMap = new Map();
+        usersData.forEach(u => {
+          if (u.username) existingMap.set(u.username, u);
+          if (u.phone) existingMap.set(u.phone, u);
+        });
+
+        let changed = false;
+        rows.forEach(r => {
+          const uname = String(r.username || r.phone || '').trim();
+          if (!uname) return;
+          const mappedRole = String(r.role || '').toLowerCase() === 'admin'
+            ? 'admin'
+            : (String(r.role || '').toUpperCase() === 'OSM' || r.position === 'อสม.' ? 'OSM' : 'staff');
+          const mappedUser = {
+            id: `sb_${r.id}`,
+            supabaseId: r.id,
+            username: uname,
+            phone: r.phone || uname,
+            password: r.password || '1234',
+            fullName: normalizeThaiStr(r.name || ''),
+            position: normalizeThaiStr(r.position || ''),
+            unit: normalizeThaiStr(r.health_center || ''),
+            hcode: r.hcode || getHCodeByName(r.health_center),
+            zone: normalizeThaiStr(r.zone || ''),
+            subdistrict: normalizeThaiStr(r.subdistrict || ''),
+            villageNo: r.village_no ? String(r.village_no) : '',
+            role: mappedRole,
+            status: r.status || 'Active',
+            isActive: r.is_active !== false
+          };
+          const prev = existingMap.get(uname) || (r.phone ? existingMap.get(r.phone) : null);
+          if (!prev) {
+            usersData.push(mappedUser);
+            changed = true;
+          } else {
+            // อัปเดตข้อมูลล่าสุดจาก Supabase
+            Object.assign(prev, mappedUser, { id: prev.id });
+            changed = true;
+          }
+        });
+        if (changed) {
+          saveUsers();
+          if (typeof renderUserTable === 'function') renderUserTable();
+        }
+      } catch (err) {
+        console.warn('[TDDS] fetchUsersFromSupabase error:', err);
+      }
+    }
+    async function upsertUserToSupabase(userObj) {
+      const cfg = typeof getSupabasePersonConfig === 'function' ? getSupabasePersonConfig() : null;
+      if (!cfg || !cfg.url || !cfg.key) return { ok: false };
+      try {
+        const hcInfo = getHealthCenterInfo(userObj.unit);
+        const sbRole = userObj.role === 'admin' ? 'Admin' : (userObj.role === 'OSM' ? 'OSM' : 'User');
+        const payload = {
+          name: userObj.fullName,
+          position: userObj.position || null,
+          phone: userObj.phone || userObj.username,
+          username: userObj.username,
+          password: userObj.password,
+          health_center: userObj.unit,
+          hcode: userObj.hcode || (hcInfo ? hcInfo.hcode : null),
+          zone: userObj.zone || (hcInfo ? hcInfo.zone : null),
+          subdistrict: userObj.subdistrict || (hcInfo ? hcInfo.subdistrict : null),
+          village_no: userObj.villageNo ? String(userObj.villageNo) : null,
+          role: sbRole,
+          status: userObj.status || 'Active',
+          is_active: userObj.isActive !== false
+        };
+        const res = await fetch(`${cfg.url}/rest/v1/staff_accounts`, {
+          method: 'POST',
+          headers: buildSupabaseHeaders(cfg.key, {
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          }),
+          body: JSON.stringify(payload)
+        });
+        if (res.status === 401 || res.status === 403) {
+          return { ok: false, rlsBlocked: true };
+        }
+        if (!res.ok) {
+          const txt = await res.text();
+          return { ok: false, error: txt };
+        }
+        return { ok: true };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    }
+    async function handleRegisterSubmit(e) {
+      e.preventDefault();
+      const username = document.getElementById('reg_username').value.trim();
+      const password = document.getElementById('reg_password').value.trim();
+      const fullName = normalizeThaiStr(document.getElementById('reg_fullname').value);
+      const position = document.getElementById('reg_position').value;
+      const unit = document.getElementById('reg_unit').value;
+      const subdistrict = document.getElementById('reg_subdistrict').value;
+      const villageNo = document.getElementById('reg_village_no').value;
+      const role = document.getElementById('reg_role').value || 'staff';
+
+      if (!username || !password || !fullName || !position || !unit || !subdistrict || !villageNo) {
+        Swal.fire({ icon: 'warning', title: 'กรุณากรอกข้อมูลให้ครบทุกช่อง' });
+        return;
+      }
+
+      if (usersData.some(u => u.username === username || (u.phone && u.phone === username))) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Username นี้มีผู้ใช้งานแล้ว',
+          text: `ชื่อผู้ใช้ "${username}" ถูกใช้ลงทะเบียนแล้ว กรุณาใช้ชื่ออื่นหรือเบอร์โทรศัพท์อื่น`
+        });
+        return;
+      }
+
+      showLoading('กำลังสมัครเข้าใช้งาน...');
+      const hcInfo = getHealthCenterInfo(unit);
+      const newUser = {
+        id: 'u_' + Date.now(),
+        username: username,
+        phone: username,
+        password: password,
+        fullName: fullName,
+        position: position,
+        unit: unit,
+        hcode: hcInfo ? hcInfo.hcode : '',
+        zone: hcInfo ? hcInfo.zone : '',
+        subdistrict: subdistrict,
+        villageNo: String(villageNo),
+        role: role,
+        status: 'Pending Approval',
+        isActive: false
+      };
+
+      usersData.push(newUser);
+      saveUsers();
+      const sbRes = await upsertUserToSupabase(newUser);
+      addAuditLog('REGISTER_USER', `คำขอสมัครเข้าใช้งาน (รออนุมัติ): ${newUser.username} (${newUser.fullName} - ${newUser.unit} ม.${newUser.villageNo})`);
+      hideLoading();
+      if (typeof renderUserTable === 'function') renderUserTable();
+
+      document.getElementById('registerForm')?.reset();
+      switchAuthModalTab('login');
+
+      Swal.fire({
+        icon: 'info',
+        title: 'ส่งคำขอสมัครเข้าใช้งานแล้ว',
+        html: `บันทึกคำขอของ <b>${fullName}</b> (${unit} ต.${subdistrict} ม.${villageNo}) เรียบร้อยแล้ว<br><br>⏳ <b>กรุณารอผู้ดูแลระบบ (Admin) อนุมัติบัญชีของท่านก่อน</b> จึงจะสามารถเข้าสู่ระบบได้` +
+          (sbRes && sbRes.rlsBlocked ? '<br><span class="text-[11px] text-amber-700">(หมายเหตุ: บันทึกในเครื่องแล้ว หากต้องการบันทึกลงตาราง staff_accounts บน Supabase ด้วย กรุณารัน enable_staff_registration_sync.sql)</span>' : ''),
+        confirmButtonColor: '#0D9488'
+      });
     }
 
-    function handleLoginSubmit(e) {
+    async function handleLoginSubmit(e) {
       e.preventDefault();
       const u = document.getElementById('loginUsername').value.trim();
       const p = document.getElementById('loginPassword').value.trim();
 
       showLoading('กำลังตรวจสอบความถูกต้องบัญชีผู้ใช้...');
 
-      setTimeout(() => {
-        const found = usersData.find(user => (user.username === u || (user.phone && user.phone === u)) && user.password === p);
-        hideLoading();
+      // ซิงค์สถานะผู้ใช้ล่าสุดจาก Supabase ก่อนตรวจสอบ (กรณี Admin เพิ่งกดอนุมัติจากเครื่องอื่น)
+      await fetchUsersFromSupabase();
 
-        if (found) {
-          currentUser = found;
-          localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(currentUser));
-          closeLoginModal();
+      const found = usersData.find(user => (user.username === u || (user.phone && user.phone === u)) && user.password === p);
+      hideLoading();
 
-          addAuditLog('LOGIN', `เข้าสู่ระบบสำเร็จในฐานะ ${found.fullName} (${found.unit})`);
-
+      if (found) {
+        if (found.status === 'Pending Approval' || found.isActive === false) {
           Swal.fire({
-            icon: 'success',
-            title: 'เข้าสู่ระบบสำเร็จ!',
-            text: `ยินดีต้อนรับ ${found.fullName} (${found.unit})`,
-            timer: 1800,
-            showConfirmButton: false
+            icon: 'warning',
+            title: 'บัญชีอยู่ระหว่างรอการอนุมัติ',
+            html: `บัญชีของ <b>${found.fullName}</b> ยังไม่ได้รับการอนุมัติจากผู้ดูแลระบบ (Admin)<br>กรุณาติดต่อ สสอ.เทพา เพื่ออนุมัติการใช้งานก่อนเข้าสู่ระบบ`,
+            confirmButtonColor: '#F59E0B'
           });
-
-          updateAuthUI();
-          navigateTo('dashboard');
-        } else {
+          return;
+        }
+        if (found.status === 'Rejected' || found.status === 'Suspended') {
           Swal.fire({
             icon: 'error',
-            title: 'เข้าสู่ระบบไม่สำเร็จ',
-            text: 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง โปรดลองอีกครั้ง',
+            title: 'บัญชีถูกระงับหรือไม่ได้รับอนุมัติ',
+            text: 'กรุณาติดต่อผู้ดูแลระบบ (สสอ.เทพา)',
             confirmButtonColor: '#EF5350'
           });
+          return;
         }
-      }, 500);
+
+        currentUser = found;
+        localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(currentUser));
+        closeLoginModal();
+
+        addAuditLog('LOGIN', `เข้าสู่ระบบสำเร็จในฐานะ ${found.fullName} (${found.unit})`);
+
+        Swal.fire({
+          icon: 'success',
+          title: 'เข้าสู่ระบบสำเร็จ!',
+          text: `ยินดีต้อนรับ ${found.fullName} (${found.unit})`,
+          timer: 1800,
+          showConfirmButton: false
+        });
+
+        updateAuthUI();
+        navigateTo('dashboard');
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'เข้าสู่ระบบไม่สำเร็จ',
+          text: 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง โปรดลองอีกครั้ง',
+          confirmButtonColor: '#EF5350'
+        });
+      }
     }
 
     function handleLogout() {
@@ -13221,8 +13576,96 @@
       };
     }
 
+    function isRuleOutCase(p) {
+      if (!p || !p.diagnosis) return false;
+      return normalizeThaiStr(p.diagnosis).toUpperCase().includes('R/O');
+    }
+
+    function syncPopulationFromImportedPersons() {
+      if (typeof personsData === 'undefined' || !Array.isArray(personsData) || personsData.length === 0) return;
+      const byHcode = {};
+      personsData.forEach(p => {
+        const code = String(p.pcucodeperson || '').trim();
+        if (code) byHcode[code] = (byHcode[code] || 0) + 1;
+      });
+      Object.keys(byHcode).forEach(code => {
+        const hName = getHNameByCode(code);
+        if (hName && thephaPopulationData.healthCenters) {
+          thephaPopulationData.healthCenters[hName] = byHcode[code];
+        }
+        const hcMaster = HEALTH_CENTERS_MASTER.find(h => h.hcode === code);
+        if (hcMaster) hcMaster.population = byHcode[code];
+      });
+      // อัปเดตประชากรรายตำบลเฉพาะตำบลที่มีข้อมูลครบทุก รพ.สต. ในตำบลนั้น (หรือตามข้อมูลจริงที่มี)
+      const importedHcodeSet = new Set(Object.keys(byHcode));
+      const allPrimary = HEALTH_CENTERS_MASTER.filter(h => !['99901', '10729'].includes(h.hcode));
+      const subList = [...new Set(allPrimary.map(h => h.subdistrict))];
+      subList.forEach(sub => {
+        const unitsInSub = allPrimary.filter(h => h.subdistrict === sub);
+        const allImportedInSub = unitsInSub.length > 0 && unitsInSub.every(u => importedHcodeSet.has(u.hcode));
+        if (allImportedInSub) {
+          thephaPopulationData.subdistricts[sub] = unitsInSub.reduce((acc, u) => acc + (u.population || 0), 0);
+        }
+      });
+      thephaPopulationData.total = Object.values(thephaPopulationData.subdistricts).reduce((a, b) => a + b, 0);
+    }
+
+    function getAgeGroupPopulationContext(selectedSubdistrict = 'all') {
+      const ageGroups = ['0-4 ปี', '5-9 ปี', '10-14 ปี', '15-24 ปี', '25-34 ปี', '35-44 ปี', '45-54 ปี', '55-64 ปี', '65 ปีขึ้นไป'];
+      const hasImported = typeof personsData !== 'undefined' && Array.isArray(personsData) && personsData.length > 0;
+
+      let matchedPersons = [];
+      if (hasImported) {
+        if (currentUser && currentUser.role !== 'admin') {
+          matchedPersons = getFilteredPersonsForUser();
+        } else {
+          matchedPersons = personsData;
+        }
+        if (selectedSubdistrict && selectedSubdistrict !== 'all') {
+          const unitHcodesInSub = new Set(
+            HEALTH_CENTERS_MASTER.filter(h => h.subdistrict === selectedSubdistrict).map(h => h.hcode)
+          );
+          matchedPersons = matchedPersons.filter(p =>
+            normalizeThaiStr(p.subdistrict) === normalizeThaiStr(selectedSubdistrict) ||
+            unitHcodesInSub.has(String(p.pcucodeperson || '').trim())
+          );
+        }
+      }
+
+      if (matchedPersons.length > 0) {
+        const popMap = {};
+        ageGroups.forEach(g => popMap[g] = 0);
+        matchedPersons.forEach(p => {
+          const g = p.age_group;
+          if (popMap[g] !== undefined) popMap[g]++;
+        });
+        return {
+          source: 'person',
+          totalPop: matchedPersons.length,
+          popByAge: popMap
+        };
+      }
+
+      // Fallback กรณียังไม่มีข้อมูล person ในขอบเขตที่เลือก
+      const baseTotal = thephaPopulationData.total || 65784;
+      const targetPop = (selectedSubdistrict && selectedSubdistrict !== 'all' && thephaPopulationData.subdistricts[selectedSubdistrict])
+        ? thephaPopulationData.subdistricts[selectedSubdistrict]
+        : baseTotal;
+      const scale = baseTotal > 0 ? (targetPop / baseTotal) : 1;
+      const popMap = {};
+      ageGroups.forEach(g => {
+        popMap[g] = Math.round((thephaPopulationData.ageGroups[g] || 0) * scale);
+      });
+      return {
+        source: 'default',
+        totalPop: targetPop,
+        popByAge: popMap
+      };
+    }
+
     function applyDashboardFilters() {
-      let scopedList = getFilteredPatientsForUser();
+      // ประมวลผลหน้า Dashboard เฉพาะผู้ป่วยยืนยัน (ไม่รวมเคส R/O เพราะยังไม่ใช่ผู้ป่วย)
+      let scopedList = getFilteredPatientsForUser().filter(p => !isRuleOutCase(p));
       const selectedSubdistrict = document.getElementById('dashSubdistrictFilter').value;
 
       if (selectedSubdistrict !== 'all') {
@@ -13237,10 +13680,24 @@
       document.getElementById('kpi14DaysCases').innerText = metrics.within14;
       document.getElementById('kpi28DaysCases').innerText = metrics.within28;
 
-      // Calculate Morbidity Rate per 100,000
+      // Calculate Morbidity Rate per 100,000 (ใช้ฐานประชากรที่นำเข้าจาก person เมื่อมีข้อมูลในขอบเขต)
+      const popCtx = getAgeGroupPopulationContext(selectedSubdistrict);
       let targetPop = thephaPopulationData.total;
-      if (selectedSubdistrict !== 'all' && thephaPopulationData.subdistricts[selectedSubdistrict]) {
-        targetPop = thephaPopulationData.subdistricts[selectedSubdistrict];
+      if (currentUser && currentUser.role !== 'admin') {
+        const userHcode = currentUser.hcode || getHCodeByName(currentUser.unit);
+        const hcInfo = HEALTH_CENTERS_MASTER.find(h => h.hcode === userHcode);
+        if (popCtx.source === 'person' && popCtx.totalPop > 0) {
+          targetPop = popCtx.totalPop;
+        } else if (hcInfo && hcInfo.population > 0) {
+          targetPop = hcInfo.population;
+        }
+      } else if (selectedSubdistrict !== 'all' && thephaPopulationData.subdistricts[selectedSubdistrict]) {
+        targetPop = (popCtx.source === 'person' && popCtx.totalPop > 0)
+          ? popCtx.totalPop
+          : thephaPopulationData.subdistricts[selectedSubdistrict];
+      } else if (popCtx.source === 'person' && popCtx.totalPop > 0) {
+        // ถ้า Admin นำเข้า person มาแล้ว ใช้ยอดประชากรจาก person หรือผลรวมที่มีจริง
+        targetPop = popCtx.totalPop;
       }
       const morbidityRate = targetPop > 0 ? ((metrics.total / targetPop) * 100000).toFixed(2) : '0.00';
       const kpiRateEl = document.getElementById('kpiMorbidityRate');
@@ -13673,7 +14130,7 @@
       }
 
       // -----------------------------------------------------------
-      // 2. Age Group Percentage Bar Chart
+      // 2. Age Group Morbidity Rate per 100,000 Bar Chart (จากประชากรที่นำเข้า)
       // -----------------------------------------------------------
       const ageGroups = ['0-4 ปี', '5-9 ปี', '10-14 ปี', '15-24 ปี', '25-34 ปี', '35-44 ปี', '45-54 ปี', '55-64 ปี', '65 ปีขึ้นไป'];
       const ageCounts = {};
@@ -13696,20 +14153,41 @@
         }
       });
 
-      const agePercentages = ageGroups.map(g => parseFloat(((ageCounts[g] / totalPatients) * 100).toFixed(1)));
+      const agePopCtx = getAgeGroupPopulationContext(subKey);
+      const agePopData = ageGroups.map(g => agePopCtx.popByAge[g] || 0);
       const ageRawData = ageGroups.map(g => ageCounts[g]);
+      const agePercentages = ageGroups.map(g => parseFloat(((ageCounts[g] / totalPatients) * 100).toFixed(1)));
+      const ageMorbidityRates = ageGroups.map((g, idx) => {
+        const pop = agePopData[idx];
+        return pop > 0 ? parseFloat((((ageCounts[g] || 0) / pop) * 100000).toFixed(2)) : 0;
+      });
 
-      // Update Top Age Group note
-      const sortedAgeBrackets = [...ageGroups].sort((a, b) => ageCounts[b] - ageCounts[a]);
+      const sourceBadge = document.getElementById('ageGroupPopSourceBadge');
+      if (sourceBadge) {
+        if (agePopCtx.source === 'person') {
+          sourceBadge.className = 'text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg font-semibold shrink-0';
+          sourceBadge.innerText = `ฐาน person: ${agePopCtx.totalPop.toLocaleString()} คน`;
+        } else {
+          sourceBadge.className = 'text-[11px] bg-purple-50 text-purple-700 border border-purple-200 px-2.5 py-1 rounded-lg font-medium shrink-0';
+          sourceBadge.innerText = `ฐานตั้งต้น: ${agePopCtx.totalPop.toLocaleString()} คน`;
+        }
+      }
+
+      // Update Top Age Group note (จัดอันดับตามอัตราป่วยต่อแสนประชากร)
+      const rateByGroup = {};
+      ageGroups.forEach((g, idx) => { rateByGroup[g] = ageMorbidityRates[idx]; });
+      const sortedAgeBrackets = [...ageGroups].sort((a, b) => (rateByGroup[b] - rateByGroup[a]) || (ageCounts[b] - ageCounts[a]));
       const topAgeEl = document.getElementById('topAgeGroupText');
       const secondAgeEl = document.getElementById('secondAgeGroupText');
       if (topAgeEl) {
         const topG = sortedAgeBrackets[0];
-        topAgeEl.innerText = `${topG} (${((ageCounts[topG]/totalPatients)*100).toFixed(1)}% - ${ageCounts[topG]} ราย)`;
+        const topIdx = ageGroups.indexOf(topG);
+        topAgeEl.innerText = `${topG} (${rateByGroup[topG].toFixed(2)}/แสน • ${ageCounts[topG]} ราย / ปชก. ${agePopData[topIdx].toLocaleString()})`;
       }
       if (secondAgeEl && sortedAgeBrackets.length > 1) {
         const secG = sortedAgeBrackets[1];
-        secondAgeEl.innerText = `${secG} (${((ageCounts[secG]/totalPatients)*100).toFixed(1)}% - ${ageCounts[secG]} ราย)`;
+        const secIdx = ageGroups.indexOf(secG);
+        secondAgeEl.innerText = `${secG} (${rateByGroup[secG].toFixed(2)}/แสน • ${ageCounts[secG]} ราย / ปชก. ${agePopData[secIdx].toLocaleString()})`;
       }
 
       const ctxAge = document.getElementById('ageGroupChart');
@@ -13722,8 +14200,8 @@
           data: {
             labels: ageGroups,
             datasets: [{
-              label: 'ร้อยละ (%)',
-              data: agePercentages,
+              label: 'อัตราป่วยต่อแสนประชากร',
+              data: ageMorbidityRates,
               backgroundColor: [
                 '#81C784', '#4DB6AC', '#7E57C2', '#5C6BC0', '#42A5F5',
                 '#FFB74D', '#FF8A65', '#BA68C8', '#A1887F'
@@ -13746,9 +14224,14 @@
                 callbacks: {
                   label: function(context) {
                     const idx = context.dataIndex;
-                    const pct = context.raw;
+                    const rate = context.raw;
                     const count = ageRawData[idx];
-                    return ` สัดส่วน: ${pct}% (${count} ราย)`;
+                    const pop = agePopData[idx];
+                    const pct = agePercentages[idx];
+                    return [
+                      ` อัตราป่วย: ${Number(rate).toLocaleString()} ต่อแสนประชากร`,
+                      ` ผู้ป่วย: ${count} ราย / ประชากร: ${pop.toLocaleString()} คน (ร้อยละ ${pct}%)`
+                    ];
                   }
                 }
               }
@@ -13757,8 +14240,14 @@
               y: {
                 beginAtZero: true,
                 ticks: {
-                  callback: function(v) { return v + '%'; },
+                  callback: function(v) { return Number(v).toLocaleString(); },
                   font: { family: 'Kanit' },
+                  color: '#64748b'
+                },
+                title: {
+                  display: true,
+                  text: 'ต่อแสนประชากร',
+                  font: { family: 'Kanit', size: 11 },
                   color: '#64748b'
                 },
                 grid: { color: '#f1f5f9' }
@@ -13921,14 +14410,17 @@
       }
 
       // -----------------------------------------------------------
-      // 5. Diagnosis Doughnut Chart
+      // 5. Diagnosis Doughnut Chart (เฉพาะ DF, DHF, DSS ไม่รวม R/O)
       // -----------------------------------------------------------
-      const diagCounts = { 'DF': 0, 'DHF': 0, 'DSS': 0, 'R/O DF': 0 };
+      const diagCounts = { 'DF': 0, 'DHF': 0, 'DSS': 0 };
       list.forEach(p => {
-        if (diagCounts[p.diagnosis] !== undefined) {
-          diagCounts[p.diagnosis]++;
+        const diagUp = normalizeThaiStr(p.diagnosis || '').toUpperCase();
+        if (diagUp === 'DHF' || diagUp.includes('DHF')) {
+          diagCounts['DHF']++;
+        } else if (diagUp === 'DSS' || diagUp.includes('DSS')) {
+          diagCounts['DSS']++;
         } else {
-          diagCounts['R/O DF']++;
+          diagCounts['DF']++;
         }
       });
 
@@ -13940,10 +14432,10 @@
         diagnosisChartInstance = new Chart(ctxDiag.getContext('2d'), {
           type: 'doughnut',
           data: {
-            labels: ['DF', 'DHF', 'DSS', 'R/O DF'],
+            labels: ['DF', 'DHF', 'DSS'],
             datasets: [{
-              data: [diagCounts['DF'], diagCounts['DHF'], diagCounts['DSS'], diagCounts['R/O DF']],
-              backgroundColor: ['#0288D1', '#FF8A65', '#EF5350', '#FFCA28'],
+              data: [diagCounts['DF'], diagCounts['DHF'], diagCounts['DSS']],
+              backgroundColor: ['#0288D1', '#FF8A65', '#EF5350'],
               borderWidth: 2,
               borderColor: '#ffffff'
             }]
@@ -14112,7 +14604,7 @@
       fullMapMarkers.forEach(m => fullMap.removeLayer(m));
       fullMapMarkers = [];
 
-      let list = getFilteredPatientsForUser();
+      let list = getFilteredPatientsForUser().filter(p => !isRuleOutCase(p));
       const periodFilter = document.getElementById('mapFilterPeriod').value;
       const now = new Date();
 
@@ -14621,7 +15113,23 @@
 
       selectedDiagnoses = [];
       updateDiagMultiSelectUI();
+      syncPatientHealthCenterFilterLock();
       filterPatientTable();
+    }
+
+    function syncPatientHealthCenterFilterLock() {
+      const hcFilterEl = document.getElementById('patientFilterHealthCenter');
+      if (!hcFilterEl) return;
+      const userUnit = currentUser ? normalizeThaiStr(currentUser.unit) : '';
+      const isAllUnitUser = currentUser && (currentUser.role === 'admin' || userUnit === 'สสอ.เทพา' || userUnit === 'รพ.เทพา');
+      if (currentUser && !isAllUnitUser) {
+        const uCode = currentUser.hcode || getHCodeByName(userUnit);
+        if (uCode) hcFilterEl.value = uCode;
+        hcFilterEl.disabled = true;
+      } else {
+        if (hcFilterEl.disabled) hcFilterEl.value = '';
+        hcFilterEl.disabled = false;
+      }
     }
 
     function formatPatientNotifiedDisplay(p) {
@@ -14634,10 +15142,8 @@
       return '-';
     }
 
-    function renderPatientTable() {
-      const tbody = document.getElementById('patientFullTbody');
-      tbody.innerHTML = '';
-
+    function getFilteredPatientTableList() {
+      // หน้าทะเบียนผู้ป่วยแสดงทั้งหมดรวมเคส R/O เพื่อใช้ติดตามและควบคุมโรค (จำกัดสิทธิ์ตามสถานพยาบาล/หมู่บ้านของผู้ใช้)
       let list = getFilteredPatientsForUser();
 
       // 1. ค้นหาทั่วไป (ชื่อ, บ้านเลขที่, เบอร์โทร, ตำบล, หน่วยบริการ)
@@ -14733,7 +15239,7 @@
         });
       }
 
-      // 9. เรียงลำดับรายการในตาราง: วันที่ใหม่ > เก่า (Descending) ตามที่ผู้ใช้ต้องการ
+      // 9. เรียงลำดับรายการในตาราง: วันที่ใหม่ > เก่า (Descending)
       list.sort((a, b) => {
         const getSortTime = (item) => {
           const dtStr = item.notifiedDatetime || item.createdAt || item.illnessDate;
@@ -14741,8 +15247,116 @@
           const t = new Date(dtStr).getTime();
           return isNaN(t) ? 0 : t;
         };
-        return getSortTime(b) - getSortTime(a); // วันที่ใหม่สุดอยู่ด้านบน (ใหม่ > เก่า)
+        return getSortTime(b) - getSortTime(a);
       });
+
+      return list;
+    }
+
+    function exportPatientsCsv() {
+      if (!currentUser) {
+        Swal.fire({ icon: 'warning', title: 'กรุณาเข้าสู่ระบบ', text: 'ต้องเข้าสู่ระบบก่อนส่งออกข้อมูลทะเบียนผู้ป่วย' });
+        return;
+      }
+
+      const list = getFilteredPatientTableList();
+      if (!list || list.length === 0) {
+        Swal.fire({ icon: 'info', title: 'ไม่มีข้อมูลสำหรับส่งออก', text: 'ไม่พบรายการผู้ป่วยตามสิทธิ์และตัวกรองที่เลือก' });
+        return;
+      }
+
+      const csvEscape = (v) => `"${String(v ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
+      const headers = [
+        'ลำดับ', 'รหัสผู้ป่วย', 'hcode', 'หน่วยบริการรับผิดชอบ', 'ชื่อ-สกุล', 'เพศ',
+        'อายุ(ปี)', 'อายุ(เดือน)', 'กลุ่มอายุ', 'เบอร์โทร', 'บ้านเลขที่', 'หมู่ที่',
+        'ตำบล', 'โซน', 'อาชีพ', 'สถานที่ทำงาน/โรงเรียน', 'วันเริ่มป่วย', 'วันที่แจ้ง',
+        'วันรับการรักษา', 'โรงพยาบาลที่รักษา', 'ประเภทผู้ป่วย', 'การวินิจฉัย',
+        'ผลการรักษา', 'Tourniquet Test', 'NS1 (ล่าสุด)', 'PLT ต่ำสุด',
+        'สถานะยืนยันเคส', 'ผู้ยืนยัน', 'ละติจูด', 'ลองจิจูด', 'ผู้สอบสวน'
+      ];
+
+      const rows = [headers.map(csvEscape).join(',')];
+      list.forEach((p, idx) => {
+        const pHcode = p.hcode || getHCodeByName(p.healthCenter) || '';
+        const labs = Array.isArray(p.labResults) ? p.labResults : [];
+        let latestNs1 = '';
+        let minPlt = '';
+        labs.forEach(l => {
+          if (l.ns1 && l.ns1 !== 'ไม่ได้ตรวจ') latestNs1 = l.ns1;
+          const pltVal = parseInt(l.plt ?? l.platelet, 10);
+          if (!isNaN(pltVal) && (minPlt === '' || pltVal < minPlt)) minPlt = pltVal;
+        });
+
+        const isConfirmedLocal = p.confirmedStatus === 'confirmed_local' || (p.areaConfirmed === 'ยืนยัน' && !p.confirmedStatus);
+        const isConfirmedExternal = p.confirmedStatus === 'confirmed_external';
+        const confirmLabel = isConfirmedLocal
+          ? 'ป่วยในพื้นที่จริง'
+          : (isConfirmedExternal ? 'ป่วยนอกพื้นที่' : (p.areaConfirmed === 'ยืนยันแล้ว' ? 'ยืนยันแล้ว' : 'ยังไม่ยืนยัน'));
+
+        const vals = [
+          idx + 1,
+          p.patientCode || p.id || '',
+          pHcode,
+          p.healthCenter || getHNameByCode(pHcode) || '',
+          p.fullName || '',
+          p.gender || '',
+          p.ageYear ?? '',
+          p.ageMonth ?? 0,
+          p.ageGroup || '',
+          p.phone || '',
+          p.addressNo || '',
+          p.villageNo || '',
+          p.subdistrict || '',
+          p.zone || '',
+          p.occupation || '',
+          p.workplace || '',
+          p.illnessDate || '',
+          (p.notifiedDatetime || '').split('T')[0] || '',
+          p.treatmentDate || '',
+          p.hospitalType || '',
+          p.patientType || '',
+          p.diagnosis || '',
+          p.treatmentOutcome || '',
+          p.tourniquet || '',
+          latestNs1,
+          minPlt,
+          confirmLabel,
+          p.confirmedBy || '',
+          p.lat ?? '',
+          p.lng ?? '',
+          p.investigatorName || ''
+        ];
+        rows.push(vals.map(csvEscape).join(','));
+      });
+
+      const unitTag = currentUser.role === 'admin'
+        ? 'ทั้งหมด'
+        : `${currentUser.hcode || getHCodeByName(currentUser.unit) || ''}_${normalizeThaiStr(currentUser.unit || '').replace(/[^\wก-๙.-]/g, '')}`;
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const fileName = `ทะเบียนผู้ป่วยไข้เลือดออก_${unitTag}_${dateStr}.csv`;
+
+      const blob = new Blob(['\uFEFF' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      addAuditLog('EXPORT_PATIENTS_CSV', `ส่งออกทะเบียนผู้ป่วย CSV จำนวน ${list.length} ราย (${unitTag})`);
+      Swal.fire({
+        toast: true, position: 'top-end', icon: 'success',
+        title: `ส่งออกไฟล์ CSV สำเร็จ (${list.length} ราย)`,
+        timer: 2200, showConfirmButton: false
+      });
+    }
+
+    function renderPatientTable() {
+      const tbody = document.getElementById('patientFullTbody');
+      tbody.innerHTML = '';
+
+      const list = getFilteredPatientTableList();
+      const now = new Date();
 
       document.getElementById('patientTableSummary').innerText = `พบข้อมูลผู้ป่วยทั้งหมด ${list.length} ราย (เรียงลำดับ: วันที่ใหม่ > เก่า)`;
 
@@ -15738,18 +16352,33 @@
 
         if (isEdit) {
           const idx = patientsData.findIndex(p => p.id === id);
+          let mergedPatient = patientObj;
           if (idx !== -1) {
-            patientsData[idx] = { ...patientsData[idx], ...patientObj };
+            mergedPatient = { ...patientsData[idx], ...patientObj };
+            patientsData[idx] = mergedPatient;
           }
-          addAuditLog('UPDATE_PATIENT', `แก้ไขข้อมูลผู้ป่วย: ${patientObj.fullName} (ID: ${id})`);
+          addAuditLog('UPDATE_PATIENT', `แก้ไขข้อมูลผู้ป่วย: ${mergedPatient.fullName} (ID: ${id})`);
           savePatients();
+
+          upsertPatientToSupabase(mergedPatient, true).then(sbRes => {
+            if (sbRes && sbRes.ok) {
+              savePatients();
+            } else if (sbRes && sbRes.rlsBlocked) {
+              Swal.fire({
+                toast: true, position: 'top-end', icon: 'warning',
+                title: 'บันทึกในเครื่องแล้ว แต่ Supabase ติดสิทธิ์ RLS (กรุณารัน enable_current_dengue_cases_sync.sql)',
+                timer: 5000, showConfirmButton: false
+              });
+            }
+          });
+
           hideLoading();
           closePatientModal();
 
           Swal.fire({
             icon: 'success',
             title: 'แก้ไขข้อมูลสำเร็จ',
-            text: `แก้ไขข้อมูลผู้ป่วย "${patientObj.fullName}" เรียบร้อยแล้ว`,
+            text: `แก้ไขข้อมูลผู้ป่วย "${mergedPatient.fullName}" เรียบร้อยแล้ว`,
             timer: 1800,
             showConfirmButton: false
           });
@@ -15758,6 +16387,8 @@
           renderPatientTable();
           renderMapMarkers();
         } else {
+          patientObj.patientCode = patientObj.patientCode || generateNextPatientCode(patientObj.year);
+          patientObj.hcode = patientObj.hcode || getHCodeByName(patientObj.healthCenter);
           patientObj.createdAt = new Date().toISOString();
           patientObj.areaConfirmed = '';
           patientObj.confirmedStatus = 'pending';
@@ -15769,6 +16400,19 @@
           patientsData.unshift(patientObj);
           addAuditLog('CREATE_PATIENT', `บันทึกผู้ป่วยรายใหม่: ${patientObj.fullName} (${patientObj.diagnosis})`);
           savePatients();
+
+          upsertPatientToSupabase(patientObj, false).then(sbRes => {
+            if (sbRes && sbRes.ok) {
+              savePatients();
+            } else if (sbRes && sbRes.rlsBlocked) {
+              Swal.fire({
+                icon: 'warning',
+                title: 'บันทึกในเครื่องแล้ว (Supabase รอปลดล็อกสิทธิ์เขียน)',
+                html: 'ข้อมูลถูกบันทึกในเบราว์เซอร์แล้ว แต่ยังไม่เข้าตาราง <b>current_dengue_cases</b> บน Supabase เนื่องจาก RLS บล็อกสิทธิ์ <code>anon</code><br><br>กรุณานำไฟล์ <code>enable_current_dengue_cases_sync.sql</code> ไปรันใน Supabase SQL Editor เพียงครั้งเดียวครับ'
+              });
+            }
+          });
+
           hideLoading();
           closePatientModal();
 
@@ -15804,6 +16448,7 @@
           setTimeout(() => {
             patientsData = patientsData.filter(item => item.id !== id);
             savePatients();
+            deletePatientFromSupabase(p);
             addAuditLog('DELETE_PATIENT', `ลบข้อมูลผู้ป่วย: ${p.fullName} (ID: ${id})`);
             hideLoading();
 
@@ -16007,7 +16652,7 @@
       const invPos = p.investigatorPosition || 'นักวิชาการสาธารณสุขชำนาญการ';
 
       return `
-        <div style="font-family:'Sarabun', 'TH Sarabun New', 'Kanit', Tahoma, Arial, sans-serif; color:#000000; padding:20px 30px; line-height:1.4; background:#ffffff; font-size:12px; width:794px; min-height:1050px; margin:0 auto; box-sizing:border-box;">
+        <div style="font-family:'Sarabun', 'Kanit', Tahoma, Arial, sans-serif; color:#000000; padding:18px 26px; line-height:1.4; background:#ffffff; font-size:12px; width:794px; margin:0 auto; box-sizing:border-box;">
 
           <!-- Header Title -->
           <div style="text-align:center; font-size:17px; font-weight:bold; margin-bottom:12px; color:#000000;">
@@ -16193,21 +16838,19 @@
       `;
     }
 
-    // ฟังก์ชันสร้าง PDF และดาวน์โหลด (รองรับ html2pdf และ Native Browser Print)
-    async function generatePatientReportPDF(patient, shouldDownload = true) {
-      const pName = (patient.fullName || 'ผู้ป่วย').replace(/\s+/g, '_');
-      const pCode = patient.patientCode || patient.id;
-      const fileName = `แบบสอบสวนโรค_${pName}_${pCode}.pdf`;
-      const reportHtml = buildPatientReportHtml(patient);
+    // ฟังก์ชันกลางสำหรับเรนเดอร์ HTML เป็น PDF โดยใช้ html2canvas + jsPDF โดยตรง (แก้ปัญหาหน้าเปล่า)
+    async function renderHtmlToPdfDirect(reportHtml, fileName, shouldDownload = true, widthPx = 794) {
+      const prevScrollX = window.scrollX || window.pageXOffset || 0;
+      const prevScrollY = window.scrollY || window.pageYOffset || 0;
 
-      // สร้าง container ลอยบนหน้าจอชั่วคราวเพื่อให้ html2canvas เรนเดอร์ได้ 100%
       const tempContainer = document.createElement('div');
       tempContainer.id = 'tempPatientPdfCapture';
-      tempContainer.style.position = 'fixed';
+      tempContainer.style.position = 'absolute';
       tempContainer.style.left = '0';
       tempContainer.style.top = '0';
-      tempContainer.style.width = '794px';
+      tempContainer.style.width = `${widthPx}px`;
       tempContainer.style.backgroundColor = '#ffffff';
+      tempContainer.style.color = '#000000';
       tempContainer.style.zIndex = '999999';
       tempContainer.style.opacity = '1';
       tempContainer.style.visibility = 'visible';
@@ -16215,45 +16858,118 @@
       tempContainer.innerHTML = reportHtml;
       document.body.appendChild(tempContainer);
 
-      // รอ DOM และ Font Sarabun/Kanit เรนเดอร์
-      await new Promise(resolve => setTimeout(resolve, 400));
-
       let pdfBlob = null;
-      let pdfBase64 = null;
-
       try {
+        // เลื่อนหน้าไปบนสุดชั่วคราวเพื่อให้ html2canvas จับพิกัด (0,0) ได้แม่นยำ ไม่ติด offset หน้าเปล่า
+        window.scrollTo(0, 0);
+        if (document.fonts && document.fonts.ready) {
+          await document.fonts.ready;
+        }
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const JsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+        if (window.html2canvas && JsPDFCtor) {
+          const captureHeight = Math.max(tempContainer.scrollHeight, tempContainer.offsetHeight, 400);
+          const canvas = await window.html2canvas(tempContainer, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            x: 0,
+            y: 0,
+            scrollX: 0,
+            scrollY: 0,
+            width: widthPx,
+            height: captureHeight,
+            windowWidth: Math.max(widthPx + 20, document.documentElement.clientWidth)
+          });
+
+          const imgData = canvas.toDataURL('image/jpeg', 0.96);
+          const pdf = new JsPDFCtor({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+          const pageW = pdf.internal.pageSize.getWidth();
+          const pageH = pdf.internal.pageSize.getHeight();
+          const margin = 8;
+          const usableW = pageW - margin * 2;
+          const usableH = pageH - margin * 2;
+
+          let imgW = usableW;
+          let imgH = (canvas.height * imgW) / canvas.width;
+
+          if (imgH <= usableH * 1.12) {
+            // ปรับขนาดให้พอดี 1 หน้า A4 สวยงามโดยไม่เกิดหน้า 2 เปล่า
+            if (imgH > usableH) {
+              const ratio = usableH / imgH;
+              imgW = imgW * ratio;
+              imgH = usableH;
+            }
+            const xOffset = (pageW - imgW) / 2;
+            pdf.addImage(imgData, 'JPEG', xOffset, margin, imgW, imgH);
+          } else {
+            // รองรับหลายหน้าอัตโนมัติสำหรับรายงานที่ยาวเกิน 1 หน้า
+            let heightLeft = imgH;
+            let position = margin;
+            pdf.addImage(imgData, 'JPEG', margin, position, imgW, imgH);
+            heightLeft -= usableH;
+            while (heightLeft > 2) {
+              position = heightLeft - imgH + margin;
+              pdf.addPage();
+              pdf.addImage(imgData, 'JPEG', margin, position, imgW, imgH);
+              heightLeft -= usableH;
+            }
+          }
+
+          if (shouldDownload) {
+            pdf.save(fileName);
+          } else {
+            pdfBlob = pdf.output('blob');
+          }
+          return { blob: pdfBlob, handled: true };
+        }
+
         if (window.html2pdf) {
           const opt = {
             margin: [8, 8, 8, 8],
             filename: fileName,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: {
-              scale: 2,
-              useCORS: true,
-              logging: false,
-              scrollY: 0,
-              scrollX: 0,
-              windowWidth: 800
-            },
+            html2canvas: { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: widthPx + 10 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
           };
-
           if (shouldDownload) {
             await html2pdf().set(opt).from(tempContainer).save();
           } else {
             pdfBlob = await html2pdf().set(opt).from(tempContainer).output('blob');
           }
-        } else {
-          // หากไม่มี html2pdf ให้เปิดหน้าต่างพิมพ์
-          openPatientPrintWindow(patient);
+          return { blob: pdfBlob, handled: true };
         }
-      } catch (err) {
-        console.error('html2pdf error:', err);
-        openPatientPrintWindow(patient);
+        return { blob: null, handled: false };
       } finally {
         if (tempContainer.parentNode) {
           document.body.removeChild(tempContainer);
         }
+        window.scrollTo(prevScrollX, prevScrollY);
+      }
+    }
+
+    // ฟังก์ชันสร้าง PDF และดาวน์โหลด (รองรับ html2canvas+jsPDF และ Native Browser Print)
+    async function generatePatientReportPDF(patient, shouldDownload = true) {
+      const pName = (patient.fullName || 'ผู้ป่วย').replace(/\s+/g, '_');
+      const pCode = patient.patientCode || patient.id;
+      const fileName = `แบบสอบสวนโรค_${pName}_${pCode}.pdf`;
+      const reportHtml = buildPatientReportHtml(patient);
+
+      let pdfBlob = null;
+      let pdfBase64 = null;
+
+      try {
+        const res = await renderHtmlToPdfDirect(reportHtml, fileName, shouldDownload, 794);
+        pdfBlob = res.blob;
+        if (!res.handled && shouldDownload) {
+          openPatientPrintWindow(patient);
+        }
+      } catch (err) {
+        console.error('PDF generation error:', err);
+        if (shouldDownload) openPatientPrintWindow(patient);
       }
 
       return { blob: pdfBlob, base64: pdfBase64, filename: fileName };
@@ -16596,6 +17312,7 @@ https://dengue-thepha.github.io/tdds/`;
           p.confirmedTime = new Date().toISOString();
           p.confirmedNote = note;
           savePatients();
+          upsertPatientToSupabase(p, true);
 
           // ส่งแจ้งเตือนการยืนยันเข้า Telegram
           sendTelegramCaseConfirmedNotice(p);
@@ -16873,12 +17590,12 @@ https://dengue-thepha.github.io/tdds/`;
       const now = new Date();
       const todayStr = now.toISOString().split('T')[0];
 
-      let scopedPatients = patientsData;
+      let scopedPatients = patientsData.filter(p => !isRuleOutCase(p));
       let targetPop = 65961;
       let scopeTitle = 'อำเภอเทพา ทั้งหมด (7 ตำบล 13 สถานบริการ)';
 
       if (scope !== 'all') {
-        scopedPatients = patientsData.filter(p => p.subdistrict === scope);
+        scopedPatients = scopedPatients.filter(p => p.subdistrict === scope);
         targetPop = thephaPopulationData.subdistricts[scope] || 0;
         scopeTitle = `ตำบล${scope} (ประชากร ${targetPop.toLocaleString()} คน)`;
       }
@@ -17260,58 +17977,17 @@ ${topHcText}${noteBlock}
       const reportHtml = buildSituationReportHTML(metrics, customNote);
 
       showLoading('กำลังสร้างและดาวน์โหลดไฟล์เอกสาร .PDF...');
-
-      const tempContainer = document.createElement('div');
-      tempContainer.id = 'tempDownloadPdfCapture';
-      tempContainer.style.position = 'fixed';
-      tempContainer.style.left = '0';
-      tempContainer.style.top = '0';
-      tempContainer.style.zIndex = '-99999';
-      tempContainer.style.opacity = '1';
-      tempContainer.style.pointerEvents = 'none';
-      tempContainer.style.width = '794px';
-      tempContainer.style.backgroundColor = '#ffffff';
-      tempContainer.innerHTML = reportHtml;
-      document.body.appendChild(tempContainer);
-
-      await new Promise(r => setTimeout(r, 300));
-
       try {
-        if (!window.html2pdf) {
-          throw new Error('ไม่พบไลบรารี html2pdf ในระบบ โปรดรีเฟรชหน้าเว็บ');
-        }
-        const opt = {
-          margin: [6, 6, 6, 6],
-          filename: `รายงานสถานการณ์ไข้เลือดออก_เทพา_${new Date().toISOString().split('T')[0]}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            scrollX: 0,
-            scrollY: 0,
-            windowWidth: 850,
-            onclone: (clonedDoc) => {
-              const el = clonedDoc.getElementById('tempDownloadPdfCapture');
-              if (el) {
-                el.style.position = 'relative';
-                el.style.zIndex = '99999';
-                el.style.display = 'block';
-                el.style.visibility = 'visible';
-              }
-            }
-          },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        await html2pdf().from(tempContainer).set(opt).save();
+        const fileName = `รายงานสถานการณ์ไข้เลือดออก_เทพา_${new Date().toISOString().split('T')[0]}.pdf`;
+        const res = await renderHtmlToPdfDirect(reportHtml, fileName, true, 794);
         hideLoading();
+        if (!res.handled) {
+          throw new Error('ไม่พบไลบรารีสร้าง PDF ในระบบ โปรดรีเฟรชหน้าเว็บ');
+        }
         Swal.fire({ icon: 'success', title: 'ดาวน์โหลด PDF สำเร็จ', timer: 1500, showConfirmButton: false });
       } catch (err) {
         hideLoading();
         Swal.fire({ icon: 'error', title: 'ดาวน์โหลด PDF ไม่สำเร็จ', text: err.toString() });
-      } finally {
-        if (tempContainer.parentNode) document.body.removeChild(tempContainer);
       }
     }
 
@@ -17801,6 +18477,17 @@ ${topHcText}${noteBlock}
       const countEl = document.getElementById('userCountBadge');
       if (countEl) countEl.innerText = `${usersData.length} บัญชี`;
 
+      const pendingCount = usersData.filter(u => u.status === 'Pending Approval' || u.isActive === false).length;
+      const pendingBadgeEl = document.getElementById('pendingUserBadge');
+      if (pendingBadgeEl) {
+        if (pendingCount > 0) {
+          pendingBadgeEl.classList.remove('hidden');
+          pendingBadgeEl.innerText = `⏳ รออนุมัติ ${pendingCount} บัญชี`;
+        } else {
+          pendingBadgeEl.classList.add('hidden');
+        }
+      }
+
       const filtered = usersData.filter(u => {
         if (!query) return true;
         const name = (u.fullName || '').toLowerCase();
@@ -17811,14 +18498,37 @@ ${topHcText}${noteBlock}
         return name.includes(query) || uname.includes(query) || phone.includes(query) || unit.includes(query) || pos.includes(query);
       });
 
+      // เรียงให้บัญชีที่รออนุมัติขึ้นบนสุดเพื่อให้แอดมินเห็นทันที
+      filtered.sort((a, b) => {
+        const aPending = (a.status === 'Pending Approval' || a.isActive === false) ? 0 : 1;
+        const bPending = (b.status === 'Pending Approval' || b.isActive === false) ? 0 : 1;
+        return aPending - bPending;
+      });
+
       if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">ไม่พบรายชื่อผู้ใช้งานที่ค้นหา</td></tr>`;
         return;
       }
 
       filtered.forEach(u => {
+        const isPending = u.status === 'Pending Approval' || u.isActive === false;
+        const statusBadge = isPending
+          ? '<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">⏳ รออนุมัติ</span>'
+          : '<span class="px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-50 text-emerald-700">ใช้งานปกติ</span>';
+
+        const approveButtons = isPending
+          ? `
+            <button onclick="approvePendingUser('${u.id}')" title="อนุมัติเข้าใช้งาน" class="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold shadow-2xs transition">
+              ✅ อนุมัติ
+            </button>
+            <button onclick="rejectPendingUser('${u.id}')" title="ไม่อนุมัติ / ลบคำขอ" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold transition">
+              ❌ ไม่อนุมัติ
+            </button>
+          `
+          : '';
+
         const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-50 transition';
+        tr.className = isPending ? 'bg-amber-50/40 hover:bg-amber-50/70 transition' : 'hover:bg-slate-50 transition';
         tr.innerHTML = `
           <td class="px-4 py-3 font-bold text-slate-800">
             <div>${u.username}</div>
@@ -17832,11 +18542,10 @@ ${topHcText}${noteBlock}
               ${u.role}
             </span>
           </td>
-          <td class="px-4 py-3">
-            <span class="px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-50 text-emerald-700">ใช้งานปกติ</span>
-          </td>
+          <td class="px-4 py-3">${statusBadge}</td>
           <td class="px-4 py-3 text-center">
             <div class="flex items-center justify-center gap-1.5">
+              ${approveButtons}
               <button onclick="openUserModal('edit', '${u.id}')" title="แก้ไข" class="p-1.5 rounded-lg text-slate-500 hover:text-purple-700 hover:bg-purple-50 transition">
                 <span class="text-sm">✏️</span>
               </button>
@@ -17847,6 +18556,82 @@ ${topHcText}${noteBlock}
           </td>
         `;
         tbody.appendChild(tr);
+      });
+    }
+
+    async function approvePendingUser(id) {
+      if (!currentUser || currentUser.role !== 'admin') return;
+      const u = usersData.find(item => item.id === id);
+      if (!u) return;
+
+      u.status = 'Active';
+      u.isActive = true;
+      saveUsers();
+
+      const cfg = typeof getSupabasePersonConfig === 'function' ? getSupabasePersonConfig() : null;
+      if (cfg && cfg.url && cfg.key) {
+        try {
+          const query = u.supabaseId
+            ? `id=eq.${encodeURIComponent(u.supabaseId)}`
+            : `username=eq.${encodeURIComponent(u.username)}`;
+          await fetch(`${cfg.url}/rest/v1/staff_accounts?${query}`, {
+            method: 'PATCH',
+            headers: buildSupabaseHeaders(cfg.key, { 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ status: 'Active', is_active: true })
+          });
+        } catch (err) {
+          console.warn('[TDDS] approvePendingUser Supabase error:', err);
+        }
+      }
+
+      addAuditLog('APPROVE_USER', `อนุมัติคำขอสมัครใช้งาน: ${u.username} (${u.fullName})`);
+      renderUserTable();
+      Swal.fire({
+        icon: 'success',
+        title: 'อนุมัติผู้ใช้งานเรียบร้อย',
+        text: `${u.fullName} (${u.unit}) สามารถเข้าสู่ระบบได้แล้ว`,
+        timer: 1800,
+        showConfirmButton: false
+      });
+    }
+
+    function rejectPendingUser(id) {
+      if (!currentUser || currentUser.role !== 'admin') return;
+      const u = usersData.find(item => item.id === id);
+      if (!u) return;
+
+      Swal.fire({
+        title: 'ไม่อนุมัติและลบคำขอนี้?',
+        text: `บัญชีของ ${u.fullName} (${u.username}) จะถูกลบออกจากรายการคำขอ`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#EF5350',
+        confirmButtonText: 'ไม่อนุมัติ / ลบคำขอ',
+        cancelButtonText: 'ยกเลิก'
+      }).then(async (res) => {
+        if (res.isConfirmed) {
+          usersData = usersData.filter(item => item.id !== id);
+          saveUsers();
+
+          const cfg = typeof getSupabasePersonConfig === 'function' ? getSupabasePersonConfig() : null;
+          if (cfg && cfg.url && cfg.key) {
+            try {
+              const query = u.supabaseId
+                ? `id=eq.${encodeURIComponent(u.supabaseId)}`
+                : `username=eq.${encodeURIComponent(u.username)}`;
+              await fetch(`${cfg.url}/rest/v1/staff_accounts?${query}`, {
+                method: 'DELETE',
+                headers: buildSupabaseHeaders(cfg.key)
+              });
+            } catch (err) {
+              console.warn('[TDDS] rejectPendingUser Supabase error:', err);
+            }
+          }
+
+          addAuditLog('REJECT_USER', `ไม่อนุมัติคำขอสมัครใช้งาน: ${u.username} (${u.fullName})`);
+          renderUserTable();
+          Swal.fire({ icon: 'success', title: 'ลบคำขอเรียบร้อย', timer: 1300, showConfirmButton: false });
+        }
       });
     }
 
@@ -18110,6 +18895,10 @@ ${topHcText}${noteBlock}
       personsData = await loadPersonsFromIDB();
       updatePersonTotalBadge();
       loadSupabasePersonConfigUI();
+      if (personsData.length > 0) {
+        syncPopulationFromImportedPersons();
+        applyDashboardFilters();
+      }
       // ถ้าตั้งค่า Supabase ไว้และเครื่องยังว่าง ให้ดึงจาก Supabase อัตโนมัติ
       const cfg = getSupabasePersonConfig();
       if (personsData.length === 0 && cfg.url && cfg.key) {
@@ -18320,11 +19109,13 @@ ${topHcText}${noteBlock}
         if (fetched.length > 0) {
           personsData = fetched;
           await savePersonsToIDB(personsData);
+          syncPopulationFromImportedPersons();
           updatePersonTotalBadge();
           renderPersonScopeBanner();
           populatePersonFilters();
           renderPersonAgeStats();
           renderPersonDirectoryTable();
+          applyDashboardFilters();
         }
         if (!silent) {
           hideLoading();
@@ -18618,10 +19409,12 @@ ${topHcText}${noteBlock}
       const importedCount = pendingPersonImportRows.length;
       addAuditLog('IMPORT_PERSON', `นำเข้าข้อมูลประชากร (person) จาก ${pendingPersonImportFileName} จำนวน ${importedCount} ราย`);
       cancelPersonImportPreview();
+      syncPopulationFromImportedPersons();
       updatePersonTotalBadge();
       populatePersonFilters();
       renderPersonAgeStats();
       renderPersonDirectoryTable();
+      applyDashboardFilters();
 
       Swal.fire({
         icon: sbErrMsg ? 'warning' : 'success',
@@ -19070,23 +19863,42 @@ ${topHcText}${noteBlock}
       const mapEl = document.getElementById('personRadiusMap');
       if (!mapEl || typeof L === 'undefined') return;
       if (!personRadiusMapInstance) {
-        personRadiusMapInstance = L.map('personRadiusMap').setView([centerLat, centerLng], 17);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; OpenStreetMap',
-          maxZoom: 19
-        }).addTo(personRadiusMapInstance);
+        const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+          maxZoom: 21,
+          maxNativeZoom: 20,
+          subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+          attribution: '© Google Maps Satellite | TDDS Thepha'
+        });
+        const googleRoadmap = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+          maxZoom: 21,
+          maxNativeZoom: 20,
+          subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+          attribution: '© Google Maps | TDDS Thepha'
+        });
+
+        personRadiusMapInstance = L.map('personRadiusMap', {
+          center: [centerLat, centerLng],
+          zoom: 18,
+          layers: [googleHybrid]
+        });
+
+        L.control.layers({
+          "🛰️ ภาพถ่ายดาวเทียม (Satellite)": googleHybrid,
+          "🗺️ แผนที่ปกติ (Roadmap)": googleRoadmap
+        }, null, { position: 'topright' }).addTo(personRadiusMapInstance);
+
         personRadiusLayerGroup = L.layerGroup().addTo(personRadiusMapInstance);
       } else {
-        personRadiusMapInstance.setView([centerLat, centerLng], 17);
+        personRadiusMapInstance.setView([centerLat, centerLng], 18);
         personRadiusLayerGroup.clearLayers();
       }
 
-      // วงกลมรัศมี 100 เมตร
-      L.circle([centerLat, centerLng], {
-        color: '#EF5350',
-        fillColor: '#EF5350',
-        fillOpacity: 0.12,
-        weight: 2,
+      // วงกลมรัศมี 100 เมตร (สีเด่นชัดบนภาพถ่ายดาวเทียม)
+      const radiusCircle = L.circle([centerLat, centerLng], {
+        color: '#FF5252',
+        fillColor: '#FF5252',
+        fillOpacity: 0.16,
+        weight: 2.5,
         dashArray: '6, 4',
         radius: radiusM
       }).addTo(personRadiusLayerGroup);
@@ -19094,7 +19906,7 @@ ${topHcText}${noteBlock}
       // จุดศูนย์กลางบ้านผู้ป่วย
       const centerTitle = lastRadiusCenterInfo ? `🏠 บ้านผู้ป่วย: ${lastRadiusCenterInfo.fullName}` : '📍 จุดศูนย์กลางค้นหา';
       L.circleMarker([centerLat, centerLng], {
-        radius: 9, color: '#B71C1C', fillColor: '#EF5350', fillOpacity: 1, weight: 2
+        radius: 9, color: '#FFFFFF', fillColor: '#EF4444', fillOpacity: 1, weight: 2.5
       }).bindPopup(`<b>${centerTitle}</b><br>${centerLat.toFixed(6)}, ${centerLng.toFixed(6)}`).addTo(personRadiusLayerGroup);
 
       // จัดกลุ่มตามพิกัดหลังคาเรือนเพื่อแสดงหมุดสะอาดตา
@@ -19116,11 +19928,16 @@ ${topHcText}${noteBlock}
             ${people.length > 6 ? `<br><i>...และอีก ${people.length - 6} คน</i>` : ''}
           </div>`;
         L.circleMarker([first.lat, first.lng], {
-          radius: 6, color: '#0F766E', fillColor: '#14B8A6', fillOpacity: 0.9, weight: 1.5
+          radius: 7, color: '#FFFFFF', fillColor: '#06B6D4', fillOpacity: 0.95, weight: 2
         }).bindPopup(popupHtml).addTo(personRadiusLayerGroup);
       });
 
-      setTimeout(() => personRadiusMapInstance.invalidateSize(), 200);
+      setTimeout(() => {
+        personRadiusMapInstance.invalidateSize();
+        try {
+          personRadiusMapInstance.fitBounds(radiusCircle.getBounds(), { padding: [20, 20], maxZoom: 19 });
+        } catch (e) {}
+      }, 200);
     }
 
     function exportRadiusResultCsv() {
@@ -19360,6 +20177,325 @@ ${topHcText}${noteBlock}
     }
 
     // -------------------------------------------------------------
+    // 14. SUPABASE SYNC FOR CURRENT_DENGUE_CASES (บันทึก/แก้ไข/ลบ/ดึงผู้ป่วย)
+    // -------------------------------------------------------------
+    function generateNextPatientCode(yearBeStr) {
+      const y = String(yearBeStr || '2569').trim();
+      let maxNum = 0;
+      (patientsData || []).forEach(p => {
+        const m = String(p.patientCode || '').match(/^P\d{4}-(\d+)$/);
+        if (m) {
+          const n = parseInt(m[1], 10);
+          if (n > maxNum) maxNum = n;
+        }
+      });
+      return `P${y}-${String(maxNum + 1).padStart(3, '0')}`;
+    }
+
+    function toThaiSymText(val, defaultVal = 'ไม่มี') {
+      if (val === true || val === 'มี') return 'มี';
+      if (val === false || val === 'ไม่มี') return 'ไม่มี';
+      if (val === 'ไม่ทราบ') return 'ไม่ทราบ';
+      return defaultVal;
+    }
+
+    function toIsoTimestampOrNull(val) {
+      if (!val) return null;
+      const s = String(val).trim();
+      if (!s) return null;
+      if (s.includes('+') || s.endsWith('Z')) return s;
+      // datetime-local format YYYY-MM-DDTHH:mm
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s)) return `${s}:00+07:00`;
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(s)) return `${s}+07:00`;
+      return s;
+    }
+
+    function mapPatientToSupabaseRow(p) {
+      const yearBe = parseInt(p.year || '2569', 10) || 2569;
+      const yearAd = yearBe > 2400 ? yearBe - 543 : yearBe;
+      const sym = p.symptoms || {};
+      const lab1 = (p.labResults && p.labResults[0]) ? p.labResults[0] : {};
+      const ageInfo = computeAgeAndGroup(null, p.ageYear);
+      const latNum = p.lat != null && !isNaN(parseFloat(p.lat)) ? parseFloat(p.lat) : null;
+      const lngNum = p.lng != null && !isNaN(parseFloat(p.lng)) ? parseFloat(p.lng) : null;
+
+      return {
+        patient_code: p.patientCode || generateNextPatientCode(yearBe),
+        notified_datetime: toIsoTimestampOrNull(p.notifiedDatetime),
+        notified_from: p.notifiedFrom || null,
+        full_name: p.fullName || '-',
+        gender: p.gender || null,
+        marital_status: p.maritalStatus || null,
+        nationality: p.nationality || 'ไทย',
+        age_year: p.ageYear != null && p.ageYear !== '' ? parseInt(p.ageYear, 10) : null,
+        age_month: p.ageMonth != null && p.ageMonth !== '' ? parseInt(p.ageMonth, 10) : 0,
+        age_group: p.ageGroup || ageInfo.ageGroup,
+        address_no: p.addressNo || null,
+        village_no: p.villageNo ? String(p.villageNo) : null,
+        subdistrict: p.subdistrict || 'เทพา',
+        health_center: p.healthCenter || null,
+        hcode: p.hcode || getHCodeByName(p.healthCenter) || null,
+        zone: p.zone || null,
+        phone: p.phone || null,
+        occupation: p.occupation || null,
+        work_desc: p.workDesc || null,
+        workplace_or_school: p.workplace || null,
+        classroom_or_dept: p.department || null,
+        stay_domicile: p.stayDomicile === false ? 'ไม่ใช่' : 'ใช่',
+        other_address: p.stayAddress || null,
+        illness_date: p.illnessDate || new Date().toISOString().slice(0, 10),
+        treatment_date: p.treatmentDate || p.illnessDate || null,
+        hospital_name: p.hospitalType || null,
+        hospital_other: p.hospitalOther || null,
+        patient_type: p.patientType || 'IPD',
+        diagnosis: p.diagnosis || 'DF',
+        travel_history_14d: p.travelHistory || null,
+        symptom_fever: toThaiSymText(sym.fever, 'มี'),
+        symptom_eye_pain: toThaiSymText(sym.eyePain, 'ไม่มี'),
+        symptom_joint_pain: toThaiSymText(sym.jointPain, 'ไม่มี'),
+        symptom_bleeding: toThaiSymText(sym.bleeding, 'ไม่มี'),
+        tourniquet_test: p.tourniquet || 'ไม่ทำ',
+        symptom_headache: toThaiSymText(sym.headache, 'ไม่มี'),
+        symptom_muscle_pain: toThaiSymText(sym.musclePain, 'ไม่มี'),
+        symptom_rash: toThaiSymText(sym.rash, 'ไม่มี'),
+        symptom_hepatomegaly: toThaiSymText(sym.hepatomegaly, 'ไม่มี'),
+        symptom_shock: toThaiSymText(sym.shock, 'ไม่มี'),
+        symptom_other: p.symptomsOther || null,
+        treatment_outcome: p.treatmentOutcome || 'ยังรักษาอยู่',
+        lab_1_date: lab1.date || null,
+        lab_1_hct: lab1.hct != null && lab1.hct !== '' ? parseFloat(lab1.hct) : null,
+        lab_1_wbc: lab1.wbc != null && lab1.wbc !== '' ? parseInt(lab1.wbc, 10) : null,
+        lab_1_platelet: (lab1.plt ?? lab1.platelet) != null && (lab1.plt ?? lab1.platelet) !== '' ? parseInt(lab1.plt ?? lab1.platelet, 10) : null,
+        lab_1_lymphocyte: (lab1.lym ?? lab1.lymphocyte) != null && (lab1.lym ?? lab1.lymphocyte) !== '' ? parseFloat(lab1.lym ?? lab1.lymphocyte) : null,
+        lab_1_rapid_test: (lab1.rapidTested || lab1.rapidTest === 'ตรวจ') ? 'ตรวจ' : 'ไม่ตรวจ',
+        lab_1_ns1: lab1.ns1 || null,
+        lab_1_igm: lab1.igm || null,
+        lab_1_igg: lab1.igg || null,
+        lab_results: Array.isArray(p.labResults) ? p.labResults : [],
+        notified_area_date: toIsoTimestampOrNull(p.notifiedAreaDatetime),
+        investigator_name: p.investigatorName || null,
+        investigator_position: p.investigatorPosition || null,
+        area_confirmed: p.areaConfirmed || null,
+        confirmed_status: p.confirmedStatus || null,
+        confirmed_by: p.confirmedBy || null,
+        confirmed_time: toIsoTimestampOrNull(p.confirmedTime),
+        confirmed_note: p.confirmedNote || null,
+        house_coordinates: (latNum !== null && lngNum !== null) ? `${latNum}, ${lngNum}` : null,
+        latitude: latNum,
+        longitude: lngNum,
+        year_be: yearBe,
+        year_ad: yearAd
+      };
+    }
+
+    function toLocalDatetimeInput(val) {
+      if (!val) return '';
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return String(val);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function mapSupabaseRowToPatient(row, existingLocal = null) {
+      let labs = Array.isArray(row.lab_results) ? row.lab_results : [];
+      if (labs.length === 0 && (row.lab_1_date || row.lab_1_hct != null || row.lab_1_platelet != null || row.lab_1_ns1)) {
+        labs = [{
+          round: 1,
+          date: row.lab_1_date || '',
+          hct: row.lab_1_hct,
+          wbc: row.lab_1_wbc,
+          plt: row.lab_1_platelet,
+          lym: row.lab_1_lymphocyte,
+          rapidTested: row.lab_1_rapid_test === 'ตรวจ',
+          ns1: row.lab_1_ns1 || 'ไม่ได้ตรวจ',
+          igm: row.lab_1_igm || 'ไม่ได้ตรวจ',
+          igg: row.lab_1_igg || 'ไม่ได้ตรวจ'
+        }];
+      }
+      const hName = normalizeThaiStr(row.health_center || '');
+      const hCode = row.hcode || getHCodeByName(hName);
+      return {
+        ...(existingLocal || {}),
+        id: existingLocal ? existingLocal.id : `sb_${row.id}`,
+        supabaseId: row.id,
+        patientCode: row.patient_code || (existingLocal ? existingLocal.patientCode : ''),
+        year: String(row.year_be || '2569'),
+        notifiedDatetime: toLocalDatetimeInput(row.notified_datetime),
+        notifiedFrom: row.notified_from || 'OPD',
+        fullName: normalizeThaiStr(row.full_name || ''),
+        gender: normalizeThaiStr(row.gender || 'ชาย'),
+        maritalStatus: normalizeThaiStr(row.marital_status || 'โสด'),
+        nationality: normalizeThaiStr(row.nationality || 'ไทย'),
+        ageYear: row.age_year ?? 0,
+        ageMonth: row.age_month ?? 0,
+        ageGroup: row.age_group || '',
+        addressNo: normalizeThaiStr(row.address_no || ''),
+        villageNo: row.village_no ? String(row.village_no) : '',
+        subdistrict: normalizeThaiStr(row.subdistrict || ''),
+        healthCenter: hName || getHNameByCode(hCode),
+        hcode: hCode,
+        zone: normalizeThaiStr(row.zone || ''),
+        phone: row.phone || '',
+        occupation: normalizeThaiStr(row.occupation || ''),
+        workDesc: row.work_desc || '',
+        workplace: row.workplace_or_school || '',
+        department: row.classroom_or_dept || '',
+        stayDomicile: row.stay_domicile !== 'ไม่ใช่',
+        stayAddress: row.other_address || '',
+        illnessDate: row.illness_date || '',
+        treatmentDate: row.treatment_date || row.illness_date || '',
+        hospitalType: normalizeThaiStr(row.hospital_name || 'รพ.เทพา'),
+        hospitalOther: row.hospital_other || '',
+        patientType: row.patient_type || 'IPD',
+        diagnosis: normalizeThaiStr(row.diagnosis || 'DF'),
+        travelHistory: row.travel_history_14d || '',
+        symptoms: {
+          fever: row.symptom_fever || 'มี',
+          eyePain: row.symptom_eye_pain || 'ไม่มี',
+          jointPain: row.symptom_joint_pain || 'ไม่มี',
+          bleeding: row.symptom_bleeding || 'ไม่มี',
+          headache: row.symptom_headache || 'ไม่มี',
+          musclePain: row.symptom_muscle_pain || 'ไม่มี',
+          rash: row.symptom_rash || 'ไม่มี',
+          hepatomegaly: row.symptom_hepatomegaly || 'ไม่มี',
+          shock: row.symptom_shock || 'ไม่มี'
+        },
+        tourniquet: row.tourniquet_test || 'ไม่ทำ',
+        treatmentOutcome: row.treatment_outcome || 'ยังรักษาอยู่',
+        symptomsOther: row.symptom_other || '',
+        labResults: labs,
+        notifiedAreaDatetime: toLocalDatetimeInput(row.notified_area_date),
+        investigatorName: row.investigator_name || '',
+        investigatorPosition: row.investigator_position || '',
+        areaConfirmed: row.area_confirmed || '',
+        confirmedStatus: row.confirmed_status || (row.area_confirmed === 'ยืนยัน' || row.area_confirmed === 'ยืนยันแล้ว' ? 'confirmed_local' : (row.area_confirmed === 'ไม่อยู่ในพื้นที่' ? 'confirmed_external' : 'pending')),
+        confirmedBy: row.confirmed_by || null,
+        confirmedTime: row.confirmed_time || null,
+        confirmedNote: row.confirmed_note || '',
+        lat: row.latitude != null ? Number(row.latitude) : (existingLocal?.lat ?? null),
+        lng: row.longitude != null ? Number(row.longitude) : (existingLocal?.lng ?? null),
+        createdAt: row.created_at || (existingLocal?.createdAt ?? null),
+        updatedAt: row.updated_at || (existingLocal?.updatedAt ?? null)
+      };
+    }
+
+    async function fetchPatientsFromSupabase(silent = true) {
+      const cfg = getSupabasePersonConfig();
+      if (!cfg.url || !cfg.key) return;
+      try {
+        const res = await fetch(`${cfg.url}/rest/v1/current_dengue_cases?select=*&order=illness_date.desc`, {
+          headers: buildSupabaseHeaders(cfg.key)
+        });
+        if (!res.ok) return;
+        const rows = await res.json();
+        if (!Array.isArray(rows) || rows.length === 0) return;
+
+        // จับคู่ข้อมูล Supabase กับรายการในเครื่องเพื่อรักษา id / treatments เดิม และรวมเคสใหม่จาก Supabase
+        const localByCode = new Map();
+        const localByUuid = new Map();
+        patientsData.forEach(p => {
+          if (p.patientCode) localByCode.set(p.patientCode, p);
+          if (p.supabaseId) localByUuid.set(p.supabaseId, p);
+        });
+
+        const merged = [];
+        const seenKeys = new Set();
+        rows.forEach(r => {
+          const match = localByUuid.get(r.id) || (r.patient_code ? localByCode.get(r.patient_code) : null);
+          const mapped = mapSupabaseRowToPatient(r, match);
+          merged.push(mapped);
+          if (mapped.patientCode) seenKeys.add(mapped.patientCode);
+          if (mapped.supabaseId) seenKeys.add(mapped.supabaseId);
+        });
+
+        // คงรายการที่เพิ่งสร้างในเครื่องแต่ยังไม่ซิงค์ขึ้น Supabase (ถ้ามี)
+        patientsData.forEach(p => {
+          const inSb = (p.supabaseId && seenKeys.has(p.supabaseId)) || (p.patientCode && seenKeys.has(p.patientCode));
+          if (!inSb && String(p.id || '').startsWith('p_')) {
+            merged.unshift(p);
+          }
+        });
+
+        patientsData = merged;
+        savePatients();
+        applyDashboardFilters();
+        renderPatientTable();
+        renderMapMarkers();
+        if (typeof populatePersonFilters === 'function') populatePersonFilters();
+      } catch (err) {
+        console.warn('[TDDS] fetchPatientsFromSupabase error:', err);
+      }
+    }
+
+    async function upsertPatientToSupabase(patientObj, isEdit = false) {
+      const cfg = getSupabasePersonConfig();
+      if (!cfg.url || !cfg.key) return { ok: false };
+      try {
+        const payload = mapPatientToSupabaseRow(patientObj);
+        let url = `${cfg.url}/rest/v1/current_dengue_cases`;
+        let method = 'POST';
+
+        if (isEdit && patientObj.supabaseId) {
+          url = `${cfg.url}/rest/v1/current_dengue_cases?id=eq.${encodeURIComponent(patientObj.supabaseId)}`;
+          method = 'PATCH';
+        } else if (isEdit && patientObj.patientCode) {
+          url = `${cfg.url}/rest/v1/current_dengue_cases?patient_code=eq.${encodeURIComponent(patientObj.patientCode)}`;
+          method = 'PATCH';
+        }
+
+        const res = await fetch(url, {
+          method,
+          headers: buildSupabaseHeaders(cfg.key, {
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          }),
+          body: JSON.stringify(payload)
+        });
+
+        if (res.status === 401 || res.status === 403) {
+          const txt = await res.text();
+          console.warn('[TDDS] Supabase RLS blocked write:', txt);
+          return { ok: false, rlsBlocked: true, error: txt };
+        }
+        if (!res.ok) {
+          const txt = await res.text();
+          console.warn('[TDDS] Supabase save patient error:', res.status, txt);
+          return { ok: false, error: txt };
+        }
+
+        const data = await res.json();
+        if (Array.isArray(data) && data[0] && data[0].id) {
+          patientObj.supabaseId = data[0].id;
+        }
+        return { ok: true, data };
+      } catch (err) {
+        console.warn('[TDDS] upsertPatientToSupabase error:', err);
+        return { ok: false, error: err.message };
+      }
+    }
+
+    async function deletePatientFromSupabase(patientObj) {
+      const cfg = getSupabasePersonConfig();
+      if (!cfg.url || !cfg.key || !patientObj) return;
+      try {
+        let query = '';
+        if (patientObj.supabaseId) {
+          query = `id=eq.${encodeURIComponent(patientObj.supabaseId)}`;
+        } else if (patientObj.patientCode) {
+          query = `patient_code=eq.${encodeURIComponent(patientObj.patientCode)}`;
+        } else {
+          return;
+        }
+        await fetch(`${cfg.url}/rest/v1/current_dengue_cases?${query}`, {
+          method: 'DELETE',
+          headers: buildSupabaseHeaders(cfg.key)
+        });
+      } catch (err) {
+        console.warn('[TDDS] deletePatientFromSupabase error:', err);
+      }
+    }
+
+    // -------------------------------------------------------------
     // 12. INITIALIZATION ON DOM READY
     // -------------------------------------------------------------
     function handleUrlActionParams() {
@@ -19382,6 +20518,8 @@ ${topHcText}${noteBlock}
       
       initStores();
       initPersonStore();
+      fetchUsersFromSupabase();
+      fetchPatientsFromSupabase(true);
       initMaps();
       updateAuthUI();
       initDailyAutoReportScheduler();
