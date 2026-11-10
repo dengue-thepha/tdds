@@ -30,6 +30,9 @@
   <!-- html2pdf.js CDN (PDF Generation) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
+  <!-- SheetJS (xlsx) CDN - สำหรับ parse ไฟล์ Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <script>
     tailwind.config = {
       theme: {
@@ -314,6 +317,12 @@
           <button onclick="navigateTo('audit')" id="menu-audit" class="sidebar-menu-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-700 hover:text-purple-700 hover:bg-purple-50 transition">
             <span class="w-5 text-center text-base">📋</span>
             <span>ประวัติการใช้งาน (Audit)</span>
+          </button>
+
+          <!-- Person Population & Excel Import -->
+          <button onclick="navigateTo('person-import')" id="menu-person-import" class="sidebar-menu-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-700 hover:text-teal-700 hover:bg-teal-50 transition">
+            <span class="w-5 text-center text-base">🏘️</span>
+            <span>นำเข้าข้อมูลประชากร (person)</span>
           </button>
 
           <!-- Cloud & Telegram Settings -->
@@ -1132,6 +1141,256 @@
 
       </section>
 
+      <!-- ======================================================== -->
+      <!-- VIEW 6: PERSON POPULATION IMPORT & 100M RADIUS SEARCH    -->
+      <!-- ======================================================== -->
+      <section id="view-person-import" class="view-panel auth-only hidden space-y-4">
+
+        <!-- Header & Excel Import Controls -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                <span class="text-lg">🏘️</span>
+                <span>ฐานข้อมูลประชากรรายบุคคล (ตาราง person) &amp; ค้นหารัศมี 100 เมตร</span>
+                <span id="personTotalBadge" class="text-xs bg-teal-100 text-teal-800 px-2.5 py-0.5 rounded-full font-bold">0 ราย</span>
+              </h2>
+              <p class="text-xs text-slate-500 mt-0.5">
+                นำเข้าข้อมูลประชากรจากไฟล์ Excel JHCIS (.xls / .xlsx) เพื่อคำนวณกลุ่มอายุ ดึงพิกัดบ้านผู้ป่วย และค้นหาบ้านในรัศมี 100 เมตร
+              </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <input type="file" id="personExcelFileInput" accept=".xls,.xlsx,.csv" class="hidden" onchange="handlePersonExcelSelected(event)">
+              <button type="button" onclick="document.getElementById('personExcelFileInput').click()" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-xs transition active:scale-95">
+                <span>📥</span>
+                <span>นำเข้าข้อมูลประชากร (Excel)</span>
+              </button>
+              <button type="button" onclick="syncPersonsToSupabaseManual()" id="btnSyncPersonSupabase" class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-xs transition active:scale-95">
+                <span>☁️</span>
+                <span>ส่งขึ้น Supabase</span>
+              </button>
+              <button type="button" onclick="clearPersonData()" class="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 text-xs font-semibold px-3 py-2.5 rounded-xl border border-slate-200 transition">
+                <span>🗑️</span>
+                <span>ล้างข้อมูล</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Supabase Connection Config Bar (Optional Cloud Sync) -->
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <span>🔌</span>
+                <span>เชื่อมต่อ Supabase (สำหรับซิงค์ตาราง <code class="text-teal-700">public.person</code> อัตโนมัติ)</span>
+              </span>
+              <span id="supabasePersonStatusBadge" class="text-[11px] font-semibold text-slate-500">⚪ ยังไม่ได้ตั้งค่า Supabase URL/Key (เก็บในเบราว์เซอร์ IndexedDB)</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+              <input type="text" id="sb_person_url" placeholder="Supabase URL (เช่น https://xxxx.supabase.co)" class="sm:col-span-5 text-xs px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none focus:border-teal-500 font-mono">
+              <input type="password" id="sb_person_key" placeholder="Supabase Anon / Publishable Key" class="sm:col-span-5 text-xs px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none focus:border-teal-500 font-mono">
+              <button type="button" onclick="saveSupabasePersonConfig()" class="sm:col-span-2 text-xs bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-2 rounded-lg transition">บันทึก/โหลด</button>
+            </div>
+          </div>
+
+          <!-- Import Progress / Preview Box -->
+          <div id="personImportPreviewBox" class="hidden bg-teal-50/70 p-4 rounded-xl border border-teal-200 space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <div class="text-xs font-bold text-teal-900" id="personImportFileTitle">ตัวอย่างข้อมูลก่อนนำเข้า</div>
+                <div class="text-[11px] text-teal-700" id="personImportFileMeta">-</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="cancelPersonImportPreview()" class="text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-600 font-semibold">ยกเลิก</button>
+                <button type="button" onclick="confirmPersonImport()" id="btnConfirmPersonImport" class="text-xs px-4 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold shadow-xs">✅ ยืนยันนำเข้าข้อมูล</button>
+              </div>
+            </div>
+            <div id="personImportProgressWrap" class="hidden space-y-1">
+              <div class="w-full bg-teal-100 rounded-full h-2.5 overflow-hidden">
+                <div id="personImportProgressBar" class="bg-teal-600 h-2.5 rounded-full transition-all" style="width: 0%"></div>
+              </div>
+              <div class="text-[11px] font-medium text-teal-800" id="personImportProgressText">กำลังนำเข้า...</div>
+            </div>
+            <div class="overflow-x-auto rounded-lg border border-teal-200 bg-white">
+              <table class="w-full text-left text-[11px]">
+                <thead class="bg-teal-50 text-teal-900 font-bold border-b border-teal-200">
+                  <tr>
+                    <th class="px-2.5 py-2">hcode</th>
+                    <th class="px-2.5 py-2">pid</th>
+                    <th class="px-2.5 py-2">ชื่อ-สกุล</th>
+                    <th class="px-2.5 py-2">เพศ / อายุ</th>
+                    <th class="px-2.5 py-2">กลุ่มอายุ</th>
+                    <th class="px-2.5 py-2">ที่อยู่</th>
+                    <th class="px-2.5 py-2">พิกัด (Lat, Lng)</th>
+                    <th class="px-2.5 py-2">อสม.</th>
+                  </tr>
+                </thead>
+                <tbody id="personImportPreviewTbody" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Sub-Tabs -->
+          <div class="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
+            <button type="button" onclick="switchPersonSubTab('age')" id="personTabBtn-age" class="person-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold bg-teal-600 text-white shadow-xs transition">📊 สรุปประชากรตามกลุ่มอายุ</button>
+            <button type="button" onclick="switchPersonSubTab('radius')" id="personTabBtn-radius" class="person-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">🎯 ค้นหาบ้านรัศมี 100 เมตร</button>
+            <button type="button" onclick="switchPersonSubTab('list')" id="personTabBtn-list" class="person-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">📋 ค้นหารายชื่อ / พิกัดบ้าน</button>
+          </div>
+        </div>
+
+        <!-- SUB-TAB 1: AGE GROUP SUMMARY -->
+        <div id="personSubTab-age" class="person-subtab-panel space-y-4">
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="flex items-center gap-2">
+                <label class="text-xs font-bold text-slate-700">กรองตามสถานพยาบาล (hcode):</label>
+                <select id="personAgeHcodeFilter" onchange="renderPersonAgeStats()" class="text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+                  <option value="all">ทุกหน่วยบริการ (ทั้งหมด)</option>
+                </select>
+              </div>
+              <button type="button" onclick="applyPersonPopulationToDashboard()" class="text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold px-3.5 py-2 rounded-xl shadow-xs transition">
+                🔄 อัปเดตฐานประชากร Dashboard จากตาราง person
+              </button>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                <div class="text-[11px] text-slate-500">ประชากรรวม</div>
+                <div class="text-xl font-bold text-slate-900" id="personStatTotal">0</div>
+              </div>
+              <div class="bg-blue-50/70 p-3.5 rounded-xl border border-blue-200">
+                <div class="text-[11px] text-blue-700">เพศชาย</div>
+                <div class="text-xl font-bold text-blue-900" id="personStatMale">0</div>
+              </div>
+              <div class="bg-pink-50/70 p-3.5 rounded-xl border border-pink-200">
+                <div class="text-[11px] text-pink-700">เพศหญิง</div>
+                <div class="text-xl font-bold text-pink-900" id="personStatFemale">0</div>
+              </div>
+              <div class="bg-emerald-50/70 p-3.5 rounded-xl border border-emerald-200">
+                <div class="text-[11px] text-emerald-700">มีพิกัด GPS บ้าน</div>
+                <div class="text-xl font-bold text-emerald-900" id="personStatGps">0</div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div class="overflow-x-auto rounded-xl border border-slate-200">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                    <tr>
+                      <th class="px-3.5 py-2.5">กลุ่มอายุ</th>
+                      <th class="px-3.5 py-2.5 text-right">ชาย</th>
+                      <th class="px-3.5 py-2.5 text-right">หญิง</th>
+                      <th class="px-3.5 py-2.5 text-right">รวม (คน)</th>
+                      <th class="px-3.5 py-2.5 text-right">ร้อยละ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="personAgeStatsTbody" class="divide-y divide-slate-100"></tbody>
+                </table>
+              </div>
+              <div class="bg-slate-50/50 p-3 rounded-xl border border-slate-200 h-72">
+                <canvas id="personAgeChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB-TAB 2: 100-METER RADIUS SEARCH -->
+        <div id="personSubTab-radius" class="person-subtab-panel hidden space-y-4">
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-end">
+              <div class="lg:col-span-4">
+                <label class="block text-xs font-bold text-slate-700 mb-1">เลือกบ้านผู้ป่วยเป็นจุดศูนย์กลาง:</label>
+                <select id="radiusPatientSelect" onchange="onRadiusPatientSelect()" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+                  <option value="">-- เลือกรายชื่อผู้ป่วย --</option>
+                </select>
+              </div>
+              <div class="lg:col-span-2">
+                <label class="block text-xs font-bold text-slate-700 mb-1">ละติจูด (Lat):</label>
+                <input type="text" id="radiusCenterLat" placeholder="6.809096" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500 font-mono">
+              </div>
+              <div class="lg:col-span-2">
+                <label class="block text-xs font-bold text-slate-700 mb-1">ลองจิจูด (Lng):</label>
+                <input type="text" id="radiusCenterLng" placeholder="100.981736" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500 font-mono">
+              </div>
+              <div class="lg:col-span-2">
+                <label class="block text-xs font-bold text-slate-700 mb-1">รัศมี (เมตร):</label>
+                <select id="radiusMetersSelect" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+                  <option value="50">50 เมตร</option>
+                  <option value="100" selected>100 เมตร (มาตรฐาน)</option>
+                  <option value="200">200 เมตร</option>
+                  <option value="500">500 เมตร</option>
+                </select>
+              </div>
+              <div class="lg:col-span-2 flex gap-2">
+                <button type="button" onclick="runPersonRadiusSearch()" class="w-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-2.5 rounded-xl shadow-xs transition">
+                  🎯 ค้นหารัศมี
+                </button>
+              </div>
+            </div>
+
+            <!-- Result Summary & Export -->
+            <div id="radiusResultSummaryBar" class="hidden flex-col sm:flex-row sm:items-center justify-between gap-2 bg-rose-50/70 p-3 rounded-xl border border-rose-200">
+              <div class="text-xs text-rose-950 font-semibold" id="radiusResultSummaryText">-</div>
+              <button type="button" onclick="exportRadiusResultCsv()" class="text-xs bg-white hover:bg-slate-50 text-slate-800 border border-rose-200 font-bold px-3 py-1.5 rounded-lg shadow-2xs transition">
+                📥 ดาวน์โหลดรายชื่อบ้าน (CSV)
+              </button>
+            </div>
+
+            <!-- Leaflet Mini Map + Table -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+              <div class="lg:col-span-5">
+                <div id="personRadiusMap" class="w-full h-80 rounded-xl border border-slate-200 bg-slate-100 z-10"></div>
+              </div>
+              <div class="lg:col-span-7 overflow-x-auto rounded-xl border border-slate-200 max-h-80 overflow-y-auto">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 sticky top-0">
+                    <tr>
+                      <th class="px-3 py-2.5">ระยะทาง</th>
+                      <th class="px-3 py-2.5">บ้านเลขที่/หมู่</th>
+                      <th class="px-3 py-2.5">ชื่อ-สกุล</th>
+                      <th class="px-3 py-2.5">เพศ/อายุ</th>
+                      <th class="px-3 py-2.5">อสม.รับผิดชอบ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="personRadiusResultTbody" class="divide-y divide-slate-100">
+                    <tr><td colspan="5" class="px-4 py-8 text-center text-slate-400">กรุณาเลือกผู้ป่วยหรือระบุพิกัด แล้วกดปุ่มค้นหารัศมี 100 เมตร</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB-TAB 3: PERSON DIRECTORY SEARCH -->
+        <div id="personSubTab-list" class="person-subtab-panel hidden space-y-4">
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+            <div class="flex flex-col sm:flex-row gap-2">
+              <input type="text" id="personDirSearchInput" oninput="renderPersonDirectoryTable()" placeholder="🔍 ค้นหาชื่อ-สกุล, บ้านเลขที่, เลขบัตร ปชช., ชื่อ อสม...." class="flex-1 text-xs px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+              <select id="personDirHcodeFilter" onchange="renderPersonDirectoryTable()" class="text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+                <option value="all">ทุกสถานพยาบาล</option>
+              </select>
+            </div>
+            <div class="overflow-x-auto rounded-xl border border-slate-200">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                  <tr>
+                    <th class="px-3 py-2.5">hcode / รพ.สต.</th>
+                    <th class="px-3 py-2.5">ชื่อ-สกุล</th>
+                    <th class="px-3 py-2.5">เพศ / อายุ</th>
+                    <th class="px-3 py-2.5">ที่อยู่</th>
+                    <th class="px-3 py-2.5">พิกัดบ้าน</th>
+                    <th class="px-3 py-2.5">อสม.</th>
+                  </tr>
+                </thead>
+                <tbody id="personDirTbody" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
     </main>
   </div>
 
@@ -1369,6 +1628,23 @@
               <div class="font-bold text-slate-800" id="viewModalLabAlertTitle">การแปลผลทางห้องปฏิบัติการ</div>
               <p class="text-slate-600 leading-relaxed" id="viewModalLabAlertDesc">ข้อมูลผลการตรวจทางห้องปฏิบัติการจะช่วยระบุระยะของโรคและการเฝ้าระวังภาวะช็อก (Dengue Shock Syndrome)</p>
             </div>
+          </div>
+
+          <!-- 100m Radius Neighbors Summary (from person table) -->
+          <div id="viewModalRadius100mBox" class="p-3.5 rounded-xl border border-indigo-200 bg-indigo-50/50 space-y-2 text-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-base">🏘️</span>
+                <div>
+                  <div class="font-bold text-indigo-950">บ้านและประชากรในรัศมี 100 เมตรรอบบ้านผู้ป่วย (จากตาราง person)</div>
+                  <div class="text-[11px] text-indigo-700" id="viewModalRadius100mSummary">กำลังตรวจสอบ...</div>
+                </div>
+              </div>
+              <button type="button" id="viewModalOpenRadiusBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-[11px] shrink-0 shadow-2xs transition">
+                🎯 ดูแผนที่และรายชื่อบ้านรัศมี 100 ม.
+              </button>
+            </div>
+            <div id="viewModalRadius100mList" class="hidden max-h-40 overflow-y-auto rounded-lg border border-indigo-100 bg-white divide-y divide-slate-100 text-[11px]"></div>
           </div>
         </div>
 
@@ -1636,11 +1912,14 @@
               <span>📍</span>
               <span class="text-xs font-bold text-slate-800">พิกัด GPS บ้านผู้ป่วย (Latitude / Longitude):</span>
             </div>
-            <div class="flex items-center gap-2 w-full sm:w-auto">
-              <input type="text" id="p_lat" placeholder="ละติจูด (Lat)" class="w-1/2 sm:w-32 text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg">
-              <input type="text" id="p_lng" placeholder="ลองจิจูด (Lng)" class="w-1/2 sm:w-32 text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg">
+            <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <input type="text" id="p_lat" placeholder="ละติจูด (Lat)" class="w-1/2 sm:w-28 text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg">
+              <input type="text" id="p_lng" placeholder="ลองจิจูด (Lng)" class="w-1/2 sm:w-28 text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg">
               <button type="button" onclick="getCurrentLocation()" class="text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 font-semibold px-2.5 py-2 rounded-lg border border-teal-200 shrink-0">
-                <span>🎯</span> ดึงพิกัด
+                <span>🎯</span> ดึงพิกัด GPS
+              </button>
+              <button type="button" onclick="lookupCoordsFromPerson()" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold px-2.5 py-2 rounded-lg border border-indigo-200 shrink-0" title="ค้นหาพิกัดบ้านจากตารางประชากร (person)">
+                <span>🏘️</span> ดึงจาก person
               </button>
             </div>
           </div>
@@ -12659,6 +12938,8 @@
           setTimeout(() => fullMap.invalidateSize(), 200);
         } else if (viewId === 'patients') {
           renderPatientTable();
+        } else if (viewId === 'person-import') {
+          initPersonView();
         }
 
         toggleSidebar(false); // Close mobile sidebar if open
@@ -14980,6 +15261,9 @@
           </div>
         `;
       }
+
+      // 100m Radius Neighbors Summary inside Patient View Modal
+      updateViewModalRadius100m(p);
 
       // Buttons
       document.getElementById('viewModalPdfBtn').onclick = () => downloadPatientReportPDF(p.id);
@@ -17720,6 +18004,1146 @@ ${topHcText}${noteBlock}
     }
 
     // -------------------------------------------------------------
+    // 13. PERSON TABLE (EXCEL IMPORT, AGE GROUPS, COORD LOOKUP & 100M RADIUS)
+    // -------------------------------------------------------------
+    const PERSON_IDB_NAME = 'TDDS_PersonDB';
+    const PERSON_IDB_STORE = 'persons';
+    const PERSON_SB_CFG_KEY = 'tdds_supabase_person_cfg_v1';
+    const PERSON_AGE_GROUPS_ORDER = [
+      '0-4 ปี', '5-9 ปี', '10-14 ปี', '15-24 ปี',
+      '25-34 ปี', '35-44 ปี', '45-54 ปี', '55-64 ปี', '65 ปีขึ้นไป', 'ไม่ระบุ'
+    ];
+
+    let personsData = [];
+    let pendingPersonImportRows = [];
+    let pendingPersonImportFileName = '';
+    let personAgeChartInstance = null;
+    let personRadiusMapInstance = null;
+    let personRadiusLayerGroup = null;
+    let lastRadiusSearchResults = [];
+    let lastRadiusCenterInfo = null;
+
+    function openPersonIDB() {
+      return new Promise((resolve, reject) => {
+        if (!window.indexedDB) {
+          reject(new Error('IndexedDB not supported'));
+          return;
+        }
+        const req = indexedDB.open(PERSON_IDB_NAME, 1);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(PERSON_IDB_STORE)) {
+            db.createObjectStore(PERSON_IDB_STORE, { keyPath: 'uid' });
+          }
+        };
+        req.onsuccess = (e) => resolve(e.target.result);
+        req.onerror = (e) => reject(e.target.error);
+      });
+    }
+
+    async function loadPersonsFromIDB() {
+      try {
+        const db = await openPersonIDB();
+        return await new Promise((resolve, reject) => {
+          const tx = db.transaction(PERSON_IDB_STORE, 'readonly');
+          const store = tx.objectStore(PERSON_IDB_STORE);
+          const req = store.getAll();
+          req.onsuccess = () => resolve(req.result || []);
+          req.onerror = () => reject(req.error);
+        });
+      } catch (e) {
+        console.warn('[TDDS] loadPersonsFromIDB error:', e);
+        return [];
+      }
+    }
+
+    async function savePersonsToIDB(rows) {
+      try {
+        const db = await openPersonIDB();
+        return await new Promise((resolve, reject) => {
+          const tx = db.transaction(PERSON_IDB_STORE, 'readwrite');
+          const store = tx.objectStore(PERSON_IDB_STORE);
+          const clearReq = store.clear();
+          clearReq.onsuccess = () => {
+            for (const row of rows) {
+              store.put(row);
+            }
+          };
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => reject(tx.error);
+        });
+      } catch (e) {
+        console.warn('[TDDS] savePersonsToIDB error:', e);
+        return false;
+      }
+    }
+
+    async function initPersonStore() {
+      personsData = await loadPersonsFromIDB();
+      updatePersonTotalBadge();
+      loadSupabasePersonConfigUI();
+      // ถ้าตั้งค่า Supabase ไว้และเครื่องยังว่าง ให้ดึงจาก Supabase อัตโนมัติ
+      const cfg = getSupabasePersonConfig();
+      if (personsData.length === 0 && cfg.url && cfg.key) {
+        await fetchPersonsFromSupabase(true);
+      }
+    }
+
+    function updatePersonTotalBadge() {
+      const badge = document.getElementById('personTotalBadge');
+      if (badge) {
+        badge.innerText = `${personsData.length.toLocaleString()} ราย`;
+      }
+    }
+
+    function getSupabasePersonConfig() {
+      try {
+        const raw = localStorage.getItem(PERSON_SB_CFG_KEY);
+        return raw ? JSON.parse(raw) : { url: '', key: '' };
+      } catch (e) {
+        return { url: '', key: '' };
+      }
+    }
+
+    function loadSupabasePersonConfigUI() {
+      const cfg = getSupabasePersonConfig();
+      const urlEl = document.getElementById('sb_person_url');
+      const keyEl = document.getElementById('sb_person_key');
+      const statusEl = document.getElementById('supabasePersonStatusBadge');
+      if (urlEl && cfg.url) urlEl.value = cfg.url;
+      if (keyEl && cfg.key) keyEl.value = cfg.key;
+      if (statusEl) {
+        if (cfg.url && cfg.key) {
+          statusEl.className = 'text-[11px] font-semibold text-emerald-700';
+          statusEl.innerText = `🟢 เชื่อมต่อ Supabase แล้ว (${cfg.url})`;
+        } else {
+          statusEl.className = 'text-[11px] font-semibold text-slate-500';
+          statusEl.innerText = '⚪ ยังไม่ได้ตั้งค่า Supabase URL/Key (เก็บในเบราว์เซอร์ IndexedDB)';
+        }
+      }
+    }
+
+    async function saveSupabasePersonConfig() {
+      const urlEl = document.getElementById('sb_person_url');
+      const keyEl = document.getElementById('sb_person_key');
+      const url = (urlEl ? urlEl.value : '').trim().replace(/\/+$/, '');
+      const key = (keyEl ? keyEl.value : '').trim();
+      localStorage.setItem(PERSON_SB_CFG_KEY, JSON.stringify({ url, key }));
+      loadSupabasePersonConfigUI();
+
+      if (url && key) {
+        await fetchPersonsFromSupabase(false);
+      } else {
+        Swal.fire({ icon: 'info', title: 'บันทึกการตั้งค่าแล้ว', text: 'ใช้งานฐานข้อมูลในเบราว์เซอร์ (IndexedDB)', timer: 1500, showConfirmButton: false });
+      }
+    }
+
+    async function fetchPersonsFromSupabase(silent = false) {
+      const cfg = getSupabasePersonConfig();
+      if (!cfg.url || !cfg.key) return;
+      if (!silent) showLoading('กำลังดึงข้อมูลตาราง person จาก Supabase...');
+      try {
+        const fetched = [];
+        let offset = 0;
+        const limit = 1000;
+        while (true) {
+          const res = await fetch(`${cfg.url}/rest/v1/person?select=*&order=id.asc&limit=${limit}&offset=${offset}`, {
+            headers: {
+              'apikey': cfg.key,
+              'Authorization': `Bearer ${cfg.key}`
+            }
+          });
+          if (!res.ok) {
+            const errTxt = await res.text();
+            throw new Error(`HTTP ${res.status}: ${errTxt}`);
+          }
+          const page = await res.json();
+          if (!Array.isArray(page) || page.length === 0) break;
+          for (const r of page) {
+            const ageInfo = computeAgeAndGroup(r.dob, r.age_year);
+            fetched.push({
+              uid: `${r.pcucodeperson || ''}_${r.pid || r.id}`,
+              pcucodeperson: String(r.pcucodeperson || '').trim(),
+              pid: String(r.pid || '').trim(),
+              cid: String(r.cid || '').trim(),
+              fullname: normalizeThaiStr(r.fullname || ''),
+              gender: normalizeThaiStr(r.gender || ''),
+              dob: r.dob || null,
+              age_year: r.age_year != null ? Number(r.age_year) : ageInfo.ageYear,
+              age_group: r.age_group || ageInfo.ageGroup,
+              occupation: normalizeThaiStr(r.occupation || ''),
+              residence_type: normalizeThaiStr(r.residence_type || ''),
+              house_no: normalizeThaiStr(r.house_no || ''),
+              village_no: normalizeThaiStr(r.village_no || ''),
+              subdistrict: normalizeThaiStr(r.subdistrict || ''),
+              district: normalizeThaiStr(r.district || ''),
+              province: normalizeThaiStr(r.province || ''),
+              lat: r.lat != null ? Number(r.lat) : null,
+              lng: r.lng != null ? Number(r.lng) : null,
+              osm_name: normalizeThaiStr(r.osm_name || '')
+            });
+          }
+          if (page.length < limit) break;
+          offset += limit;
+        }
+        if (fetched.length > 0) {
+          personsData = fetched;
+          await savePersonsToIDB(personsData);
+          updatePersonTotalBadge();
+          populatePersonFilters();
+          renderPersonAgeStats();
+          renderPersonDirectoryTable();
+        }
+        if (!silent) {
+          hideLoading();
+          Swal.fire({
+            icon: 'success',
+            title: 'เชื่อมต่อ Supabase สำเร็จ',
+            text: `พบข้อมูลในตาราง person จำนวน ${fetched.length.toLocaleString()} ราย`,
+            timer: 2000,
+            showConfirmButton: false
+          });
+        }
+      } catch (err) {
+        console.warn('[TDDS] fetchPersonsFromSupabase error:', err);
+        if (!silent) {
+          hideLoading();
+          Swal.fire({ icon: 'error', title: 'เชื่อมต่อ Supabase ไม่สำเร็จ', text: err.message });
+        }
+      }
+    }
+
+    function parseThaiDateToISO(val) {
+      if (!val) return null;
+      const s = String(val).trim();
+      // รูปแบบ DD/MM/YYYY (พ.ศ. หรือ ค.ศ.)
+      const m1 = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+      if (m1) {
+        let day = parseInt(m1[1], 10);
+        let month = parseInt(m1[2], 10);
+        let year = parseInt(m1[3], 10);
+        if (year > 2400) year -= 543;
+        if (month >= 1 && month <= 12 && day >= 1 && day <= 31 && year >= 1900 && year <= 2100) {
+          return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+      }
+      // รูปแบบ YYYY-MM-DD
+      const m2 = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (m2) {
+        let year = parseInt(m2[1], 10);
+        if (year > 2400) year -= 543;
+        return `${year}-${String(m2[2]).padStart(2, '0')}-${String(m2[3]).padStart(2, '0')}`;
+      }
+      return null;
+    }
+
+    function computeAgeAndGroup(dobISO, rawAge) {
+      let ageYear = null;
+      if (dobISO) {
+        const parts = dobISO.split('-');
+        if (parts.length === 3) {
+          const bYear = parseInt(parts[0], 10);
+          const bMonth = parseInt(parts[1], 10) - 1;
+          const bDay = parseInt(parts[2], 10);
+          const now = new Date();
+          let age = now.getFullYear() - bYear;
+          if (now.getMonth() < bMonth || (now.getMonth() === bMonth && now.getDate() < bDay)) {
+            age--;
+          }
+          if (age >= 0 && age <= 130) ageYear = age;
+        }
+      }
+      if (ageYear === null && rawAge !== undefined && rawAge !== null && String(rawAge).trim() !== '') {
+        const parsed = parseInt(String(rawAge).trim(), 10);
+        if (!isNaN(parsed) && parsed >= 0 && parsed <= 130) ageYear = parsed;
+      }
+
+      let ageGroup = 'ไม่ระบุ';
+      if (ageYear !== null) {
+        if (ageYear < 5) ageGroup = '0-4 ปี';
+        else if (ageYear < 10) ageGroup = '5-9 ปี';
+        else if (ageYear < 15) ageGroup = '10-14 ปี';
+        else if (ageYear < 25) ageGroup = '15-24 ปี';
+        else if (ageYear < 35) ageGroup = '25-34 ปี';
+        else if (ageYear < 45) ageGroup = '35-44 ปี';
+        else if (ageYear < 55) ageGroup = '45-54 ปี';
+        else if (ageYear < 65) ageGroup = '55-64 ปี';
+        else ageGroup = '65 ปีขึ้นไป';
+      }
+      return { ageYear, ageGroup };
+    }
+
+    function sanitizeLatLngPair(rawLat, rawLng) {
+      let lat = parseFloat(String(rawLat ?? '').trim());
+      let lng = parseFloat(String(rawLng ?? '').trim());
+      if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
+        return { lat: null, lng: null };
+      }
+      // ไฟล์ JHCIS บางรุ่นสลับคอลัมน์ละติจูด/ลองจิจูด (เช่น lat=100.98, lng=6.80)
+      if ((lat > 90 || (lat > 50 && lng < 30)) && lng >= -90 && lng <= 90) {
+        const tmp = lat;
+        lat = lng;
+        lng = tmp;
+      }
+      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        return { lat: null, lng: null };
+      }
+      return { lat: Number(lat.toFixed(7)), lng: Number(lng.toFixed(7)) };
+    }
+
+    function mapExcelRowToPerson(headers, rowArr, fallbackFileHcode) {
+      const getByKeywords = (keywords, fallbackIdx) => {
+        for (let i = 0; i < headers.length; i++) {
+          const h = normalizeThaiStr(headers[i]).toLowerCase().replace(/\s+/g, '');
+          if (keywords.some(k => h === k || h.includes(k))) {
+            return rowArr[i];
+          }
+        }
+        return fallbackIdx != null && fallbackIdx < rowArr.length ? rowArr[fallbackIdx] : '';
+      };
+
+      let pcucode = String(getByKeywords(['pcucodeperson', 'pcucode', 'hcode', 'รหัสหน่วย'], 0) || fallbackFileHcode || '').trim();
+      if (/^\d+$/.test(pcucode) && pcucode.length < 5) pcucode = pcucode.padStart(5, '0');
+      const pid = String(getByKeywords(['pid'], 1) || '').trim();
+      const cid = String(getByKeywords(['เลขบัตร', 'cid', 'idcard'], 2) || '').trim();
+      const fullname = normalizeThaiStr(getByKeywords(['ชื่อ-สกุล', 'ชื่อสกุล', 'fullname', 'name'], 3) || '');
+      const gender = normalizeThaiStr(getByKeywords(['เพศ', 'gender', 'sex'], 4) || '');
+      const rawDob = getByKeywords(['วันเดือนปีเกิด', 'วันเกิด', 'dob', 'birth'], 5);
+      const rawAge = getByKeywords(['อายุ', 'age'], 6);
+      const occupation = normalizeThaiStr(getByKeywords(['อาชีพ', 'occupation'], 7) || '');
+      const residenceType = normalizeThaiStr(getByKeywords(['ประเภทการอยู่อาศัย', 'residence'], 8) || '');
+      const houseNo = normalizeThaiStr(getByKeywords(['บ้านเลขที่', 'house'], 9) || '');
+      let villageNo = normalizeThaiStr(getByKeywords(['หมู่ที่', 'หมู่', 'village'], 10) || '');
+      villageNo = villageNo.replace(/^หมู่ที่\s*/i, '').replace(/^ม\.\s*/i, '').trim();
+      const subdistrict = normalizeThaiStr(getByKeywords(['ตำบล', 'subdistrict'], 11) || '').replace(/^ต\.\s*/i, '').trim();
+      const district = normalizeThaiStr(getByKeywords(['อำเภอ', 'district'], 12) || '').replace(/^อ\.\s*/i, '').trim();
+      const province = normalizeThaiStr(getByKeywords(['จังหวัด', 'province'], 13) || '').replace(/^จ\.\s*/i, '').trim();
+      const rawLat = getByKeywords(['ละติจูด', 'lat'], 14);
+      const rawLng = getByKeywords(['ลองจิจูด', 'ลองติจูด', 'lng', 'lon'], 15);
+      const osmName = normalizeThaiStr(getByKeywords(['อสม', 'osm'], 16) || '');
+
+      if (!fullname && !pid && !cid) return null;
+
+      const dobISO = parseThaiDateToISO(rawDob);
+      const ageInfo = computeAgeAndGroup(dobISO, rawAge);
+      const coords = sanitizeLatLngPair(rawLat, rawLng);
+      const safePid = pid || cid || `${fullname}_${houseNo}`;
+
+      return {
+        uid: `${pcucode}_${safePid}`,
+        pcucodeperson: pcucode,
+        pid: safePid,
+        cid,
+        fullname,
+        gender,
+        dob: dobISO,
+        age_year: ageInfo.ageYear,
+        age_group: ageInfo.ageGroup,
+        occupation,
+        residence_type: residenceType,
+        house_no: houseNo,
+        village_no: villageNo,
+        subdistrict,
+        district,
+        province,
+        lat: coords.lat,
+        lng: coords.lng,
+        osm_name: osmName
+      };
+    }
+
+    function handlePersonExcelSelected(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      if (typeof XLSX === 'undefined') {
+        Swal.fire({ icon: 'error', title: 'ไม่พบไลบรารี SheetJS', text: 'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วรีเฟรชหน้าเว็บ' });
+        return;
+      }
+
+      showLoading(`กำลังอ่านไฟล์ ${file.name}...`);
+      const hcodeMatch = file.name.match(/(\d{5})/);
+      const fallbackHcode = hcodeMatch ? hcodeMatch[1] : '';
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[firstSheetName];
+          const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
+
+          if (!rawRows || rawRows.length < 2) {
+            hideLoading();
+            Swal.fire({ icon: 'warning', title: 'ไม่พบข้อมูลในไฟล์', text: 'ไฟล์ Excel ต้องมีหัวตารางอย่างน้อย 1 แถว และข้อมูลอย่างน้อย 1 แถว' });
+            return;
+          }
+
+          const headers = rawRows[0].map(h => String(h || '').trim());
+          const mapped = [];
+          for (let r = 1; r < rawRows.length; r++) {
+            const p = mapExcelRowToPerson(headers, rawRows[r], fallbackHcode);
+            if (p) mapped.push(p);
+          }
+
+          pendingPersonImportRows = mapped;
+          pendingPersonImportFileName = file.name;
+          renderPersonImportPreview();
+          hideLoading();
+        } catch (err) {
+          console.error('[TDDS] Excel parse error:', err);
+          hideLoading();
+          Swal.fire({ icon: 'error', title: 'อ่านไฟล์ Excel ไม่สำเร็จ', text: err.message });
+        }
+        event.target.value = '';
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function renderPersonImportPreview() {
+      const box = document.getElementById('personImportPreviewBox');
+      const titleEl = document.getElementById('personImportFileTitle');
+      const metaEl = document.getElementById('personImportFileMeta');
+      const tbody = document.getElementById('personImportPreviewTbody');
+      const progWrap = document.getElementById('personImportProgressWrap');
+      if (!box || !tbody) return;
+
+      if (progWrap) progWrap.classList.add('hidden');
+      box.classList.remove('hidden');
+
+      const withGps = pendingPersonImportRows.filter(r => r.lat !== null && r.lng !== null).length;
+      const uniqueHcodes = [...new Set(pendingPersonImportRows.map(r => r.pcucodeperson).filter(Boolean))];
+      if (titleEl) titleEl.innerText = `ตัวอย่างข้อมูลก่อนนำเข้า: ${pendingPersonImportFileName}`;
+      if (metaEl) metaEl.innerText = `พบข้อมูลทั้งหมด ${pendingPersonImportRows.length.toLocaleString()} ราย | มีพิกัด GPS ${withGps.toLocaleString()} ราย | รหัสหน่วยบริการ: ${uniqueHcodes.join(', ') || '-'}`;
+
+      tbody.innerHTML = '';
+      pendingPersonImportRows.slice(0, 8).forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="px-2.5 py-1.5 font-mono text-teal-800">${r.pcucodeperson || '-'}</td>
+          <td class="px-2.5 py-1.5 font-mono">${r.pid || '-'}</td>
+          <td class="px-2.5 py-1.5 font-semibold text-slate-800">${r.fullname || '-'}</td>
+          <td class="px-2.5 py-1.5">${r.gender || '-'} / ${r.age_year ?? '-'} ปี</td>
+          <td class="px-2.5 py-1.5"><span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">${r.age_group}</span></td>
+          <td class="px-2.5 py-1.5">${r.house_no || '-'} ม.${r.village_no || '-'} ต.${r.subdistrict || '-'}</td>
+          <td class="px-2.5 py-1.5 font-mono text-[10px]">${r.lat != null ? `${r.lat.toFixed(5)}, ${r.lng.toFixed(5)}` : '<span class="text-slate-400">ไม่มีพิกัด</span>'}</td>
+          <td class="px-2.5 py-1.5">${r.osm_name || '-'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function cancelPersonImportPreview() {
+      pendingPersonImportRows = [];
+      pendingPersonImportFileName = '';
+      const box = document.getElementById('personImportPreviewBox');
+      if (box) box.classList.add('hidden');
+    }
+
+    async function confirmPersonImport() {
+      if (!pendingPersonImportRows || pendingPersonImportRows.length === 0) return;
+
+      const btn = document.getElementById('btnConfirmPersonImport');
+      const progWrap = document.getElementById('personImportProgressWrap');
+      const progBar = document.getElementById('personImportProgressBar');
+      const progText = document.getElementById('personImportProgressText');
+      if (btn) btn.disabled = true;
+      if (progWrap) progWrap.classList.remove('hidden');
+      if (progBar) progBar.style.width = '20%';
+      if (progText) progText.innerText = `กำลังรวมข้อมูลเข้าฐานข้อมูลเบราว์เซอร์ (${pendingPersonImportRows.length.toLocaleString()} ราย)...`;
+
+      // Merge / Upsert เข้า personsData โดยใช้ uid (pcucodeperson + pid) เพื่อไม่ให้ทับข้อมูล รพ.สต. อื่น
+      const mapByUid = new Map();
+      personsData.forEach(p => mapByUid.set(p.uid, p));
+      pendingPersonImportRows.forEach(p => mapByUid.set(p.uid, p));
+      personsData = Array.from(mapByUid.values());
+
+      await savePersonsToIDB(personsData);
+      if (progBar) progBar.style.width = '50%';
+
+      let sbSynced = false;
+      let sbErrMsg = '';
+      const cfg = getSupabasePersonConfig();
+      if (cfg.url && cfg.key) {
+        try {
+          await upsertPersonsToSupabase(pendingPersonImportRows, (pct, msg) => {
+            if (progBar) progBar.style.width = `${50 + Math.round(pct * 0.5)}%`;
+            if (progText) progText.innerText = msg;
+          });
+          sbSynced = true;
+        } catch (err) {
+          sbErrMsg = err.message;
+        }
+      }
+
+      if (progBar) progBar.style.width = '100%';
+      if (btn) btn.disabled = false;
+
+      const importedCount = pendingPersonImportRows.length;
+      addAuditLog('IMPORT_PERSON', `นำเข้าข้อมูลประชากร (person) จาก ${pendingPersonImportFileName} จำนวน ${importedCount} ราย`);
+      cancelPersonImportPreview();
+      updatePersonTotalBadge();
+      populatePersonFilters();
+      renderPersonAgeStats();
+      renderPersonDirectoryTable();
+
+      Swal.fire({
+        icon: sbErrMsg ? 'warning' : 'success',
+        title: `นำเข้าข้อมูลประชากรสำเร็จ ${importedCount.toLocaleString()} ราย`,
+        html: `รวมข้อมูลในระบบทั้งหมด <b>${personsData.length.toLocaleString()}</b> ราย<br>` +
+          (sbSynced ? '<span class="text-emerald-700 text-xs">✅ ซิงค์ขึ้นตาราง public.person บน Supabase เรียบร้อย</span>' :
+           (sbErrMsg ? `<span class="text-amber-700 text-xs">⚠️ เก็บในเบราว์เซอร์แล้ว แต่ซิงค์ Supabase ไม่สำเร็จ: ${sbErrMsg}</span>` :
+           '<span class="text-slate-500 text-xs">💾 บันทึกลง IndexedDB บนเบราว์เซอร์เรียบร้อย (หากต้องการซิงค์ Supabase ให้กรอก URL/Key ด้านบน)</span>'))
+      });
+    }
+
+    async function upsertPersonsToSupabase(rows, onProgress) {
+      const cfg = getSupabasePersonConfig();
+      if (!cfg.url || !cfg.key) throw new Error('ยังไม่ได้ตั้งค่า Supabase URL / Key');
+      const chunkSize = 400;
+      for (let i = 0; i < rows.length; i += chunkSize) {
+        const slice = rows.slice(i, i + chunkSize).map(r => ({
+          pcucodeperson: r.pcucodeperson || '00000',
+          pid: r.pid || `${i}`,
+          cid: r.cid || null,
+          fullname: r.fullname || null,
+          gender: r.gender || null,
+          dob: r.dob || null,
+          age_year: r.age_year,
+          age_group: r.age_group,
+          occupation: r.occupation || null,
+          residence_type: r.residence_type || null,
+          house_no: r.house_no || null,
+          village_no: r.village_no || null,
+          subdistrict: r.subdistrict || null,
+          district: r.district || null,
+          province: r.province || null,
+          lat: r.lat,
+          lng: r.lng,
+          osm_name: r.osm_name || null
+        }));
+        const res = await fetch(`${cfg.url}/rest/v1/person?on_conflict=pcucodeperson,pid`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': cfg.key,
+            'Authorization': `Bearer ${cfg.key}`,
+            'Prefer': 'resolution=merge-duplicates,return=minimal'
+          },
+          body: JSON.stringify(slice)
+        });
+        if (!res.ok) {
+          const errTxt = await res.text();
+          throw new Error(`HTTP ${res.status}: ${errTxt}`);
+        }
+        const done = Math.min(i + chunkSize, rows.length);
+        if (onProgress) {
+          onProgress(done / rows.length, `กำลังอัปโหลดขึ้น Supabase (${done.toLocaleString()} / ${rows.length.toLocaleString()} ราย)...`);
+        }
+      }
+    }
+
+    async function syncPersonsToSupabaseManual() {
+      if (personsData.length === 0) {
+        Swal.fire({ icon: 'info', title: 'ยังไม่มีข้อมูลประชากร', text: 'กรุณานำเข้าไฟล์ Excel ก่อนส่งขึ้น Supabase' });
+        return;
+      }
+      const cfg = getSupabasePersonConfig();
+      if (!cfg.url || !cfg.key) {
+        Swal.fire({ icon: 'warning', title: 'กรุณากรอก Supabase URL และ Anon Key', text: 'ระบุค่าในช่องเชื่อมต่อ Supabase ด้านบนก่อนทำการส่งข้อมูล' });
+        return;
+      }
+      showLoading(`กำลังซิงค์ข้อมูล ${personsData.length.toLocaleString()} รายขึ้น Supabase...`);
+      try {
+        await upsertPersonsToSupabase(personsData, (pct, msg) => {
+          const txtEl = document.getElementById('loadingText');
+          if (txtEl) txtEl.innerText = msg;
+        });
+        hideLoading();
+        Swal.fire({ icon: 'success', title: 'ซิงค์ข้อมูลขึ้น Supabase สำเร็จ', text: `ส่งข้อมูลตาราง person จำนวน ${personsData.length.toLocaleString()} รายเรียบร้อยแล้ว` });
+      } catch (err) {
+        hideLoading();
+        Swal.fire({ icon: 'error', title: 'ซิงค์ Supabase ไม่สำเร็จ', text: err.message });
+      }
+    }
+
+    function clearPersonData() {
+      Swal.fire({
+        title: 'ยืนยันล้างข้อมูลประชากรในเบราว์เซอร์?',
+        text: 'ข้อมูลตาราง person ที่เก็บไว้ในเครื่องนี้จะถูกลบออก',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#EF5350',
+        confirmButtonText: 'ล้างข้อมูล',
+        cancelButtonText: 'ยกเลิก'
+      }).then(async (res) => {
+        if (res.isConfirmed) {
+          personsData = [];
+          await savePersonsToIDB([]);
+          updatePersonTotalBadge();
+          populatePersonFilters();
+          renderPersonAgeStats();
+          renderPersonDirectoryTable();
+          Swal.fire({ icon: 'success', title: 'ล้างข้อมูลเรียบร้อย', timer: 1200, showConfirmButton: false });
+        }
+      });
+    }
+
+    function initPersonView() {
+      updatePersonTotalBadge();
+      loadSupabasePersonConfigUI();
+      populatePersonFilters();
+      renderPersonAgeStats();
+      renderPersonDirectoryTable();
+    }
+
+    function switchPersonSubTab(tabName) {
+      document.querySelectorAll('.person-subtab-panel').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.person-subtab-btn').forEach(btn => {
+        btn.classList.remove('bg-teal-600', 'text-white', 'shadow-xs');
+        btn.classList.add('bg-slate-100', 'text-slate-700');
+      });
+      const target = document.getElementById(`personSubTab-${tabName}`);
+      const activeBtn = document.getElementById(`personTabBtn-${tabName}`);
+      if (target) target.classList.remove('hidden');
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-slate-100', 'text-slate-700');
+        activeBtn.classList.add('bg-teal-600', 'text-white', 'shadow-xs');
+      }
+      if (tabName === 'radius' && personRadiusMapInstance) {
+        setTimeout(() => personRadiusMapInstance.invalidateSize(), 150);
+      }
+    }
+
+    function populatePersonFilters() {
+      const hcodes = [...new Set(personsData.map(p => p.pcucodeperson).filter(Boolean))].sort();
+      ['personAgeHcodeFilter', 'personDirHcodeFilter'].forEach(selId => {
+        const sel = document.getElementById(selId);
+        if (!sel) return;
+        const prev = sel.value;
+        sel.innerHTML = '<option value="all">ทุกหน่วยบริการ (ทั้งหมด)</option>';
+        hcodes.forEach(code => {
+          const opt = document.createElement('option');
+          opt.value = code;
+          opt.text = `${code} - ${getHNameByCode(code)}`;
+          sel.appendChild(opt);
+        });
+        if (prev && hcodes.includes(prev)) sel.value = prev;
+      });
+
+      // Populate patient selector for 100m radius search
+      const pSel = document.getElementById('radiusPatientSelect');
+      if (pSel && typeof patientsData !== 'undefined') {
+        const prev = pSel.value;
+        pSel.innerHTML = '<option value="">-- เลือกรายชื่อผู้ป่วย (เรียงจากแจ้งล่าสุด) --</option>';
+        const sorted = [...patientsData].sort((a, b) => (b.illnessDate || '').localeCompare(a.illnessDate || ''));
+        sorted.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          const gpsTag = (p.lat && p.lng) ? '📍' : '⚠️ไม่มีพิกัด';
+          opt.text = `${gpsTag} ${p.fullName} (${p.addressNo || '-'} ม.${p.villageNo || '-'} ต.${p.subdistrict || '-'})`;
+          pSel.appendChild(opt);
+        });
+        if (prev) pSel.value = prev;
+      }
+    }
+
+    function renderPersonAgeStats() {
+      const hcodeFilter = (document.getElementById('personAgeHcodeFilter')?.value) || 'all';
+      const filtered = hcodeFilter === 'all' ? personsData : personsData.filter(p => p.pcucodeperson === hcodeFilter);
+
+      const total = filtered.length;
+      const male = filtered.filter(p => p.gender === 'ชาย').length;
+      const female = filtered.filter(p => p.gender === 'หญิง').length;
+      const withGps = filtered.filter(p => p.lat !== null && p.lng !== null).length;
+
+      const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+      setTxt('personStatTotal', total.toLocaleString());
+      setTxt('personStatMale', male.toLocaleString());
+      setTxt('personStatFemale', female.toLocaleString());
+      setTxt('personStatGps', withGps.toLocaleString());
+
+      const counts = {};
+      PERSON_AGE_GROUPS_ORDER.forEach(g => { counts[g] = { male: 0, female: 0, total: 0 }; });
+      filtered.forEach(p => {
+        const g = counts[p.age_group] ? p.age_group : 'ไม่ระบุ';
+        counts[g].total++;
+        if (p.gender === 'ชาย') counts[g].male++;
+        else if (p.gender === 'หญิง') counts[g].female++;
+      });
+
+      const tbody = document.getElementById('personAgeStatsTbody');
+      if (tbody) {
+        tbody.innerHTML = '';
+        PERSON_AGE_GROUPS_ORDER.forEach(g => {
+          const c = counts[g];
+          const pct = total > 0 ? ((c.total / total) * 100).toFixed(1) : '0.0';
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="px-3.5 py-2 font-semibold text-slate-800">${g}</td>
+            <td class="px-3.5 py-2 text-right text-blue-700">${c.male.toLocaleString()}</td>
+            <td class="px-3.5 py-2 text-right text-pink-700">${c.female.toLocaleString()}</td>
+            <td class="px-3.5 py-2 text-right font-bold text-slate-900">${c.total.toLocaleString()}</td>
+            <td class="px-3.5 py-2 text-right text-slate-500">${pct}%</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      const canvas = document.getElementById('personAgeChart');
+      if (canvas && typeof Chart !== 'undefined') {
+        if (personAgeChartInstance) personAgeChartInstance.destroy();
+        const chartLabels = PERSON_AGE_GROUPS_ORDER.filter(g => g !== 'ไม่ระบุ');
+        personAgeChartInstance = new Chart(canvas.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: chartLabels,
+            datasets: [
+              { label: 'ชาย', data: chartLabels.map(g => counts[g].male), backgroundColor: '#60A5FA', borderRadius: 4 },
+              { label: 'หญิง', data: chartLabels.map(g => counts[g].female), backgroundColor: '#F472B6', borderRadius: 4 }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'top', labels: { font: { family: 'Kanit', size: 11 } } } },
+            scales: {
+              x: { ticks: { font: { family: 'Kanit', size: 10 } }, grid: { display: false } },
+              y: { beginAtZero: true, ticks: { font: { family: 'Kanit', size: 10 } } }
+            }
+          }
+        });
+      }
+    }
+
+    function applyPersonPopulationToDashboard() {
+      if (personsData.length === 0) {
+        Swal.fire({ icon: 'info', title: 'ยังไม่มีข้อมูลในตาราง person', text: 'กรุณานำเข้าข้อมูลประชากร Excel ก่อนครับ' });
+        return;
+      }
+      // อัปเดตประชากรราย รพ.สต. และรายกลุ่มอายุใน thephaPopulationData สำหรับกลุ่มที่มีใน person
+      const byHcode = {};
+      const byAgeGroup = {};
+      personsData.forEach(p => {
+        if (p.pcucodeperson) {
+          byHcode[p.pcucodeperson] = (byHcode[p.pcucodeperson] || 0) + 1;
+        }
+        if (p.age_group && p.age_group !== 'ไม่ระบุ') {
+          byAgeGroup[p.age_group] = (byAgeGroup[p.age_group] || 0) + 1;
+        }
+      });
+
+      let updatedUnits = [];
+      Object.keys(byHcode).forEach(code => {
+        const hName = getHNameByCode(code);
+        if (hName && thephaPopulationData.healthCenters) {
+          thephaPopulationData.healthCenters[hName] = byHcode[code];
+          updatedUnits.push(`${code} ${hName}: ${byHcode[code].toLocaleString()} คน`);
+        }
+        const hcMaster = HEALTH_CENTERS_MASTER.find(h => h.hcode === code);
+        if (hcMaster) hcMaster.population = byHcode[code];
+      });
+
+      if (typeof renderHealthCenterStats === 'function') renderHealthCenterStats();
+      if (typeof renderDashboard === 'function') renderDashboard();
+
+      Swal.fire({
+        icon: 'success',
+        title: 'อัปเดตฐานประชากรสำเร็จ',
+        html: `<div class="text-xs text-left space-y-1">${updatedUnits.map(u => `<div>✅ ${u}</div>`).join('')}</div>`
+      });
+    }
+
+    // คำนวณระยะทาง Haversine (เมตร)
+    function calcDistanceMeters(lat1, lng1, lat2, lng2) {
+      const R = 6371000;
+      const toRad = (deg) => deg * Math.PI / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLng = toRad(lng2 - lng1);
+      const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function findPersonsWithinRadius(centerLat, centerLng, radiusM = 100) {
+      if (isNaN(centerLat) || isNaN(centerLng)) return [];
+      const res = [];
+      for (const p of personsData) {
+        if (p.lat === null || p.lng === null) continue;
+        const dist = calcDistanceMeters(centerLat, centerLng, p.lat, p.lng);
+        if (dist <= radiusM) {
+          res.push({ ...p, distance_m: dist });
+        }
+      }
+      res.sort((a, b) => a.distance_m - b.distance_m);
+      return res;
+    }
+
+    function onRadiusPatientSelect() {
+      const id = document.getElementById('radiusPatientSelect')?.value;
+      if (!id) return;
+      const p = patientsData.find(item => item.id === id);
+      if (!p) return;
+      let lat = parseFloat(p.lat);
+      let lng = parseFloat(p.lng);
+
+      // ถ้าผู้ป่วยยังไม่มีพิกัด ให้ลองค้นหาจากตาราง person อัตโนมัติ!
+      if (isNaN(lat) || isNaN(lng)) {
+        const match = findBestPersonMatchForPatient(p);
+        if (match && match.lat !== null && match.lng !== null) {
+          lat = match.lat;
+          lng = match.lng;
+          Swal.fire({
+            toast: true, position: 'top-end', icon: 'info',
+            title: `ดึงพิกัดบ้านจาก person ให้ ${p.fullName} อัตโนมัติ`,
+            timer: 2500, showConfirmButton: false
+          });
+        }
+      }
+
+      const latEl = document.getElementById('radiusCenterLat');
+      const lngEl = document.getElementById('radiusCenterLng');
+      if (latEl) latEl.value = isNaN(lat) ? '' : lat;
+      if (lngEl) lngEl.value = isNaN(lng) ? '' : lng;
+      lastRadiusCenterInfo = p;
+      if (!isNaN(lat) && !isNaN(lng)) {
+        runPersonRadiusSearch();
+      }
+    }
+
+    function runPersonRadiusSearch() {
+      const lat = parseFloat(document.getElementById('radiusCenterLat')?.value);
+      const lng = parseFloat(document.getElementById('radiusCenterLng')?.value);
+      const radiusM = parseInt(document.getElementById('radiusMetersSelect')?.value || '100', 10);
+
+      if (isNaN(lat) || isNaN(lng)) {
+        Swal.fire({ icon: 'warning', title: 'กรุณาระบุพิกัด Lat / Lng', text: 'เลือกผู้ป่วยที่มีพิกัด หรือกรอกค่าละติจูด/ลองจิจูดด้วยตนเอง' });
+        return;
+      }
+
+      const matches = findPersonsWithinRadius(lat, lng, radiusM);
+      lastRadiusSearchResults = matches;
+
+      const houseKeys = new Set(matches.map(m => `${m.house_no || '-'}_${m.village_no || '-'}_${m.subdistrict || '-'}`));
+      const sumBar = document.getElementById('radiusResultSummaryBar');
+      const sumTxt = document.getElementById('radiusResultSummaryText');
+      if (sumBar) {
+        sumBar.classList.remove('hidden');
+        sumBar.classList.add('flex');
+      }
+      if (sumTxt) {
+        sumTxt.innerHTML = `พบในรัศมี <b>${radiusM} เมตร</b>: จำนวน <b class="text-rose-700">${houseKeys.size.toLocaleString()} หลังคาเรือน</b> | ประชากรทั้งหมด <b class="text-rose-700">${matches.length.toLocaleString()} คน</b>`;
+      }
+
+      const tbody = document.getElementById('personRadiusResultTbody');
+      if (tbody) {
+        tbody.innerHTML = '';
+        if (matches.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-slate-400">ไม่พบบ้าน/ประชากรในรัศมี ${radiusM} เมตร (ตรวจสอบว่านำเข้าข้อมูลตาราง person ของพื้นที่นี้แล้ว)</td></tr>`;
+        } else {
+          matches.slice(0, 300).forEach(m => {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-slate-50';
+            tr.innerHTML = `
+              <td class="px-3 py-2 font-bold text-rose-700 whitespace-nowrap">${m.distance_m.toFixed(1)} ม.</td>
+              <td class="px-3 py-2 whitespace-nowrap">${m.house_no || '-'} ม.${m.village_no || '-'} ต.${m.subdistrict || '-'}</td>
+              <td class="px-3 py-2 font-semibold text-slate-800">${m.fullname || '-'}</td>
+              <td class="px-3 py-2 whitespace-nowrap">${m.gender || '-'} / ${m.age_year ?? '-'} ปี</td>
+              <td class="px-3 py-2">${m.osm_name || '-'}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+      }
+
+      renderPersonRadiusMap(lat, lng, radiusM, matches);
+    }
+
+    function renderPersonRadiusMap(centerLat, centerLng, radiusM, matches) {
+      const mapEl = document.getElementById('personRadiusMap');
+      if (!mapEl || typeof L === 'undefined') return;
+      if (!personRadiusMapInstance) {
+        personRadiusMapInstance = L.map('personRadiusMap').setView([centerLat, centerLng], 17);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap',
+          maxZoom: 19
+        }).addTo(personRadiusMapInstance);
+        personRadiusLayerGroup = L.layerGroup().addTo(personRadiusMapInstance);
+      } else {
+        personRadiusMapInstance.setView([centerLat, centerLng], 17);
+        personRadiusLayerGroup.clearLayers();
+      }
+
+      // วงกลมรัศมี 100 เมตร
+      L.circle([centerLat, centerLng], {
+        color: '#EF5350',
+        fillColor: '#EF5350',
+        fillOpacity: 0.12,
+        weight: 2,
+        dashArray: '6, 4',
+        radius: radiusM
+      }).addTo(personRadiusLayerGroup);
+
+      // จุดศูนย์กลางบ้านผู้ป่วย
+      const centerTitle = lastRadiusCenterInfo ? `🏠 บ้านผู้ป่วย: ${lastRadiusCenterInfo.fullName}` : '📍 จุดศูนย์กลางค้นหา';
+      L.circleMarker([centerLat, centerLng], {
+        radius: 9, color: '#B71C1C', fillColor: '#EF5350', fillOpacity: 1, weight: 2
+      }).bindPopup(`<b>${centerTitle}</b><br>${centerLat.toFixed(6)}, ${centerLng.toFixed(6)}`).addTo(personRadiusLayerGroup);
+
+      // จัดกลุ่มตามพิกัดหลังคาเรือนเพื่อแสดงหมุดสะอาดตา
+      const byCoord = new Map();
+      matches.forEach(m => {
+        const key = `${m.lat.toFixed(6)},${m.lng.toFixed(6)}`;
+        if (!byCoord.has(key)) byCoord.set(key, []);
+        byCoord.get(key).push(m);
+      });
+
+      byCoord.forEach((people, key) => {
+        const first = people[0];
+        const popupHtml = `
+          <div style="font-family:Kanit,sans-serif;font-size:11px;min-width:160px">
+            <b>🏡 บ้านเลขที่ ${first.house_no || '-'} ม.${first.village_no || '-'} ต.${first.subdistrict || '-'}</b><br>
+            <span>ระยะห่าง: <b style="color:#d32f2f">${first.distance_m.toFixed(1)} ม.</b> | ผู้อาศัย ${people.length} คน</span>
+            <hr style="margin:4px 0">
+            ${people.slice(0, 6).map(x => `• ${x.fullname} (${x.age_year ?? '-'} ปี)`).join('<br>')}
+            ${people.length > 6 ? `<br><i>...และอีก ${people.length - 6} คน</i>` : ''}
+          </div>`;
+        L.circleMarker([first.lat, first.lng], {
+          radius: 6, color: '#0F766E', fillColor: '#14B8A6', fillOpacity: 0.9, weight: 1.5
+        }).bindPopup(popupHtml).addTo(personRadiusLayerGroup);
+      });
+
+      setTimeout(() => personRadiusMapInstance.invalidateSize(), 200);
+    }
+
+    function exportRadiusResultCsv() {
+      if (!lastRadiusSearchResults || lastRadiusSearchResults.length === 0) return;
+      const headers = ['ระยะทาง(เมตร)', 'hcode', 'ชื่อ-สกุล', 'เพศ', 'อายุ(ปี)', 'กลุ่มอายุ', 'บ้านเลขที่', 'หมู่ที่', 'ตำบล', 'ละติจูด', 'ลองจิจูด', 'อสม.'];
+      const lines = [headers.join(',')];
+      lastRadiusSearchResults.forEach(r => {
+        const vals = [
+          r.distance_m.toFixed(1),
+          r.pcucodeperson,
+          `"${(r.fullname || '').replace(/"/g, '""')}"`,
+          r.gender,
+          r.age_year ?? '',
+          r.age_group,
+          `"${(r.house_no || '').replace(/"/g, '""')}"`,
+          r.village_no,
+          r.subdistrict,
+          r.lat ?? '',
+          r.lng ?? '',
+          `"${(r.osm_name || '').replace(/"/g, '""')}"`
+        ];
+        lines.push(vals.join(','));
+      });
+      const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `radius_100m_houses_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function renderPersonDirectoryTable() {
+      const tbody = document.getElementById('personDirTbody');
+      if (!tbody) return;
+      const q = normalizeThaiStr(document.getElementById('personDirSearchInput')?.value || '').toLowerCase();
+      const hcodeFilter = document.getElementById('personDirHcodeFilter')?.value || 'all';
+
+      let list = personsData;
+      if (hcodeFilter !== 'all') list = list.filter(p => p.pcucodeperson === hcodeFilter);
+      if (q) {
+        list = list.filter(p =>
+          (p.fullname || '').toLowerCase().includes(q) ||
+          (p.house_no || '').toLowerCase().includes(q) ||
+          (p.cid || '').includes(q) ||
+          (p.osm_name || '').toLowerCase().includes(q)
+        );
+      }
+
+      tbody.innerHTML = '';
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-slate-400">ไม่พบข้อมูลประชากร (กรุณานำเข้าไฟล์ Excel หรือปรับคำค้นหา)</td></tr>';
+        return;
+      }
+
+      list.slice(0, 100).forEach(p => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50';
+        tr.innerHTML = `
+          <td class="px-3 py-2 font-mono text-teal-800">${p.pcucodeperson} <span class="text-slate-400 font-sans text-[10px]">(${getHNameByCode(p.pcucodeperson)})</span></td>
+          <td class="px-3 py-2 font-semibold text-slate-800">${p.fullname || '-'}</td>
+          <td class="px-3 py-2">${p.gender || '-'} / ${p.age_year ?? '-'} ปี <span class="text-[10px] text-slate-400">(${p.age_group})</span></td>
+          <td class="px-3 py-2">${p.house_no || '-'} ม.${p.village_no || '-'} ต.${p.subdistrict || '-'}</td>
+          <td class="px-3 py-2 font-mono text-[10px]">${p.lat != null ? `${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}` : '-'}</td>
+          <td class="px-3 py-2">${p.osm_name || '-'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function findBestPersonMatchForPatient(patient) {
+      if (!personsData || personsData.length === 0 || !patient) return null;
+      const pName = normalizeThaiStr(patient.fullName || '').replace(/^(นาย|นางสาว|น\.ส\.|นาง|ด\.ช\.|ด\.ญ\.|เด็กชาย|เด็กหญิง)\s*/i, '').trim();
+      const pHouse = normalizeThaiStr(patient.addressNo || '');
+      const pSub = normalizeThaiStr(patient.subdistrict || '');
+
+      const exact = personsData.find(x =>
+        x.lat !== null && x.lng !== null && pName && normalizeThaiStr(x.fullname).includes(pName)
+      );
+      if (exact) return exact;
+
+      if (pHouse) {
+        return personsData.find(x =>
+          x.lat !== null && x.lng !== null &&
+          normalizeThaiStr(x.house_no) === pHouse &&
+          (!pSub || normalizeThaiStr(x.subdistrict) === pSub)
+        ) || null;
+      }
+      return null;
+    }
+
+    // ดึงพิกัดบ้านจากตาราง person สำหรับฟอร์มบันทึก/แก้ไขผู้ป่วย
+    function lookupCoordsFromPerson() {
+      if (!personsData || personsData.length === 0) {
+        Swal.fire({
+          icon: 'info',
+          title: 'ยังไม่มีข้อมูลตาราง person',
+          text: 'กรุณานำเข้าข้อมูลประชากรจากไฟล์ Excel ในเมนู "นำเข้าข้อมูลประชากร (person)" ก่อนครับ'
+        });
+        return;
+      }
+
+      const rawName = normalizeThaiStr(document.getElementById('p_full_name')?.value || '');
+      const cleanName = rawName.replace(/^(นาย|นางสาว|น\.ส\.|นาง|ด\.ช\.|ด\.ญ\.|เด็กชาย|เด็กหญิง)\s*/i, '').trim();
+      const addrNo = normalizeThaiStr(document.getElementById('p_address_no')?.value || '');
+      const subdist = normalizeThaiStr(document.getElementById('p_subdistrict')?.value || '');
+
+      let matches = [];
+      if (cleanName) {
+        matches = personsData.filter(p => normalizeThaiStr(p.fullname).includes(cleanName) && p.lat !== null);
+      }
+      if (matches.length === 0 && addrNo) {
+        matches = personsData.filter(p =>
+          normalizeThaiStr(p.house_no) === addrNo &&
+          (!subdist || normalizeThaiStr(p.subdistrict) === subdist) &&
+          p.lat !== null
+        );
+      }
+
+      if (matches.length === 0) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ไม่พบพิกัดในตาราง person',
+          text: `ไม่พบข้อมูลที่มีพิกัด GPS สำหรับ "${rawName || addrNo || '-'}"`
+        });
+        return;
+      }
+
+      if (matches.length === 1) {
+        applyPersonCoordsToPatientForm(matches[0]);
+        return;
+      }
+
+      const listHtml = matches.slice(0, 12).map((m, idx) => `
+        <button type="button" onclick="window._pickPersonCoordIdx(${idx})" class="w-full text-left p-2.5 rounded-xl border border-slate-200 hover:bg-teal-50 hover:border-teal-300 transition mb-1.5 text-xs">
+          <div class="font-bold text-slate-900">${m.fullname} (${m.age_year ?? '-'} ปี)</div>
+          <div class="text-[11px] text-slate-600">บ้านเลขที่ ${m.house_no || '-'} ม.${m.village_no || '-'} ต.${m.subdistrict || '-'} | GPS: <span class="font-mono text-teal-700">${m.lat}, ${m.lng}</span></div>
+        </button>
+      `).join('');
+
+      window._pickPersonCoordIdx = (idx) => {
+        applyPersonCoordsToPatientForm(matches[idx]);
+        Swal.close();
+      };
+
+      Swal.fire({
+        title: `พบข้อมูล ${matches.length} รายการ เลือกเพื่อดึงพิกัด`,
+        html: `<div class="max-h-72 overflow-y-auto">${listHtml}</div>`,
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: 'ปิด'
+      });
+    }
+
+    function applyPersonCoordsToPatientForm(person) {
+      if (!person) return;
+      const latEl = document.getElementById('p_lat');
+      const lngEl = document.getElementById('p_lng');
+      if (latEl && person.lat !== null) latEl.value = person.lat;
+      if (lngEl && person.lng !== null) lngEl.value = person.lng;
+      const ageEl = document.getElementById('p_age_year');
+      if (ageEl && !ageEl.value && person.age_year !== null) ageEl.value = person.age_year;
+      Swal.fire({
+        toast: true, position: 'top-end', icon: 'success',
+        title: `ดึงพิกัดบ้าน ${person.fullname} แล้ว (${person.lat}, ${person.lng})`,
+        timer: 2500, showConfirmButton: false
+      });
+    }
+
+    // อัปเดตสรุปบ้านรัศมี 100 เมตรในหน้าต่างดูรายละเอียดผู้ป่วย
+    function updateViewModalRadius100m(patient) {
+      const summaryEl = document.getElementById('viewModalRadius100mSummary');
+      const listEl = document.getElementById('viewModalRadius100mList');
+      const btnEl = document.getElementById('viewModalOpenRadiusBtn');
+      if (!summaryEl || !listEl || !btnEl) return;
+
+      listEl.classList.add('hidden');
+      listEl.innerHTML = '';
+
+      let lat = parseFloat(patient.lat);
+      let lng = parseFloat(patient.lng);
+      let fromPerson = false;
+      if ((isNaN(lat) || isNaN(lng)) && personsData.length > 0) {
+        const match = findBestPersonMatchForPatient(patient);
+        if (match && match.lat !== null && match.lng !== null) {
+          lat = match.lat;
+          lng = match.lng;
+          fromPerson = true;
+        }
+      }
+
+      if (personsData.length === 0) {
+        summaryEl.innerText = 'ยังไม่มีข้อมูลประชากรในตาราง person (นำเข้าไฟล์ Excel เพื่อใช้งาน)';
+      } else if (isNaN(lat) || isNaN(lng)) {
+        summaryEl.innerText = 'ผู้ป่วยรายนี้ยังไม่มีพิกัด GPS และไม่พบพิกัดในตาราง person';
+      } else {
+        const neighbors = findPersonsWithinRadius(lat, lng, 100);
+        const houses = new Set(neighbors.map(n => `${n.house_no || '-'}_${n.village_no || '-'}_${n.subdistrict || '-'}`));
+        summaryEl.innerHTML = `${fromPerson ? '<span class="text-teal-700 font-semibold">(ดึงพิกัดจาก person)</span> ' : ''}พบบ้านในรัศมี 100 ม. จำนวน <b>${houses.size} หลังคาเรือน</b> (${neighbors.length} คน)`;
+        if (neighbors.length > 0) {
+          listEl.classList.remove('hidden');
+          listEl.innerHTML = neighbors.slice(0, 25).map(n => `
+            <div class="px-2.5 py-1.5 flex items-center justify-between gap-2">
+              <div><b class="text-slate-800">${n.fullname}</b> (${n.age_year ?? '-'} ปี) • บ้านเลขที่ ${n.house_no || '-'} ม.${n.village_no || '-'}</div>
+              <span class="font-bold text-rose-700 shrink-0">${n.distance_m.toFixed(1)} ม.</span>
+            </div>
+          `).join('');
+        }
+      }
+
+      btnEl.onclick = () => {
+        closePatientViewModal();
+        navigateTo('person-import');
+        setTimeout(() => {
+          switchPersonSubTab('radius');
+          const sel = document.getElementById('radiusPatientSelect');
+          if (sel) sel.value = patient.id;
+          if (!isNaN(lat) && !isNaN(lng)) {
+            const latEl = document.getElementById('radiusCenterLat');
+            const lngEl = document.getElementById('radiusCenterLng');
+            if (latEl) latEl.value = lat;
+            if (lngEl) lngEl.value = lng;
+            lastRadiusCenterInfo = patient;
+            runPersonRadiusSearch();
+          }
+        }, 350);
+      };
+    }
+
+    // -------------------------------------------------------------
     // 12. INITIALIZATION ON DOM READY
     // -------------------------------------------------------------
     function handleUrlActionParams() {
@@ -17741,6 +19165,7 @@ ${topHcText}${noteBlock}
       showLoading('กำลังเริ่มต้นระบบ TDDS Thepha...');
       
       initStores();
+      initPersonStore();
       initMaps();
       updateAuthUI();
       initDailyAutoReportScheduler();
