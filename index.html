@@ -298,6 +298,12 @@
             <span class="w-5 text-center text-base">➕</span>
             <span>บันทึกผู้ป่วยรายใหม่</span>
           </button>
+
+          <!-- Menu: 100m Radius House Search (Visible for Logged In Users, scoped by responsibility) -->
+          <button onclick="navigateTo('radius-search')" id="menu-radius-search" class="sidebar-menu-item auth-only hidden w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-700 hover:text-rose-700 hover:bg-rose-50/70 transition">
+            <span class="w-5 text-center text-base">🎯</span>
+            <span>ค้นหาบ้านรัศมี 100 เมตร</span>
+          </button>
         </div>
 
         <!-- Admin Only Menu Section -->
@@ -1160,7 +1166,7 @@
               </p>
             </div>
 
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="admin-only hidden flex flex-wrap items-center gap-2">
               <input type="file" id="personExcelFileInput" accept=".xls,.xlsx,.csv" class="hidden" onchange="handlePersonExcelSelected(event)">
               <button type="button" onclick="document.getElementById('personExcelFileInput').click()" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-xs transition active:scale-95">
                 <span>📥</span>
@@ -1177,8 +1183,13 @@
             </div>
           </div>
 
-          <!-- Supabase Connection Config Bar (Optional Cloud Sync) -->
-          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+          <!-- Access Scope Banner -->
+          <div id="personScopeBanner" class="px-3.5 py-2.5 rounded-xl border text-xs font-semibold bg-amber-50/70 border-amber-200 text-amber-900">
+            🔒 กำลังตรวจสอบสิทธิ์การเข้าถึงข้อมูลประชากร...
+          </div>
+
+          <!-- Supabase Connection Config Bar (Admin Only) -->
+          <div class="admin-only hidden bg-slate-50 p-3 rounded-xl border border-slate-200/80">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
               <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                 <span>🔌</span>
@@ -1232,9 +1243,9 @@
 
           <!-- Sub-Tabs -->
           <div class="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
-            <button type="button" onclick="switchPersonSubTab('age')" id="personTabBtn-age" class="person-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold bg-teal-600 text-white shadow-xs transition">📊 สรุปประชากรตามกลุ่มอายุ</button>
+            <button type="button" onclick="switchPersonSubTab('age')" id="personTabBtn-age" class="admin-only hidden person-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold bg-teal-600 text-white shadow-xs transition">📊 สรุปประชากรตามกลุ่มอายุ</button>
             <button type="button" onclick="switchPersonSubTab('radius')" id="personTabBtn-radius" class="person-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">🎯 ค้นหาบ้านรัศมี 100 เมตร</button>
-            <button type="button" onclick="switchPersonSubTab('list')" id="personTabBtn-list" class="person-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">📋 ค้นหารายชื่อ / พิกัดบ้าน</button>
+            <button type="button" onclick="switchPersonSubTab('list')" id="personTabBtn-list" class="admin-only hidden person-subtab-btn px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">📋 ค้นหารายชื่อ / พิกัดบ้าน</button>
           </div>
         </div>
 
@@ -1298,6 +1309,15 @@
         <!-- SUB-TAB 2: 100-METER RADIUS SEARCH -->
         <div id="personSubTab-radius" class="person-subtab-panel hidden space-y-4">
           <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+            <!-- Quick Search Center House from Scoped Person Data -->
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-2">
+              <label class="block text-xs font-bold text-slate-700">🔍 ค้นหาบ้าน/บุคคลในความรับผิดชอบเพื่อใช้เป็นจุดศูนย์กลาง (หรือเลือกจากรายชื่อผู้ป่วยด้านล่าง):</label>
+              <div class="relative">
+                <input type="text" id="radiusPersonQuickSearch" oninput="renderRadiusPersonQuickMatches()" placeholder="พิมพ์ชื่อ-สกุล หรือ บ้านเลขที่ (แสดงเฉพาะข้อมูลประชากรที่ท่านรับผิดชอบ)..." class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+                <div id="radiusPersonQuickDropdown" class="hidden mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-md divide-y divide-slate-100 text-xs"></div>
+              </div>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-end">
               <div class="lg:col-span-4">
                 <label class="block text-xs font-bold text-slate-700 mb-1">เลือกบ้านผู้ป่วยเป็นจุดศูนย์กลาง:</label>
@@ -12917,7 +12937,8 @@
         document.querySelectorAll('.view-panel').forEach(panel => panel.classList.add('hidden'));
         
         // Show target panel
-        const target = document.getElementById(`view-${viewId}`);
+        const panelViewId = (viewId === 'radius-search') ? 'person-import' : viewId;
+        const target = document.getElementById(`view-${panelViewId}`);
         if (target) {
           target.classList.remove('hidden');
         }
@@ -12938,8 +12959,8 @@
           setTimeout(() => fullMap.invalidateSize(), 200);
         } else if (viewId === 'patients') {
           renderPatientTable();
-        } else if (viewId === 'person-import') {
-          initPersonView();
+        } else if (viewId === 'person-import' || viewId === 'radius-search') {
+          initPersonView(viewId === 'radius-search');
         }
 
         toggleSidebar(false); // Close mobile sidebar if open
@@ -13028,6 +13049,9 @@
       applyDashboardFilters();
       renderPatientTable();
       renderUserTable();
+      if (typeof updatePersonTotalBadge === 'function') updatePersonTotalBadge();
+      if (typeof renderPersonScopeBanner === 'function') renderPersonScopeBanner();
+      if (typeof populatePersonFilters === 'function') populatePersonFilters();
       renderAuditTable();
     }
 
@@ -18009,6 +18033,10 @@ ${topHcText}${noteBlock}
     const PERSON_IDB_NAME = 'TDDS_PersonDB';
     const PERSON_IDB_STORE = 'persons';
     const PERSON_SB_CFG_KEY = 'tdds_supabase_person_cfg_v1';
+    const SUPABASE_PERSON_DEFAULT_CONFIG = {
+      url: 'https://zgvtfzjjjzywiqbiudtn.supabase.co',
+      key: 'sb_publishable_4hv3l9GmHhJ0hL-5FmR9AQ_XMat0lnl'
+    };
     const PERSON_AGE_GROUPS_ORDER = [
       '0-4 ปี', '5-9 ปี', '10-14 ปี', '15-24 ปี',
       '25-34 ปี', '35-44 ปี', '45-54 ปี', '55-64 ปี', '65 ปีขึ้นไป', 'ไม่ระบุ'
@@ -18089,20 +18117,126 @@ ${topHcText}${noteBlock}
       }
     }
 
+    function normalizePersonOwnerName(name) {
+      return normalizeThaiStr(name || '')
+        .replace(/^(อสม\.?|นางสาว|น\.ส\.|นาง|นาย|ด\.ช\.|ด\.ญ\.)\s*/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function getPersonScopeInfo() {
+      if (!currentUser) {
+        return { allowed: false, isAdmin: false, isOsm: false, label: '🔒 กรุณาเข้าสู่ระบบเพื่อใช้งานข้อมูลประชากร' };
+      }
+      if (currentUser.role === 'admin') {
+        return {
+          allowed: true,
+          isAdmin: true,
+          isOsm: false,
+          label: '👑 สิทธิ์ผู้ดูแลระบบ (Admin): ค้นหาและดูข้อมูลประชากร (person) ได้ทั้งหมดทุกหน่วยบริการ'
+        };
+      }
+      const isOsm = currentUser.position === 'อสม.' || currentUser.role === 'OSM' || currentUser.role === 'osm';
+      const userUnit = normalizeThaiStr(currentUser.unit || '');
+      const userHcode = currentUser.hcode || getHCodeByName(userUnit);
+      if (isOsm) {
+        const vText = currentUser.villageNo ? ` ม.${currentUser.villageNo}` : '';
+        return {
+          allowed: true,
+          isAdmin: false,
+          isOsm: true,
+          userHcode,
+          userUnit,
+          label: `🔒 จำกัดสิทธิ์ อสม.: แสดงเฉพาะบ้านและประชากรในความรับผิดชอบของ ${currentUser.fullName} (${userUnit || userHcode}${vText})`
+        };
+      }
+      return {
+        allowed: true,
+        isAdmin: false,
+        isOsm: false,
+        userHcode,
+        userUnit,
+        label: `🔒 จำกัดสิทธิ์เฉพาะ person ที่รับผิดชอบ: ${userHcode ? userHcode + ' - ' : ''}${userUnit || '-'}`
+      };
+    }
+
+    function getFilteredPersonsForUser() {
+      if (!currentUser || !Array.isArray(personsData)) return [];
+      if (currentUser.role === 'admin') return personsData;
+
+      const isOsm = currentUser.position === 'อสม.' || currentUser.role === 'OSM' || currentUser.role === 'osm';
+      const userUnit = normalizeThaiStr(currentUser.unit || '');
+      const userHcode = currentUser.hcode || getHCodeByName(userUnit);
+
+      if (!userHcode) return [];
+
+      let scoped = personsData.filter(p => String(p.pcucodeperson || '').trim() === String(userHcode).trim());
+
+      if (isOsm) {
+        const myCleanName = normalizePersonOwnerName(currentUser.fullName);
+        const hasMyOsmRecords = myCleanName && scoped.some(p => {
+          const osmClean = normalizePersonOwnerName(p.osm_name);
+          return osmClean && (osmClean === myCleanName || osmClean.includes(myCleanName) || myCleanName.includes(osmClean));
+        });
+
+        scoped = scoped.filter(p => {
+          const osmClean = normalizePersonOwnerName(p.osm_name);
+          if (hasMyOsmRecords) {
+            return osmClean && (osmClean === myCleanName || osmClean.includes(myCleanName) || myCleanName.includes(osmClean));
+          }
+          if (currentUser.villageNo) {
+            return String(p.village_no || '').trim() === String(currentUser.villageNo).trim();
+          }
+          return false;
+        });
+      }
+
+      return scoped;
+    }
+
+    function renderPersonScopeBanner() {
+      const banner = document.getElementById('personScopeBanner');
+      if (!banner) return;
+      const info = getPersonScopeInfo();
+      const scopedCount = getFilteredPersonsForUser().length;
+      if (info.isAdmin) {
+        banner.className = 'px-3.5 py-2.5 rounded-xl border text-xs font-semibold bg-purple-50/70 border-purple-200 text-purple-950';
+      } else {
+        banner.className = 'px-3.5 py-2.5 rounded-xl border text-xs font-semibold bg-amber-50/80 border-amber-200 text-amber-950';
+      }
+      banner.innerText = `${info.label} • จำนวนที่เข้าถึงได้ ${scopedCount.toLocaleString()} ราย`;
+    }
+
     function updatePersonTotalBadge() {
       const badge = document.getElementById('personTotalBadge');
       if (badge) {
-        badge.innerText = `${personsData.length.toLocaleString()} ราย`;
+        const count = currentUser ? getFilteredPersonsForUser().length : 0;
+        badge.innerText = `${count.toLocaleString()} ราย`;
       }
     }
 
     function getSupabasePersonConfig() {
       try {
         const raw = localStorage.getItem(PERSON_SB_CFG_KEY);
-        return raw ? JSON.parse(raw) : { url: '', key: '' };
-      } catch (e) {
-        return { url: '', key: '' };
+        const parsed = raw ? JSON.parse(raw) : null;
+        if (parsed && parsed.url && parsed.key) {
+          return parsed;
+        }
+      } catch (e) {}
+      return { ...SUPABASE_PERSON_DEFAULT_CONFIG };
+    }
+
+    function buildSupabaseHeaders(key, extra = {}) {
+      const headers = {
+        'apikey': key,
+        ...extra
+      };
+      // ส่ง Authorization: Bearer เฉพาะคีย์ JWT แบบเดิม (eyJ...) เท่านั้น
+      // คีย์ Publishable แบบใหม่ (sb_publishable_...) ใช้ header apikey โดยตรง
+      if (key && key.startsWith('eyJ')) {
+        headers['Authorization'] = `Bearer ${key}`;
       }
+      return headers;
     }
 
     function loadSupabasePersonConfigUI() {
@@ -18148,10 +18282,7 @@ ${topHcText}${noteBlock}
         const limit = 1000;
         while (true) {
           const res = await fetch(`${cfg.url}/rest/v1/person?select=*&order=id.asc&limit=${limit}&offset=${offset}`, {
-            headers: {
-              'apikey': cfg.key,
-              'Authorization': `Bearer ${cfg.key}`
-            }
+            headers: buildSupabaseHeaders(cfg.key)
           });
           if (!res.ok) {
             const errTxt = await res.text();
@@ -18190,6 +18321,7 @@ ${topHcText}${noteBlock}
           personsData = fetched;
           await savePersonsToIDB(personsData);
           updatePersonTotalBadge();
+          renderPersonScopeBanner();
           populatePersonFilters();
           renderPersonAgeStats();
           renderPersonDirectoryTable();
@@ -18353,6 +18485,10 @@ ${topHcText}${noteBlock}
     }
 
     function handlePersonExcelSelected(event) {
+      if (!currentUser || currentUser.role !== 'admin') {
+        Swal.fire({ icon: 'error', title: 'ไม่มีสิทธิ์นำเข้าข้อมูล', text: 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถนำเข้าข้อมูลประชากรได้' });
+        return;
+      }
       const file = event.target.files && event.target.files[0];
       if (!file) return;
       if (typeof XLSX === 'undefined') {
@@ -18524,12 +18660,10 @@ ${topHcText}${noteBlock}
         }));
         const res = await fetch(`${cfg.url}/rest/v1/person?on_conflict=pcucodeperson,pid`, {
           method: 'POST',
-          headers: {
+          headers: buildSupabaseHeaders(cfg.key, {
             'Content-Type': 'application/json',
-            'apikey': cfg.key,
-            'Authorization': `Bearer ${cfg.key}`,
             'Prefer': 'resolution=merge-duplicates,return=minimal'
-          },
+          }),
           body: JSON.stringify(slice)
         });
         if (!res.ok) {
@@ -18568,6 +18702,10 @@ ${topHcText}${noteBlock}
     }
 
     function clearPersonData() {
+      if (!currentUser || currentUser.role !== 'admin') {
+        Swal.fire({ icon: 'error', title: 'ไม่มีสิทธิ์ล้างข้อมูล', text: 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้น' });
+        return;
+      }
       Swal.fire({
         title: 'ยืนยันล้างข้อมูลประชากรในเบราว์เซอร์?',
         text: 'ข้อมูลตาราง person ที่เก็บไว้ในเครื่องนี้จะถูกลบออก',
@@ -18589,15 +18727,24 @@ ${topHcText}${noteBlock}
       });
     }
 
-    function initPersonView() {
+    function initPersonView(forceRadiusTab = false) {
       updatePersonTotalBadge();
+      renderPersonScopeBanner();
       loadSupabasePersonConfigUI();
       populatePersonFilters();
       renderPersonAgeStats();
       renderPersonDirectoryTable();
+      const isAdmin = currentUser && currentUser.role === 'admin';
+      if (forceRadiusTab || !isAdmin) {
+        switchPersonSubTab('radius');
+      }
     }
 
     function switchPersonSubTab(tabName) {
+      const isAdmin = currentUser && currentUser.role === 'admin';
+      if (!isAdmin && tabName !== 'radius') {
+        tabName = 'radius';
+      }
       document.querySelectorAll('.person-subtab-panel').forEach(el => el.classList.add('hidden'));
       document.querySelectorAll('.person-subtab-btn').forEach(btn => {
         btn.classList.remove('bg-teal-600', 'text-white', 'shadow-xs');
@@ -18616,12 +18763,13 @@ ${topHcText}${noteBlock}
     }
 
     function populatePersonFilters() {
-      const hcodes = [...new Set(personsData.map(p => p.pcucodeperson).filter(Boolean))].sort();
+      const scopedPersons = getFilteredPersonsForUser();
+      const hcodes = [...new Set(scopedPersons.map(p => p.pcucodeperson).filter(Boolean))].sort();
       ['personAgeHcodeFilter', 'personDirHcodeFilter'].forEach(selId => {
         const sel = document.getElementById(selId);
         if (!sel) return;
         const prev = sel.value;
-        sel.innerHTML = '<option value="all">ทุกหน่วยบริการ (ทั้งหมด)</option>';
+        sel.innerHTML = '<option value="all">ทุกหน่วยบริการที่รับผิดชอบ (ทั้งหมด)</option>';
         hcodes.forEach(code => {
           const opt = document.createElement('option');
           opt.value = code;
@@ -18631,12 +18779,13 @@ ${topHcText}${noteBlock}
         if (prev && hcodes.includes(prev)) sel.value = prev;
       });
 
-      // Populate patient selector for 100m radius search
+      // Populate patient selector for 100m radius search (จำกัดสิทธิ์เฉพาะผู้ป่วยในเขตรับผิดชอบ)
       const pSel = document.getElementById('radiusPatientSelect');
       if (pSel && typeof patientsData !== 'undefined') {
         const prev = pSel.value;
+        const scopedPatients = typeof getFilteredPatientsForUser === 'function' ? getFilteredPatientsForUser() : patientsData;
         pSel.innerHTML = '<option value="">-- เลือกรายชื่อผู้ป่วย (เรียงจากแจ้งล่าสุด) --</option>';
-        const sorted = [...patientsData].sort((a, b) => (b.illnessDate || '').localeCompare(a.illnessDate || ''));
+        const sorted = [...scopedPatients].sort((a, b) => (b.illnessDate || '').localeCompare(a.illnessDate || ''));
         sorted.forEach(p => {
           const opt = document.createElement('option');
           opt.value = p.id;
@@ -18649,8 +18798,9 @@ ${topHcText}${noteBlock}
     }
 
     function renderPersonAgeStats() {
+      const scopedPersons = getFilteredPersonsForUser();
       const hcodeFilter = (document.getElementById('personAgeHcodeFilter')?.value) || 'all';
-      const filtered = hcodeFilter === 'all' ? personsData : personsData.filter(p => p.pcucodeperson === hcodeFilter);
+      const filtered = hcodeFilter === 'all' ? scopedPersons : scopedPersons.filter(p => p.pcucodeperson === hcodeFilter);
 
       const total = filtered.length;
       const male = filtered.filter(p => p.gender === 'ชาย').length;
@@ -18767,8 +18917,9 @@ ${topHcText}${noteBlock}
 
     function findPersonsWithinRadius(centerLat, centerLng, radiusM = 100) {
       if (isNaN(centerLat) || isNaN(centerLng)) return [];
+      const scopedPersons = getFilteredPersonsForUser();
       const res = [];
-      for (const p of personsData) {
+      for (const p of scopedPersons) {
         if (p.lat === null || p.lng === null) continue;
         const dist = calcDistanceMeters(centerLat, centerLng, p.lat, p.lng);
         if (dist <= radiusM) {
@@ -18777,6 +18928,62 @@ ${topHcText}${noteBlock}
       }
       res.sort((a, b) => a.distance_m - b.distance_m);
       return res;
+    }
+
+    function renderRadiusPersonQuickMatches() {
+      const inputEl = document.getElementById('radiusPersonQuickSearch');
+      const dropEl = document.getElementById('radiusPersonQuickDropdown');
+      if (!inputEl || !dropEl) return;
+      const q = normalizeThaiStr(inputEl.value).toLowerCase();
+      if (!q) {
+        dropEl.classList.add('hidden');
+        dropEl.innerHTML = '';
+        return;
+      }
+      const scopedPersons = getFilteredPersonsForUser();
+      const matches = scopedPersons.filter(p =>
+        p.lat !== null && p.lng !== null && (
+          (p.fullname || '').toLowerCase().includes(q) ||
+          (p.house_no || '').toLowerCase().includes(q) ||
+          (p.osm_name || '').toLowerCase().includes(q)
+        )
+      ).slice(0, 20);
+
+      if (matches.length === 0) {
+        dropEl.classList.remove('hidden');
+        dropEl.innerHTML = `<div class="px-3 py-2 text-slate-400">ไม่พบบ้านที่มีพิกัดในเขตรับผิดชอบสำหรับ "${q}"</div>`;
+        return;
+      }
+
+      window._radiusQuickMatches = matches;
+      dropEl.classList.remove('hidden');
+      dropEl.innerHTML = matches.map((m, idx) => `
+        <button type="button" onclick="selectRadiusPersonCenter(${idx})" class="w-full text-left px-3 py-2 hover:bg-teal-50 transition flex items-center justify-between gap-2">
+          <div>
+            <span class="font-bold text-slate-900">${m.fullname}</span>
+            <span class="text-slate-500">• บ้านเลขที่ ${m.house_no || '-'} ม.${m.village_no || '-'} ต.${m.subdistrict || '-'}</span>
+          </div>
+          <span class="text-[10px] font-mono text-teal-700 shrink-0">${m.lat.toFixed(5)}, ${m.lng.toFixed(5)}</span>
+        </button>
+      `).join('');
+    }
+
+    function selectRadiusPersonCenter(idx) {
+      const list = window._radiusQuickMatches || [];
+      const m = list[idx];
+      if (!m) return;
+      const latEl = document.getElementById('radiusCenterLat');
+      const lngEl = document.getElementById('radiusCenterLng');
+      const dropEl = document.getElementById('radiusPersonQuickDropdown');
+      const inputEl = document.getElementById('radiusPersonQuickSearch');
+      const pSel = document.getElementById('radiusPatientSelect');
+      if (latEl) latEl.value = m.lat;
+      if (lngEl) lngEl.value = m.lng;
+      if (inputEl) inputEl.value = `${m.fullname} (บ้านเลขที่ ${m.house_no || '-'})`;
+      if (dropEl) dropEl.classList.add('hidden');
+      if (pSel) pSel.value = '';
+      lastRadiusCenterInfo = { fullName: `${m.fullname} (บ้านเลขที่ ${m.house_no || '-'})` };
+      runPersonRadiusSearch();
     }
 
     function onRadiusPatientSelect() {
@@ -18952,7 +19159,7 @@ ${topHcText}${noteBlock}
       const q = normalizeThaiStr(document.getElementById('personDirSearchInput')?.value || '').toLowerCase();
       const hcodeFilter = document.getElementById('personDirHcodeFilter')?.value || 'all';
 
-      let list = personsData;
+      let list = getFilteredPersonsForUser();
       if (hcodeFilter !== 'all') list = list.filter(p => p.pcucodeperson === hcodeFilter);
       if (q) {
         list = list.filter(p =>
@@ -18985,18 +19192,19 @@ ${topHcText}${noteBlock}
     }
 
     function findBestPersonMatchForPatient(patient) {
-      if (!personsData || personsData.length === 0 || !patient) return null;
+      const scopedPersons = getFilteredPersonsForUser();
+      if (!scopedPersons || scopedPersons.length === 0 || !patient) return null;
       const pName = normalizeThaiStr(patient.fullName || '').replace(/^(นาย|นางสาว|น\.ส\.|นาง|ด\.ช\.|ด\.ญ\.|เด็กชาย|เด็กหญิง)\s*/i, '').trim();
       const pHouse = normalizeThaiStr(patient.addressNo || '');
       const pSub = normalizeThaiStr(patient.subdistrict || '');
 
-      const exact = personsData.find(x =>
+      const exact = scopedPersons.find(x =>
         x.lat !== null && x.lng !== null && pName && normalizeThaiStr(x.fullname).includes(pName)
       );
       if (exact) return exact;
 
       if (pHouse) {
-        return personsData.find(x =>
+        return scopedPersons.find(x =>
           x.lat !== null && x.lng !== null &&
           normalizeThaiStr(x.house_no) === pHouse &&
           (!pSub || normalizeThaiStr(x.subdistrict) === pSub)
@@ -19007,11 +19215,14 @@ ${topHcText}${noteBlock}
 
     // ดึงพิกัดบ้านจากตาราง person สำหรับฟอร์มบันทึก/แก้ไขผู้ป่วย
     function lookupCoordsFromPerson() {
-      if (!personsData || personsData.length === 0) {
+      const scopedPersons = getFilteredPersonsForUser();
+      if (!scopedPersons || scopedPersons.length === 0) {
         Swal.fire({
           icon: 'info',
-          title: 'ยังไม่มีข้อมูลตาราง person',
-          text: 'กรุณานำเข้าข้อมูลประชากรจากไฟล์ Excel ในเมนู "นำเข้าข้อมูลประชากร (person)" ก่อนครับ'
+          title: 'ไม่พบข้อมูลประชากรในเขตรับผิดชอบ',
+          text: personsData.length === 0
+            ? 'ยังไม่มีข้อมูลตาราง person ในระบบ (กรุณาให้ Admin นำเข้าไฟล์ Excel)'
+            : 'ไม่พบข้อมูล person ในขอบเขตที่ท่านรับผิดชอบ'
         });
         return;
       }
@@ -19023,10 +19234,10 @@ ${topHcText}${noteBlock}
 
       let matches = [];
       if (cleanName) {
-        matches = personsData.filter(p => normalizeThaiStr(p.fullname).includes(cleanName) && p.lat !== null);
+        matches = scopedPersons.filter(p => normalizeThaiStr(p.fullname).includes(cleanName) && p.lat !== null);
       }
       if (matches.length === 0 && addrNo) {
-        matches = personsData.filter(p =>
+        matches = scopedPersons.filter(p =>
           normalizeThaiStr(p.house_no) === addrNo &&
           (!subdist || normalizeThaiStr(p.subdistrict) === subdist) &&
           p.lat !== null
@@ -19093,10 +19304,11 @@ ${topHcText}${noteBlock}
       listEl.classList.add('hidden');
       listEl.innerHTML = '';
 
+      const scopedPersons = getFilteredPersonsForUser();
       let lat = parseFloat(patient.lat);
       let lng = parseFloat(patient.lng);
       let fromPerson = false;
-      if ((isNaN(lat) || isNaN(lng)) && personsData.length > 0) {
+      if ((isNaN(lat) || isNaN(lng)) && scopedPersons.length > 0) {
         const match = findBestPersonMatchForPatient(patient);
         if (match && match.lat !== null && match.lng !== null) {
           lat = match.lat;
@@ -19105,8 +19317,12 @@ ${topHcText}${noteBlock}
         }
       }
 
-      if (personsData.length === 0) {
-        summaryEl.innerText = 'ยังไม่มีข้อมูลประชากรในตาราง person (นำเข้าไฟล์ Excel เพื่อใช้งาน)';
+      if (!currentUser) {
+        summaryEl.innerText = 'กรุณาเข้าสู่ระบบเพื่อดูรายชื่อบ้านในรัศมี 100 เมตร';
+      } else if (scopedPersons.length === 0) {
+        summaryEl.innerText = personsData.length === 0
+          ? 'ยังไม่มีข้อมูลประชากรในตาราง person (รอ Admin นำเข้าไฟล์ Excel)'
+          : 'ไม่พบข้อมูลตาราง person ในขอบเขตที่ท่านรับผิดชอบ';
       } else if (isNaN(lat) || isNaN(lng)) {
         summaryEl.innerText = 'ผู้ป่วยรายนี้ยังไม่มีพิกัด GPS และไม่พบพิกัดในตาราง person';
       } else {
