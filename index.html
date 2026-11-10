@@ -898,8 +898,9 @@
             <div>
               <select id="patientFilterConfirmation" onchange="filterPatientTable()" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-teal-500 font-medium">
                 <option value="">ทุกสถานะยืนยัน</option>
-                <option value="pending">⏳ รอยืนยันเคส</option>
-                <option value="pending_3h">⚠️ รอยืนยันเกิน 3 ชม.</option>
+                <option value="pending">⏳ รอยืนยัน (< 3 ชม.)</option>
+                <option value="pending_3h">⚠️ รอเกิน 3 ชม. (เคสใหม่)</option>
+                <option value="unconfirmed_old">⚪ ยังไม่ยืนยัน (เคสเก่า)</option>
                 <option value="confirmed_local">🟢 ป่วยในพื้นที่จริง</option>
                 <option value="confirmed_external">🔵 ป่วยนอกพื้นที่</option>
               </select>
@@ -2418,6 +2419,30 @@
         patientsData = JSON.parse(JSON.stringify(currentDengueCasesData));
         savePatients();
         try { localStorage.setItem(LAB_DATA_VERSION, 'true'); } catch(e) {}
+      }
+
+      // ปิดการแจ้งเตือน 3 ชม. สำหรับเคสเก่า:
+      // กำหนด unconfirmedAlertSentAt = 'OLD_CASE_SKIPPED' ให้กับเคสเก่าที่ไม่มี createdAt หรือบันทึกมาเกิน 24 ชม.
+      try {
+        const initNow = new Date().getTime();
+        let hasUpdatedOld = false;
+        if (patientsData && Array.isArray(patientsData)) {
+          patientsData.forEach(p => {
+            if (!p.unconfirmedAlertSentAt) {
+              const cTime = p.createdAt ? new Date(p.createdAt).getTime() : 0;
+              const elapsed = cTime > 0 ? (initNow - cTime) / (1000 * 3600) : 999;
+              if (!p.createdAt || elapsed > 24) {
+                p.unconfirmedAlertSentAt = 'OLD_CASE_SKIPPED';
+                hasUpdatedOld = true;
+              }
+            }
+          });
+          if (hasUpdatedOld) {
+            savePatients();
+          }
+        }
+      } catch (err) {
+        console.warn('[TDDS] init old cases alert skip error:', err);
       }
 
       // Users: Default Admin Only
@@ -4042,18 +4067,21 @@
         const isConfirmedLocal = p.confirmedStatus === 'confirmed_local' || (p.areaConfirmed === 'ยืนยัน' && !p.confirmedStatus);
         const isConfirmedExternal = p.confirmedStatus === 'confirmed_external';
         const isConfirmed = isConfirmedLocal || isConfirmedExternal || p.areaConfirmed === 'ยืนยันแล้ว';
-        const createdTime = p.createdAt ? new Date(p.createdAt) : (p.notifiedDatetime ? new Date(p.notifiedDatetime) : null);
-        const elapsedHours = createdTime ? (now.getTime() - createdTime.getTime()) / (1000 * 60 * 60) : 0;
+        const createdTime = p.createdAt ? new Date(p.createdAt) : null;
+        const elapsedHours = (createdTime && !isNaN(createdTime.getTime())) ? (now.getTime() - createdTime.getTime()) / (1000 * 60 * 60) : 999;
+        const isNewCase = p.createdAt && elapsedHours <= 24 && p.unconfirmedAlertSentAt !== 'OLD_CASE_SKIPPED';
 
         let statusChip = '';
         if (isConfirmedLocal) {
           statusChip = '<span class="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200" title="ยืนยัน: ป่วยในพื้นที่จริง">🟢 ป่วยในพื้นที่</span>';
         } else if (isConfirmedExternal) {
           statusChip = '<span class="text-[9px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200" title="ยืนยัน: ป่วยนอกพื้นที่">🔵 ป่วยนอกพื้นที่</span>';
-        } else if (elapsedHours >= 3) {
+        } else if (isNewCase && elapsedHours >= 3) {
           statusChip = `<button onclick="confirmPatientCase('${p.id}')" class="animate-pulse text-[9px] font-bold text-rose-800 bg-rose-100 px-1.5 py-0.5 rounded border border-rose-300 hover:bg-rose-200 transition" title="รอยืนยันเกิน 3 ชม. แล้ว (คลิกยืนยัน)">⚠️ รอเกิน 3 ชม.</button>`;
-        } else {
+        } else if (isNewCase && elapsedHours < 3) {
           statusChip = `<button onclick="confirmPatientCase('${p.id}')" class="text-[9px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 hover:bg-amber-100 transition" title="คลิกเพื่อยืนยันเคส">⏳ รอยืนยัน</button>`;
+        } else {
+          statusChip = `<button onclick="confirmPatientCase('${p.id}')" class="text-[9px] font-medium text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-300 hover:bg-slate-200 transition" title="เคสเก่า: คลิกเพื่อยืนยันย้อนหลัง">⚪ ยังไม่ยืนยัน</button>`;
         }
 
         const tr = document.createElement('tr');
@@ -4131,11 +4159,13 @@
           const isConfirmedLocal = p.confirmedStatus === 'confirmed_local' || (p.areaConfirmed === 'ยืนยัน' && !p.confirmedStatus);
           const isConfirmedExternal = p.confirmedStatus === 'confirmed_external';
           const isConfirmed = isConfirmedLocal || isConfirmedExternal || p.areaConfirmed === 'ยืนยันแล้ว';
-          const createdTime = p.createdAt ? new Date(p.createdAt) : (p.notifiedDatetime ? new Date(p.notifiedDatetime) : null);
-          const elapsedHours = createdTime ? (now.getTime() - createdTime.getTime()) / (1000 * 60 * 60) : 0;
+          const createdTime = p.createdAt ? new Date(p.createdAt) : null;
+          const elapsedHours = (createdTime && !isNaN(createdTime.getTime())) ? (now.getTime() - createdTime.getTime()) / (1000 * 60 * 60) : 999;
+          const isNewCase = p.createdAt && elapsedHours <= 24 && p.unconfirmedAlertSentAt !== 'OLD_CASE_SKIPPED';
 
-          if (confirmFilter === 'pending') return !isConfirmed;
-          if (confirmFilter === 'pending_3h') return !isConfirmed && elapsedHours >= 3;
+          if (confirmFilter === 'pending') return !isConfirmed && isNewCase && elapsedHours < 3;
+          if (confirmFilter === 'pending_3h') return !isConfirmed && isNewCase && elapsedHours >= 3;
+          if (confirmFilter === 'unconfirmed_old') return !isConfirmed && !isNewCase;
           if (confirmFilter === 'confirmed_local') return isConfirmedLocal;
           if (confirmFilter === 'confirmed_external') return isConfirmedExternal;
           return true;
@@ -4163,18 +4193,21 @@
         const isConfirmedLocal = p.confirmedStatus === 'confirmed_local' || (p.areaConfirmed === 'ยืนยัน' && !p.confirmedStatus);
         const isConfirmedExternal = p.confirmedStatus === 'confirmed_external';
         const isConfirmed = isConfirmedLocal || isConfirmedExternal || p.areaConfirmed === 'ยืนยันแล้ว';
-        const createdTime = p.createdAt ? new Date(p.createdAt) : (p.notifiedDatetime ? new Date(p.notifiedDatetime) : null);
-        const elapsedHours = createdTime ? (now.getTime() - createdTime.getTime()) / (1000 * 60 * 60) : 0;
+        const createdTime = p.createdAt ? new Date(p.createdAt) : null;
+        const elapsedHours = (createdTime && !isNaN(createdTime.getTime())) ? (now.getTime() - createdTime.getTime()) / (1000 * 60 * 60) : 999;
+        const isNewCase = p.createdAt && elapsedHours <= 24 && p.unconfirmedAlertSentAt !== 'OLD_CASE_SKIPPED';
 
         let confirmBadgeHtml = '';
         if (isConfirmedLocal) {
           confirmBadgeHtml = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300" title="ยืนยันโดย: ${p.confirmedBy || '-'} (${p.confirmedTime ? formatThaiShortDate(p.confirmedTime) : ''})">🟢 ป่วยในพื้นที่จริง</span>`;
         } else if (isConfirmedExternal) {
           confirmBadgeHtml = `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-300" title="ยืนยันโดย: ${p.confirmedBy || '-'} (${p.confirmedTime ? formatThaiShortDate(p.confirmedTime) : ''})">🔵 ป่วยนอกพื้นที่</span>`;
-        } else if (elapsedHours >= 3) {
+        } else if (isNewCase && elapsedHours >= 3) {
           confirmBadgeHtml = `<button onclick="confirmPatientCase('${p.id}')" class="animate-pulse inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300 hover:bg-rose-200 transition shadow-xs" title="รอยืนยันเกิน 3 ชม. แล้ว (คลิกเพื่อยืนยันเคส)">⚠️ รอเกิน 3 ชม. (ยืนยัน)</button>`;
-        } else {
+        } else if (isNewCase && elapsedHours < 3) {
           confirmBadgeHtml = `<button onclick="confirmPatientCase('${p.id}')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition shadow-2xs" title="คลิกเพื่อยืนยันเคส">⏳ รอยืนยัน (${Math.floor(elapsedHours)}ชม. ${Math.floor((elapsedHours % 1) * 60)}น.)</button>`;
+        } else {
+          confirmBadgeHtml = `<button onclick="confirmPatientCase('${p.id}')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-200 transition shadow-2xs" title="เคสเก่า: คลิกเพื่อยืนยันเคสย้อนหลัง">⚪ ยังไม่ยืนยัน</button>`;
         }
 
         const tr = document.createElement('tr');
@@ -4617,9 +4650,10 @@
         const isConfirmedLocal = p.confirmedStatus === 'confirmed_local' || (p.areaConfirmed === 'ยืนยัน' && !p.confirmedStatus);
         const isConfirmedExternal = p.confirmedStatus === 'confirmed_external';
         const isConfirmed = isConfirmedLocal || isConfirmedExternal || p.areaConfirmed === 'ยืนยันแล้ว';
-        const createdTime = p.createdAt ? new Date(p.createdAt) : (p.notifiedDatetime ? new Date(p.notifiedDatetime) : null);
-        const elapsedHours = createdTime ? (now.getTime() - createdTime.getTime()) / (1000 * 60 * 60) : 0;
-        const isOver3Hours = !isConfirmed && elapsedHours >= 3;
+        const createdTime = p.createdAt ? new Date(p.createdAt) : null;
+        const elapsedHours = (createdTime && !isNaN(createdTime.getTime())) ? (now.getTime() - createdTime.getTime()) / (1000 * 60 * 60) : 999;
+        const isNewCase = p.createdAt && elapsedHours <= 24 && p.unconfirmedAlertSentAt !== 'OLD_CASE_SKIPPED';
+        const isOver3Hours = !isConfirmed && isNewCase && elapsedHours >= 3;
 
         let bgClass = 'bg-amber-50/70 border-amber-200 text-amber-900';
         let statusTitle = `⏳ รอยืนยันการรับเคสจากเจ้าหน้าที่ รพ.สต./PCU: ${p.healthCenter || '-'}`;
@@ -4637,12 +4671,16 @@
           bgClass = 'bg-rose-50/80 border-rose-300 text-rose-950';
           statusTitle = `⚠️ ยังไม่มีการยืนยันรับเคส (เกิน 3 ชั่วโมงแล้ว!)`;
           statusDesc = `ระบบได้แจ้งเตือนเข้ากลุ่ม Telegram แล้ว | ขอให้เจ้าหน้าที่ <b>${p.healthCenter}</b> กดยืนยันรับเคสทันที`;
+        } else if (!isNewCase) {
+          bgClass = 'bg-slate-50 border-slate-200 text-slate-800';
+          statusTitle = `⚪ เคสยังไม่ได้รับการยืนยัน (ข้อมูลย้อนหลัง/เคสเก่า)`;
+          statusDesc = `เคสบันทึกย้อนหลังหรือเกิน 24 ชม. ระบบปิดการแจ้งเตือน 3 ชม. อัตโนมัติ | เจ้าหน้าที่พื้นที่สามารถกดยืนยันรับเคสได้ตามปกติ`;
         }
 
         confirmBox.className = `${bgClass} p-4 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs`;
         confirmBox.innerHTML = `
           <div class="flex items-start gap-2.5">
-            <span class="text-xl shrink-0 mt-0.5">${isConfirmed ? (isConfirmedLocal ? '✅' : '🚗') : (isOver3Hours ? '🚨' : '⏳')}</span>
+            <span class="text-xl shrink-0 mt-0.5">${isConfirmed ? (isConfirmedLocal ? '✅' : '🚗') : (isOver3Hours ? '🚨' : (!isNewCase ? '⚪' : '⏳'))}</span>
             <div>
               <div class="font-bold text-sm leading-snug">${statusTitle}</div>
               <div class="text-[11px] opacity-80 mt-0.5">${statusDesc}</div>
@@ -6061,7 +6099,7 @@ ${p.confirmedNote ? `📝 หมายเหตุ/ประวัติรั�
 https://dengue-thepha.github.io/tdds/`;
     }
 
-    // ตรวจสอบเคสที่ยังไม่ได้รับการยืนยันภายใน 3 ชั่วโมงและส่งแจ้งเตือน Telegram
+    // ตรวจสอบเคสที่ยังไม่ได้รับการยืนยันภายใน 3 ชั่วโมงและส่งแจ้งเตือน Telegram (ปิดการแจ้งเตือนเคสเก่า)
     async function checkUnconfirmedPatients3Hours() {
       if (!patientsData || patientsData.length === 0) return;
       const now = new Date();
@@ -6074,15 +6112,32 @@ https://dengue-thepha.github.io/tdds/`;
         const isConfirmed = (p.areaConfirmed === 'ยืนยัน' || p.areaConfirmed === 'ยืนยันแล้ว' || p.confirmedStatus === 'confirmed_local' || p.confirmedStatus === 'confirmed_external');
         if (isConfirmed) continue;
 
-        // หากส่งแจ้งเตือนครบ 3 ชม. ไปแล้ว ให้ข้ามไป
+        // หากส่งแจ้งเตือนไปแล้ว หรือเป็นเคสเก่าที่ข้ามการแจ้งเตือน ให้ข้ามไป
         if (p.unconfirmedAlertSentAt) continue;
 
-        const createdTime = p.createdAt ? new Date(p.createdAt) : (p.notifiedDatetime ? new Date(p.notifiedDatetime) : null);
-        if (!createdTime || isNaN(createdTime.getTime())) continue;
+        // ปิดการแจ้งเตือนเคสเก่า: ต้องมี p.createdAt และต้องบันทึกไม่เกิน 24 ชั่วโมงเท่านั้น
+        if (!p.createdAt) {
+          p.unconfirmedAlertSentAt = 'OLD_CASE_SKIPPED';
+          continue;
+        }
+
+        const createdTime = new Date(p.createdAt);
+        if (isNaN(createdTime.getTime())) {
+          p.unconfirmedAlertSentAt = 'OLD_CASE_SKIPPED';
+          continue;
+        }
 
         const elapsedHours = (now.getTime() - createdTime.getTime()) / (1000 * 60 * 60);
-        if (elapsedHours >= 3) {
-          console.log(`[TDDS Alert] Case ${p.fullName} (${p.id}) unconfirmed for ${elapsedHours.toFixed(1)}h. Sending Telegram alert...`);
+
+        // หากบันทึกมาเกิน 24 ชั่วโมง ให้ถือเป็นเคสเก่า ปิดการแจ้งเตือนทันที
+        if (elapsedHours > 24) {
+          p.unconfirmedAlertSentAt = 'OLD_CASE_SKIPPED';
+          continue;
+        }
+
+        // แจ้งเตือนเฉพาะเคสใหม่ที่บันทึกมาแล้ว 3 ถึง 24 ชั่วโมง และยังไม่ได้ยืนยัน
+        if (elapsedHours >= 3 && elapsedHours <= 24) {
+          console.log(`[TDDS Alert] New case ${p.fullName} (${p.id}) unconfirmed for ${elapsedHours.toFixed(1)}h. Sending Telegram alert...`);
           const messageText = buildUnconfirmedAlertTelegramMessage(p);
           try {
             const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`, {
