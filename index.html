@@ -293,6 +293,12 @@
             <span>ทะเบียนข้อมูลผู้ป่วย</span>
           </button>
 
+          <!-- Menu: Disease Control 3-3-1 (3 ชม.ที่ 2) -->
+          <button onclick="navigateTo('disease-control')" id="menu-disease-control" class="sidebar-menu-item auth-only hidden w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-700 hover:text-emerald-700 hover:bg-emerald-50/70 transition">
+            <span class="w-5 text-center text-base">🛡️</span>
+            <span>ควบคุมโรคเบื้องต้น (3-3-1)</span>
+          </button>
+
           <!-- Menu: New Patient Form (Visible for Logged In) -->
           <button onclick="openPatientModal('new')" id="menu-new-patient" class="sidebar-menu-item auth-only hidden w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-700 hover:text-teal-700 hover:bg-teal-50/70 transition">
             <span class="w-5 text-center text-base">➕</span>
@@ -1209,6 +1215,81 @@
       </section>
 
       <!-- ======================================================== -->
+      <!-- VIEW 5.5: DISEASE CONTROL 3-3-1 (3 ชม.ที่ 2 หลังยืนยันเคส) -->
+      <!-- ======================================================== -->
+      <section id="view-disease-control" class="view-panel auth-only hidden space-y-4">
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div>
+              <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                <span class="text-lg">🛡️</span>
+                <span>รายงานควบคุมโรคเบื้องต้น (3 ชม.ที่ 2) ตามมาตรการ 3-3-1</span>
+              </h2>
+              <p class="text-xs text-slate-500 mt-0.5">
+                เชื่อมโยงอัตโนมัติจากเคสที่พื้นที่กดยืนยันแล้ว (3 ชม.แรก) เพื่อบันทึกการค้นหาผู้ป่วยเพิ่มเติม ค่า CI/HI ภาพสำรวจ และแจ้งผลเข้า Telegram พร้อมไฟล์ .PDF
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="navigateTo('patients')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition">
+                🗂️ ไปหน้าทะเบียนผู้ป่วย
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            <div class="p-3 rounded-xl bg-amber-50 border border-amber-200">
+              <div class="text-amber-700 font-semibold">⏳ รอควบคุมโรค (&lt; 3 ชม.)</div>
+              <div class="text-xl font-extrabold text-amber-800 mt-1" id="dcStatPendingUnder3h">0</div>
+            </div>
+            <div class="p-3 rounded-xl bg-rose-50 border border-rose-200">
+              <div class="text-rose-700 font-semibold">🚨 เกิน 3 ชม. (เร่งด่วน)</div>
+              <div class="text-xl font-extrabold text-rose-700 mt-1" id="dcStatOver3h">0</div>
+            </div>
+            <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+              <div class="text-emerald-700 font-semibold">✅ บันทึกควบคุมโรคแล้ว</div>
+              <div class="text-xl font-extrabold text-emerald-800 mt-1" id="dcStatDone">0</div>
+            </div>
+            <div class="p-3 rounded-xl bg-teal-50 border border-teal-200">
+              <div class="text-teal-700 font-semibold">📌 เคสยืนยันพื้นที่ทั้งหมด</div>
+              <div class="text-xl font-extrabold text-teal-800 mt-1" id="dcStatTotalConfirmed">0</div>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input type="text" id="dcSearchInput" oninput="renderDiseaseControlView()" placeholder="🔍 ค้นหาชื่อผู้ป่วย, บ้านเลขที่, ตำบล, หน่วยบริการ..." class="flex-1 text-xs bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-700 outline-none focus:border-teal-500">
+            <select id="dcStatusFilter" onchange="renderDiseaseControlView()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-teal-500 font-medium">
+              <option value="all">📋 เคสยืนยันทั้งหมด</option>
+              <option value="pending">⏳ ยังไม่บันทึกควบคุมโรค</option>
+              <option value="over3h">🚨 เกิน 3 ชม. หลังยืนยัน</option>
+              <option value="done">✅ บันทึกควบคุมโรคแล้ว</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 uppercase font-semibold border-b border-slate-200/80">
+                <tr>
+                  <th class="px-4 py-3">ลำดับ</th>
+                  <th class="px-4 py-3">ชื่อผู้ป่วย / วินิจฉัย</th>
+                  <th class="px-4 py-3">ที่อยู่</th>
+                  <th class="px-4 py-3">หน่วยบริการ</th>
+                  <th class="px-4 py-3">ยืนยันเคส (3 ชม.แรก)</th>
+                  <th class="px-4 py-3">ควบคุมโรค (3 ชม.ที่ 2)</th>
+                  <th class="px-4 py-3 text-center">CI บ้าน / CI 100ม. / HI</th>
+                  <th class="px-4 py-3 text-center">ดำเนินการ</th>
+                </tr>
+              </thead>
+              <tbody id="diseaseControlTbody" class="divide-y divide-slate-100">
+                <tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">กำลังโหลดข้อมูล...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
       <!-- VIEW 6: PERSON POPULATION IMPORT & 100M RADIUS SEARCH    -->
       <!-- ======================================================== -->
       <section id="view-person-import" class="view-panel auth-only hidden space-y-4">
@@ -1879,6 +1960,201 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+
+  <!-- MODAL: บันทึกรายงานควบคุมโรคเบื้องต้น (3 ชม.ที่ 2 ตามมาตรการ 3-3-1) -->
+  <div id="diseaseControlModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop hidden transition-opacity overflow-y-auto">
+    <div class="bg-white w-full max-w-4xl my-6 rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh]">
+      <div class="bg-gradient-to-r from-emerald-700 to-teal-600 p-4 sm:p-5 text-white flex items-center justify-between shrink-0">
+        <div>
+          <h3 class="text-base sm:text-lg font-bold flex items-center gap-2">
+            <span>🛡️</span>
+            <span id="dcModalTitle">บันทึกรายงานควบคุมโรคเบื้องต้น (3 ชม.ที่ 2 • มาตรการ 3-3-1)</span>
+          </h3>
+          <p class="text-xs text-emerald-100 mt-0.5">เชื่อมโยงข้อมูลทะเบียนผู้ป่วย ค้นหาผู้ป่วยเพิ่มเติม 14 วัน คำนวณ CI/HI แนบภาพถ่าย และสร้างรายงาน .PDF พร้อมส่ง Telegram</p>
+        </div>
+        <button type="button" onclick="closeDiseaseControlModal()" class="text-white/80 hover:text-white text-xl p-1 rounded-lg hover:bg-white/10 transition">✕</button>
+      </div>
+
+      <form id="diseaseControlForm" onsubmit="handleDiseaseControlSubmit(event)" class="p-4 sm:p-6 overflow-y-auto space-y-5 flex-1 text-xs">
+        <input type="hidden" id="dc_patient_id">
+
+        <!-- Auto-linked Patient Summary -->
+        <div id="dcPatientBanner" class="bg-teal-50/70 border border-teal-200 rounded-2xl p-3.5 space-y-1 text-slate-700"></div>
+
+        <!-- 1. วันเวลาควบคุมโรค & ยืนยันที่อยู่ขณะป่วย -->
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5"><span>🕒</span> วันที่ควบคุมโรคและยืนยันที่อยู่ขณะป่วย</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">วัน/เวลาควบคุมโรค *</label>
+              <input type="datetime-local" id="dc_control_datetime" required class="w-full p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">ยืนยันที่อยู่ขณะป่วย</label>
+              <select id="dc_stay_domicile" onchange="toggleDcOtherAddress()" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-teal-500 font-semibold">
+                <option value="ใช่">อยู่บ้านตามภูมิลำเนาที่ระบุ</option>
+                <option value="ไม่ใช่">ไม่ได้อยู่ตามภูมิลำเนา (อยู่ที่อื่น)</option>
+              </select>
+            </div>
+          </div>
+          <div id="dc_other_addr_box" class="hidden grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2 border-t border-slate-200">
+            <div><label class="block text-[11px] text-slate-600 mb-0.5">บ้านเลขที่ (ที่อื่น)</label><input type="text" id="dc_other_address_no" class="w-full p-2 bg-white border border-slate-200 rounded-lg"></div>
+            <div><label class="block text-[11px] text-slate-600 mb-0.5">หมู่ที่ (ที่อื่น)</label><input type="text" id="dc_other_village_no" class="w-full p-2 bg-white border border-slate-200 rounded-lg"></div>
+            <div><label class="block text-[11px] text-slate-600 mb-0.5">ตำบล (ที่อื่น)</label><input type="text" id="dc_other_subdistrict" class="w-full p-2 bg-white border border-slate-200 rounded-lg"></div>
+            <div><label class="block text-[11px] text-slate-600 mb-0.5">อำเภอ</label><input type="text" id="dc_other_district" class="w-full p-2 bg-white border border-slate-200 rounded-lg"></div>
+            <div><label class="block text-[11px] text-slate-600 mb-0.5">จังหวัด</label><input type="text" id="dc_other_province" class="w-full p-2 bg-white border border-slate-200 rounded-lg"></div>
+          </div>
+        </div>
+
+        <!-- 2. แหล่งรังโรค / การค้นหาผู้ป่วยเพิ่มเติม -->
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5"><span>🔎</span> แหล่งรังโรค / การค้นหาผู้ป่วยเพิ่มเติม (14 วันก่อน/หลังวันเริ่มป่วย)</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="sm:col-span-2">
+              <label class="block font-semibold text-slate-700 mb-1">ในช่วง 14 วันก่อนป่วย ผู้ป่วยเดินทางไปไหนบ้าง (สถานที่/หมู่บ้าน/อำเภอ/จังหวัด)</label>
+              <input type="text" id="dc_travel_places" placeholder="เช่น ไม่ได้เดินทาง หรือ ระบุสถานที่..." class="w-full p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">วันที่เดินทาง</label>
+              <input type="text" id="dc_travel_dates" placeholder="เช่น - หรือ 1-3 พ.ย. 69" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+            </div>
+          </div>
+
+          <!-- Group 1: อาศัยร่วมบ้าน -->
+          <div class="p-3 bg-white rounded-xl border border-slate-200 space-y-2">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span class="font-semibold text-slate-800">1) ผู้ที่อาศัยร่วมบ้าน ป่วยเป็นไข้เลือดออกในช่วง 14 วันก่อน/หลัง:</span>
+              <select id="dc_household_sick" onchange="toggleDcContactGroup('household')" class="p-1.5 bg-slate-50 border border-slate-200 rounded-lg font-semibold">
+                <option value="ไม่มี">ไม่มี</option>
+                <option value="มี">มี (ระบุรายชื่อด้านล่าง)</option>
+              </select>
+            </div>
+            <div id="dc_household_box" class="hidden grid grid-cols-1 sm:grid-cols-6 gap-2 pt-1">
+              <input type="text" id="dc_hh_1_name" placeholder="1. ชื่อ-สกุล" class="sm:col-span-3 p-2 bg-slate-50 border border-slate-200 rounded-lg">
+              <input type="number" id="dc_hh_1_age" placeholder="อายุ(ปี)" class="p-2 bg-slate-50 border border-slate-200 rounded-lg">
+              <input type="date" id="dc_hh_1_date" title="วันเริ่มป่วย" class="sm:col-span-2 p-2 bg-slate-50 border border-slate-200 rounded-lg">
+              <input type="text" id="dc_hh_2_name" placeholder="2. ชื่อ-สกุล" class="sm:col-span-3 p-2 bg-slate-50 border border-slate-200 rounded-lg">
+              <input type="number" id="dc_hh_2_age" placeholder="อายุ(ปี)" class="p-2 bg-slate-50 border border-slate-200 rounded-lg">
+              <input type="date" id="dc_hh_2_date" title="วันเริ่มป่วย" class="sm:col-span-2 p-2 bg-slate-50 border border-slate-200 rounded-lg">
+            </div>
+          </div>
+
+          <!-- Group 2: ที่ทำงาน/โรงเรียน -->
+          <div class="p-3 bg-white rounded-xl border border-slate-200 space-y-2">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span class="font-semibold text-slate-800">2) ที่ทำงาน/โรงเรียน มีผู้ป่วยไข้เลือดออกในช่วง 14 วันก่อน/หลัง:</span>
+              <select id="dc_workplace_sick" onchange="toggleDcContactGroup('workplace')" class="p-1.5 bg-slate-50 border border-slate-200 rounded-lg font-semibold">
+                <option value="ไม่มี">ไม่มี</option>
+                <option value="มี">มี (ระบุรายชื่อด้านล่าง)</option>
+              </select>
+            </div>
+            <div id="dc_workplace_box" class="hidden grid grid-cols-1 sm:grid-cols-6 gap-2 pt-1">
+              <input type="text" id="dc_wp_1_name" placeholder="1. ชื่อ-สกุล" class="sm:col-span-3 p-2 bg-slate-50 border border-slate-200 rounded-lg">
+              <input type="number" id="dc_wp_1_age" placeholder="อายุ(ปี)" class="p-2 bg-slate-50 border border-slate-200 rounded-lg">
+              <input type="date" id="dc_wp_1_date" title="วันเริ่มป่วย" class="sm:col-span-2 p-2 bg-slate-50 border border-slate-200 rounded-lg">
+              <input type="text" id="dc_wp_2_name" placeholder="2. ชื่อ-สกุล" class="sm:col-span-3 p-2 bg-slate-50 border border-slate-200 rounded-lg">
+              <input type="number" id="dc_wp_2_age" placeholder="อายุ(ปี)" class="p-2 bg-slate-50 border border-slate-200 rounded-lg">
+              <input type="date" id="dc_wp_2_date" title="วันเริ่มป่วย" class="sm:col-span-2 p-2 bg-slate-50 border border-slate-200 rounded-lg">
+            </div>
+          </div>
+
+          <!-- Group 3: บ้านติดกัน/ละแวกบ้าน -->
+          <div class="p-3 bg-white rounded-xl border border-slate-200 space-y-2">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span class="font-semibold text-slate-800">3) ผู้ที่อยู่บ้านติดกันหรือละแวกบ้านเดียวกัน ป่วยในช่วง 14 วันก่อน/หลัง:</span>
+              <select id="dc_neighbor_sick" onchange="toggleDcContactGroup('neighbor')" class="p-1.5 bg-slate-50 border border-slate-200 rounded-lg font-semibold">
+                <option value="ไม่มี">ไม่มี</option>
+                <option value="มี">มี (ระบุรายชื่อด้านล่าง)</option>
+              </select>
+            </div>
+            <div id="dc_neighbor_box" class="hidden grid grid-cols-1 sm:grid-cols-6 gap-2 pt-1">
+              <input type="text" id="dc_nb_1_name" placeholder="1. ชื่อ-สกุล" class="sm:col-span-3 p-2 bg-slate-50 border border-slate-200 rounded-lg">
+              <input type="number" id="dc_nb_1_age" placeholder="อายุ(ปี)" class="p-2 bg-slate-50 border border-slate-200 rounded-lg">
+              <input type="date" id="dc_nb_1_date" title="วันเริ่มป่วย" class="sm:col-span-2 p-2 bg-slate-50 border border-slate-200 rounded-lg">
+              <input type="text" id="dc_nb_2_name" placeholder="2. ชื่อ-สกุล" class="sm:col-span-3 p-2 bg-slate-50 border border-slate-200 rounded-lg">
+              <input type="number" id="dc_nb_2_age" placeholder="อายุ(ปี)" class="p-2 bg-slate-50 border border-slate-200 rounded-lg">
+              <input type="date" id="dc_nb_2_date" title="วันเริ่มป่วย" class="sm:col-span-2 p-2 bg-slate-50 border border-slate-200 rounded-lg">
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. แหล่งเพาะพันธุ์ลูกน้ำยุงลาย (คำนวณ CI & HI อัตโนมัติ) -->
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5"><span>🦟</span> แหล่งเพาะพันธุ์ลูกน้ำยุงลาย (คำนวณ CI / HI อัตโนมัติ)</h4>
+            <div class="flex flex-wrap items-center gap-2 text-[11px] font-bold">
+              <span class="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 border border-rose-200">CI บ้านผู้ป่วย: <span id="dc_ci_patient_display">0.00</span>%</span>
+              <span class="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 border border-amber-200">CI 100ม.: <span id="dc_ci_100m_display">0.00</span>%</span>
+              <span class="px-2.5 py-1 rounded-lg bg-blue-100 text-blue-800 border border-blue-200">HI: <span id="dc_hi_display">0.00</span>%</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- บ้านผู้ป่วย -->
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+              <div class="font-bold text-teal-800 border-b border-slate-100 pb-1.5">🏠 บ้านผู้ป่วย</div>
+              <div class="grid grid-cols-2 gap-2.5">
+                <div><label class="block text-[11px] font-semibold text-slate-600 mb-1">ภาชนะในบ้าน (ทั้งหมด)</label><input type="number" min="0" id="dc_pt_in_total" value="0" oninput="recalcDcIndices()" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg"></div>
+                <div><label class="block text-[11px] font-semibold text-rose-700 mb-1">พบลูกน้ำในบ้าน (ภาชนะ)</label><input type="number" min="0" id="dc_pt_in_larvae" value="0" oninput="recalcDcIndices()" class="w-full p-2 bg-rose-50/40 border border-rose-200 rounded-lg"></div>
+                <div><label class="block text-[11px] font-semibold text-slate-600 mb-1">ภาชนะนอกบ้าน (ทั้งหมด)</label><input type="number" min="0" id="dc_pt_out_total" value="0" oninput="recalcDcIndices()" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg"></div>
+                <div><label class="block text-[11px] font-semibold text-rose-700 mb-1">พบลูกน้ำนอกบ้าน (ภาชนะ)</label><input type="number" min="0" id="dc_pt_out_larvae" value="0" oninput="recalcDcIndices()" class="w-full p-2 bg-rose-50/40 border border-rose-200 rounded-lg"></div>
+              </div>
+            </div>
+
+            <!-- รอบบ้านรัศมี 100 เมตร -->
+            <div class="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                <span class="font-bold text-indigo-800">🎯 รอบบ้านผู้ป่วย (รัศมี 100 เมตร)</span>
+                <button type="button" onclick="autoFillDcRadiusHouses()" class="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded border border-indigo-200 font-semibold">ดึงจำนวนบ้าน 100 ม.</button>
+              </div>
+              <div class="grid grid-cols-2 gap-2.5">
+                <div><label class="block text-[11px] font-semibold text-slate-600 mb-1">ภาชนะในบ้าน 100ม. (ทั้งหมด)</label><input type="number" min="0" id="dc_rad_in_total" value="0" oninput="recalcDcIndices()" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg"></div>
+                <div><label class="block text-[11px] font-semibold text-rose-700 mb-1">พบลูกน้ำในบ้าน 100ม.</label><input type="number" min="0" id="dc_rad_in_larvae" value="0" oninput="recalcDcIndices()" class="w-full p-2 bg-rose-50/40 border border-rose-200 rounded-lg"></div>
+                <div><label class="block text-[11px] font-semibold text-slate-600 mb-1">ภาชนะนอกบ้าน 100ม. (ทั้งหมด)</label><input type="number" min="0" id="dc_rad_out_total" value="0" oninput="recalcDcIndices()" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg"></div>
+                <div><label class="block text-[11px] font-semibold text-rose-700 mb-1">พบลูกน้ำนอกบ้าน 100ม.</label><input type="number" min="0" id="dc_rad_out_larvae" value="0" oninput="recalcDcIndices()" class="w-full p-2 bg-rose-50/40 border border-rose-200 rounded-lg"></div>
+                <div><label class="block text-[11px] font-semibold text-blue-700 mb-1">จำนวนบ้านในรัศมี 100ม. (หลัง)</label><input type="number" min="0" id="dc_rad_houses_total" value="0" oninput="recalcDcIndices()" class="w-full p-2 bg-blue-50/40 border border-blue-200 rounded-lg"></div>
+                <div><label class="block text-[11px] font-semibold text-rose-700 mb-1">จำนวนบ้านที่พบลูกน้ำ (หลัง)</label><input type="number" min="0" id="dc_rad_houses_positive" value="0" oninput="recalcDcIndices()" class="w-full p-2 bg-rose-50/40 border border-rose-200 rounded-lg"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. ภาพสำรวจ/ทำลายภายในบ้าน และ ภายนอกบ้าน -->
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-4">
+          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5"><span>📷</span> ภาพสำรวจ / ทำลายแหล่งเพาะพันธุ์ลูกน้ำยุงลาย (สูงสุดอย่างละ 4 ภาพ)</h4>
+          <div class="space-y-2">
+            <div class="font-semibold text-teal-800">ภาพสำรวจ/ทำลายภายในบ้าน (1–4)</div>
+            <div id="dcIndoorPhotoGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+          </div>
+          <div class="space-y-2">
+            <div class="font-semibold text-amber-800">ภาพสำรวจ/ทำลายภายนอกบ้าน (1–4)</div>
+            <div id="dcOutdoorPhotoGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+          </div>
+        </div>
+
+        <!-- 5. ผู้ควบคุมโรค -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">ชื่อผู้ควบคุมโรค *</label>
+            <input type="text" id="dc_controller_name" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">ตำแหน่ง *</label>
+            <input type="text" id="dc_controller_position" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500">
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeDiseaseControlModal()" class="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition">ยกเลิก</button>
+          <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold rounded-xl shadow-md transition active:scale-95 flex items-center gap-1.5">
+            <span>💾</span>
+            <span>บันทึกรายงาน + แจ้ง Telegram + สร้าง .PDF</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -2785,6 +3061,8 @@
     const STORAGE_USERS_KEY = 'tdds_users_prod_v1';
     const STORAGE_AUDIT_KEY = 'tdds_audit_logs_prod_v1';
     const STORAGE_SESSION_KEY = 'tdds_current_user_prod_v1';
+    const STORAGE_DISEASE_CONTROL_KEY = 'tdds_disease_control_reports_v1';
+    let diseaseControlReportsMap = {};
 
     // Unicode Normalization (NFC) & String Sanitization Helper for Thai Text
     function normalizeThaiStr(str) {
@@ -3070,11 +3348,50 @@
               hasUpdatedOld = true;
             }
           }
+          if (!p.controlAlert3hSentAt) {
+            const isConfLocal = p.confirmedStatus === 'confirmed_local' || ((p.areaConfirmed === 'ยืนยัน' || p.areaConfirmed === 'ยืนยันแล้ว') && p.confirmedStatus !== 'confirmed_external');
+            if (isConfLocal) {
+              const confTime = p.confirmedTime ? new Date(p.confirmedTime).getTime() : 0;
+              const elapsedConf = confTime > 0 ? (initNow - confTime) / (1000 * 3600) : 999;
+              if (!p.confirmedTime || elapsedConf > 24) {
+                p.controlAlert3hSentAt = 'OLD_CASE_SKIPPED';
+                hasUpdatedOld = true;
+              }
+            }
+          }
         });
       } catch (err) {
         console.warn('[TDDS] init old cases alert skip error:', err);
       }
       return hasUpdatedOld;
+    }
+
+    function loadDiseaseControlStore() {
+      try {
+        const raw = localStorage.getItem(STORAGE_DISEASE_CONTROL_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        diseaseControlReportsMap = (parsed && typeof parsed === 'object') ? parsed : {};
+      } catch (e) {
+        diseaseControlReportsMap = {};
+      }
+      if (Array.isArray(patientsData)) {
+        patientsData.forEach(p => {
+          const rep = diseaseControlReportsMap[p.id]
+            || (p.supabaseId && diseaseControlReportsMap[p.supabaseId])
+            || (p.patientCode && diseaseControlReportsMap[p.patientCode]);
+          if (rep && !p.diseaseControlReport) {
+            p.diseaseControlReport = rep;
+          }
+        });
+      }
+    }
+
+    function saveDiseaseControlStore() {
+      try {
+        localStorage.setItem(STORAGE_DISEASE_CONTROL_KEY, JSON.stringify(diseaseControlReportsMap));
+      } catch (e) {
+        console.warn('[TDDS] saveDiseaseControlStore error:', e);
+      }
     }
 
     // Initialize stores (ใช้แคชใน localStorage ก่อน แล้วซิงค์ข้อมูลล่าสุดจาก Supabase)
@@ -3136,6 +3453,7 @@
       }
 
       // ปิดการแจ้งเตือน 3 ชม. สำหรับเคสเก่าที่บันทึกมาเกิน 24 ชม.
+      loadDiseaseControlStore();
       if (markOldCasesAlertSkipped(patientsData)) {
         savePatients();
       }
@@ -3264,6 +3582,8 @@
           setTimeout(() => fullMap.invalidateSize(), 200);
         } else if (viewId === 'patients') {
           renderPatientTable();
+        } else if (viewId === 'disease-control') {
+          if (typeof renderDiseaseControlView === 'function') renderDiseaseControlView();
         } else if (viewId === 'person-import' || viewId === 'radius-search') {
           initPersonView(viewId === 'radius-search');
         }
@@ -3354,6 +3674,7 @@
       if (typeof syncPatientHealthCenterFilterLock === 'function') syncPatientHealthCenterFilterLock();
       applyDashboardFilters();
       renderPatientTable();
+      if (typeof renderDiseaseControlView === 'function') renderDiseaseControlView();
       renderUserTable();
       if (typeof updatePersonTotalBadge === 'function') updatePersonTotalBadge();
       if (typeof renderPersonScopeBanner === 'function') renderPersonScopeBanner();
@@ -6173,6 +6494,22 @@
           confirmBadgeHtml = `<button onclick="confirmPatientCase('${p.id}')" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-300 hover:bg-slate-200 transition shadow-2xs" title="เคสเก่า: คลิกเพื่อยืนยันเคสย้อนหลัง">⚪ ยังไม่ยืนยัน</button>`;
         }
 
+        const dcReport = typeof getDiseaseControlReport === 'function' ? getDiseaseControlReport(p) : null;
+        let dcChipHtml = '';
+        if (isConfirmedLocal) {
+          if (dcReport) {
+            dcChipHtml = `<button onclick="openDiseaseControlModal('${p.id}')" class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-teal-50 text-teal-800 border border-teal-300 hover:bg-teal-100 transition" title="ควบคุมโรคแล้ว (${dcReport.controllerName || '-'}) • คลิกดู/แก้ไข">🛡️ ควบคุมแล้ว (CI ${dcReport.ciPatient ?? 0}% / HI ${dcReport.hi100m ?? 0}%)</button>`;
+          } else {
+            const confTimeObj = p.confirmedTime ? new Date(p.confirmedTime) : null;
+            const confHours = (confTimeObj && !isNaN(confTimeObj.getTime())) ? (now.getTime() - confTimeObj.getTime()) / 3600000 : 0;
+            if (confTimeObj && confHours >= 3 && confHours <= 24) {
+              dcChipHtml = `<button onclick="openDiseaseControlModal('${p.id}')" class="mt-1 animate-pulse inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-100 text-rose-800 border border-rose-300 hover:bg-rose-200 transition" title="เกิน 3 ชม. หลังยืนยันเคส! คลิกบันทึกควบคุมโรคเบื้องต้น">🚨 รอควบคุมโรคเกิน 3 ชม.</button>`;
+            } else {
+              dcChipHtml = `<button onclick="openDiseaseControlModal('${p.id}')" class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition" title="คลิกบันทึกรายงานควบคุมโรคเบื้องต้น (3 ชม.ที่ 2)">🛡️ บันทึกควบคุมโรค (3-3-1)</button>`;
+            }
+          }
+        }
+
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 transition';
         tr.innerHTML = `
@@ -6208,10 +6545,12 @@
             </span>
           </td>
           <td class="px-4 py-3">${badgeHtml}</td>
-          <td class="px-4 py-3 text-center">${confirmBadgeHtml}</td>
+          <td class="px-4 py-3 text-center"><div class="flex flex-col items-center">${confirmBadgeHtml}${dcChipHtml}</div></td>
           <td class="px-4 py-3 text-center">
             <div class="flex items-center justify-center gap-1.5">
               <button onclick="openPatientViewModal('${p.id}')" title="ดูข้อมูลผู้ป่วยรายบุคคลและผล LAB" class="p-1.5 rounded-lg text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 transition border border-emerald-200"><span>👁️</span></button>
+              ${isConfirmedLocal ? `<button onclick="openDiseaseControlModal('${p.id}')" title="รายงานควบคุมโรคเบื้องต้น (3 ชม.ที่ 2)" class="p-1.5 rounded-lg ${dcReport ? 'text-teal-700 bg-teal-50 border border-teal-200' : 'text-amber-700 bg-amber-50 border border-amber-200'} hover:bg-teal-100 transition"><span>🛡️</span></button>` : ''}
+              ${dcReport ? `<button onclick="downloadDiseaseControlPDF('${p.id}')" title="ดาวน์โหลดรายงานควบคุมโรค 3-3-1 (.PDF)" class="p-1.5 rounded-lg text-emerald-700 hover:bg-emerald-50 transition border border-emerald-200"><span class="text-sm">📑</span></button>` : ''}
               <button onclick="downloadPatientReportPDF('${p.id}')" title="สร้าง/ดาวน์โหลดรายงานสอบสวนโรค .PDF" class="p-1.5 rounded-lg text-slate-500 hover:text-blue-700 hover:bg-blue-50 transition">
                 <span class="text-sm">📄</span>
               </button>
@@ -6660,7 +6999,7 @@
               <div class="text-[11px] opacity-80 mt-0.5">${statusDesc}</div>
             </div>
           </div>
-          <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+          <div class="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
             ${(!currentUser || canUserConfirmCase(currentUser, p)) ? (
               !isConfirmed ? `
                 <button onclick="confirmPatientCase('${p.id}', 'confirmed_local')" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5">
@@ -6670,6 +7009,11 @@
                   <span>🚗</span> ป่วยนอกพื้นที่
                 </button>
               ` : `
+                ${isConfirmedLocal ? `
+                  <button onclick="closePatientViewModal(); openDiseaseControlModal('${p.id}')" class="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5">
+                    <span>🛡️</span> ${(typeof getDiseaseControlReport === 'function' && getDiseaseControlReport(p)) ? 'ดู/แก้ไขควบคุมโรค (3-3-1)' : 'บันทึกควบคุมโรคเบื้องต้น (3 ชม.ที่ 2)'}
+                  </button>
+                ` : ''}
                 <button onclick="confirmPatientCase('${p.id}')" class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-300 shadow-2xs transition flex items-center gap-1">
                   <span>✏️</span> แก้ไขการยืนยัน
                 </button>
@@ -6679,6 +7023,11 @@
                 <span>🔒</span> เฉพาะ ${p.healthCenter || 'เจ้าของพื้นที่'} ยืนยันเท่านั้น
               </span>
             `}
+            ${(typeof getDiseaseControlReport === 'function' && getDiseaseControlReport(p)) ? `
+              <button onclick="downloadDiseaseControlPDF('${p.id}')" class="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-300 transition flex items-center gap-1">
+                <span>📑</span> PDF ควบคุมโรค 3-3-1
+              </button>
+            ` : ''}
           </div>
         `;
       }
@@ -8115,6 +8464,9 @@ https://dengue-thepha.github.io/tdds/`;
           p.confirmedBy = `${currentUser.fullName} (${currentUser.unit})`;
           p.confirmedTime = new Date().toISOString();
           p.confirmedNote = note;
+          if (selected === 'confirmed_local') {
+            p.controlAlert3hSentAt = null;
+          }
           savePatients();
           upsertPatientToSupabase(p, true);
 
@@ -8131,14 +8483,22 @@ https://dengue-thepha.github.io/tdds/`;
                 สถานะ: <b>${p.confirmedStatusText}</b><br>
                 ผู้ยืนยัน: <b>${p.confirmedBy}</b><br>
                 ส่งผลยืนยันเข้ากลุ่ม Telegram งานระบาด อ.เทพา แล้ว
+                ${selected === 'confirmed_local' ? '<div class="mt-2 p-2 rounded-xl bg-teal-50 border border-teal-200 text-teal-800 font-semibold">🛡️ ขั้นตอนถัดไป (3 ชม.ที่ 2): กรุณาบันทึกรายงานควบคุมโรคเบื้องต้นตามมาตรการ 3-3-1</div>' : ''}
               </div>
             `,
-            timer: 2200,
-            showConfirmButton: false
+            showCancelButton: selected === 'confirmed_local',
+            confirmButtonText: selected === 'confirmed_local' ? '🛡️ บันทึกควบคุมโรคทันที' : 'ตกลง',
+            cancelButtonText: 'ไว้ภายหลัง',
+            confirmButtonColor: '#0D9488'
+          }).then(nextRes => {
+            if (selected === 'confirmed_local' && nextRes.isConfirmed && typeof openDiseaseControlModal === 'function') {
+              openDiseaseControlModal(p.id);
+            }
           });
 
           applyDashboardFilters();
           renderPatientTable();
+          if (typeof renderDiseaseControlView === 'function') renderDiseaseControlView();
           if (currentViewPatientId === p.id) {
             openPatientViewModal(p.id);
           }
@@ -8275,12 +8635,957 @@ https://dengue-thepha.github.io/tdds/`;
       }
     }
 
-    // เริ่มต้นระบบตรวจสอบเคสรอยืนยัน 3 ชั่วโมง
+    // เริ่มต้นระบบตรวจสอบเคสรอยืนยัน 3 ชั่วโมง และเคสยืนยันแล้วรอควบคุมโรคเบื้องต้น (3 ชม.ที่ 2)
     function initUnconfirmedCases3HoursScheduler() {
-      // ตรวจสอบทันทีตอนเริ่มระบบ
-      setTimeout(checkUnconfirmedPatients3Hours, 3000);
-      // ตรวจสอบต่อเนื่องเป็นประจำทุก 1 นาที (60,000 ms)
-      setInterval(checkUnconfirmedPatients3Hours, 60000);
+      setTimeout(() => {
+        checkUnconfirmedPatients3Hours();
+        if (typeof checkUncontrolledCases3Hours === 'function') checkUncontrolledCases3Hours();
+      }, 3000);
+      setInterval(() => {
+        checkUnconfirmedPatients3Hours();
+        if (typeof checkUncontrolledCases3Hours === 'function') checkUncontrolledCases3Hours();
+      }, 60000);
+    }
+
+    // =============================================================
+    // 9.7 รายงานควบคุมโรคเบื้องต้น (3 ชม.ที่ 2 ตามมาตรการ 3-3-1)
+    // =============================================================
+    let dcIndoorPhotos = [null, null, null, null];
+    let dcOutdoorPhotos = [null, null, null, null];
+
+    function isLocalConfirmedForControl(p) {
+      if (!p) return false;
+      return (p.confirmedStatus === 'confirmed_local' || p.areaConfirmed === 'ยืนยัน' || p.areaConfirmed === 'ยืนยันแล้ว')
+        && p.confirmedStatus !== 'confirmed_external';
+    }
+
+    function getDiseaseControlReport(p) {
+      if (!p) return null;
+      return p.diseaseControlReport
+        || diseaseControlReportsMap[p.id]
+        || (p.supabaseId && diseaseControlReportsMap[p.supabaseId])
+        || (p.patientCode && diseaseControlReportsMap[p.patientCode])
+        || null;
+    }
+
+    function hasDiseaseControlReport(p) {
+      const r = getDiseaseControlReport(p);
+      return !!(r && (r.controlDatetime || r.submittedAt || p.controlCompletedAt));
+    }
+
+    function formatControlDateTimeBE(dtVal) {
+      const d = dtVal ? new Date(dtVal) : new Date();
+      if (isNaN(d.getTime())) return '-';
+      const pad = (n) => String(n).padStart(2, '0');
+      const day = pad(d.getDate());
+      const mon = pad(d.getMonth() + 1);
+      const yrBe = d.getFullYear() < 2500 ? d.getFullYear() + 543 : d.getFullYear();
+      const hh = pad(d.getHours());
+      const mm = pad(d.getMinutes());
+      const ss = pad(d.getSeconds());
+      return `${day}/${mon}/${yrBe} ${hh}:${mm}:${ss}`;
+    }
+
+    function formatBEDateOnlySlash(dtVal) {
+      if (!dtVal) return '-';
+      const clean = String(dtVal).split('T')[0].trim();
+      const m = clean.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (m) {
+        let y = parseInt(m[1], 10);
+        if (y < 2500) y += 543;
+        return `${String(parseInt(m[3], 10)).padStart(2, '0')}/${String(parseInt(m[2], 10)).padStart(2, '0')}/${y}`;
+      }
+      const d = new Date(dtVal);
+      if (isNaN(d.getTime())) return String(dtVal);
+      let y = d.getFullYear();
+      if (y < 2500) y += 543;
+      return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${y}`;
+    }
+
+    function renderDiseaseControlView() {
+      const tbody = document.getElementById('diseaseControlTbody');
+      if (!tbody) return;
+
+      const scopedAll = typeof getFilteredPatientsForUser === 'function' ? getFilteredPatientsForUser() : (patientsData || []);
+      const confirmedList = scopedAll.filter(isLocalConfirmedForControl);
+      const now = Date.now();
+
+      let pendingUnder3h = 0;
+      let over3h = 0;
+      let doneCount = 0;
+
+      confirmedList.forEach(p => {
+        if (hasDiseaseControlReport(p)) {
+          doneCount++;
+        } else {
+          const ct = p.confirmedTime ? new Date(p.confirmedTime).getTime() : 0;
+          const hrs = ct > 0 ? (now - ct) / 3600000 : 0;
+          if (ct > 0 && hrs >= 3) over3h++;
+          else pendingUnder3h++;
+        }
+      });
+
+      const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v; };
+      setTxt('dcStatPendingUnder3h', pendingUnder3h);
+      setTxt('dcStatOver3h', over3h);
+      setTxt('dcStatDone', doneCount);
+      setTxt('dcStatTotalConfirmed', confirmedList.length);
+
+      const q = normalizeThaiStr(document.getElementById('dcSearchInput')?.value || '').toLowerCase();
+      const statusFilter = document.getElementById('dcStatusFilter')?.value || 'all';
+
+      let filtered = confirmedList.filter(p => {
+        const done = hasDiseaseControlReport(p);
+        const ct = p.confirmedTime ? new Date(p.confirmedTime).getTime() : 0;
+        const hrs = ct > 0 ? (now - ct) / 3600000 : 0;
+        if (statusFilter === 'pending' && done) return false;
+        if (statusFilter === 'over3h' && (done || !(ct > 0 && hrs >= 3))) return false;
+        if (statusFilter === 'done' && !done) return false;
+        if (q) {
+          const hay = `${p.fullName || ''} ${p.addressNo || ''} ${p.subdistrict || ''} ${p.healthCenter || ''} ${p.patientCode || ''}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+
+      filtered.sort((a, b) => {
+        const aDone = hasDiseaseControlReport(a) ? 1 : 0;
+        const bDone = hasDiseaseControlReport(b) ? 1 : 0;
+        if (aDone !== bDone) return aDone - bDone;
+        const ta = new Date(a.confirmedTime || a.notifiedDatetime || a.illnessDate || 0).getTime() || 0;
+        const tb = new Date(b.confirmedTime || b.notifiedDatetime || b.illnessDate || 0).getTime() || 0;
+        return tb - ta;
+      });
+
+      tbody.innerHTML = '';
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">ไม่พบเคสที่ยืนยันในพื้นที่ตามเงื่อนไข (กรุณายืนยันเคสในหน้าทะเบียนผู้ป่วยก่อน)</td></tr>';
+        return;
+      }
+
+      filtered.forEach((p, idx) => {
+        const rep = getDiseaseControlReport(p);
+        const ct = p.confirmedTime ? new Date(p.confirmedTime).getTime() : 0;
+        const hrs = ct > 0 ? (now - ct) / 3600000 : 0;
+
+        let step2Html = '';
+        if (rep) {
+          step2Html = `<div class="inline-flex flex-col gap-0.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">✅ บันทึกควบคุมโรคแล้ว</span><span class="text-[10px] text-slate-500">${formatControlDateTimeBE(rep.controlDatetime)}</span></div>`;
+        } else if (ct > 0 && hrs >= 3 && hrs <= 24) {
+          step2Html = `<span class="animate-pulse px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">🚨 เกิน 3 ชม. (${Math.floor(hrs)}ชม.)</span>`;
+        } else if (ct > 0 && hrs < 3) {
+          step2Html = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">⏳ รอบันทึก (${Math.floor(hrs)}ชม. ${Math.floor((hrs % 1) * 60)}น.)</span>`;
+        } else {
+          step2Html = `<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200">⚪ ยังไม่บันทึก</span>`;
+        }
+
+        const ciHiHtml = rep
+          ? `<div class="font-mono text-[11px] font-bold text-slate-800">${Number(rep.ciPatient || 0).toFixed(2)}% / ${Number(rep.ci100m || 0).toFixed(2)}% / <span class="text-blue-700">${Number(rep.hi100m || 0).toFixed(2)}%</span></div>`
+          : '<span class="text-slate-400">-</span>';
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition';
+        tr.innerHTML = `
+          <td class="px-4 py-3 font-semibold text-slate-500">${idx + 1}</td>
+          <td class="px-4 py-3">
+            <div class="font-bold text-slate-900">${p.fullName || '-'}</div>
+            <div class="text-[10px] text-teal-700 font-semibold">${p.diagnosis || 'DF'} • ${p.patientCode || '-'}</div>
+          </td>
+          <td class="px-4 py-3 text-slate-700">${p.addressNo || '-'} ม.${p.villageNo || '-'} ต.${p.subdistrict || '-'}</td>
+          <td class="px-4 py-3">
+            <div class="font-medium text-slate-800">${p.healthCenter || '-'}</div>
+            <div class="text-[10px] font-mono text-teal-700">${p.hcode || getHCodeByName(p.healthCenter) || '-'}</div>
+          </td>
+          <td class="px-4 py-3 text-[11px] text-slate-600">
+            <div>${p.confirmedTime ? formatControlDateTimeBE(p.confirmedTime) : 'ยืนยันแล้ว'}</div>
+            <div class="text-[10px] text-slate-400">${p.confirmedBy || ''}</div>
+          </td>
+          <td class="px-4 py-3">${step2Html}</td>
+          <td class="px-4 py-3 text-center">${ciHiHtml}</td>
+          <td class="px-4 py-3 text-center">
+            <div class="flex items-center justify-center gap-1.5">
+              <button onclick="openDiseaseControlModal('${p.id}')" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold ${rep ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' : 'bg-teal-600 hover:bg-teal-700 text-white'} transition">
+                ${rep ? '✏️ แก้ไข' : '🛡️ บันทึก 3-3-1'}
+              </button>
+              ${rep ? `<button onclick="downloadDiseaseControlPDF('${p.id}')" title="ดาวน์โหลดรายงานควบคุมโรค .PDF" class="px-2 py-1.5 rounded-lg text-[11px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition">📄 .PDF</button>` : ''}
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function toggleDcOtherAddress() {
+      const val = document.getElementById('dc_stay_domicile')?.value || 'ใช่';
+      const box = document.getElementById('dc_other_addr_box');
+      if (box) box.classList.toggle('hidden', val !== 'ไม่ใช่');
+    }
+
+    function toggleDcContactGroup(group) {
+      const selMap = { household: 'dc_household_sick', workplace: 'dc_workplace_sick', neighbor: 'dc_neighbor_sick' };
+      const boxMap = { household: 'dc_household_box', workplace: 'dc_workplace_box', neighbor: 'dc_neighbor_box' };
+      const val = document.getElementById(selMap[group])?.value || 'ไม่มี';
+      const box = document.getElementById(boxMap[group]);
+      if (box) box.classList.toggle('hidden', val !== 'มี');
+    }
+
+    function recalcDcIndices() {
+      const n = (id) => Math.max(0, parseInt(document.getElementById(id)?.value || '0', 10) || 0);
+      const ptTotal = n('dc_pt_in_total') + n('dc_pt_out_total');
+      const ptLarv = n('dc_pt_in_larvae') + n('dc_pt_out_larvae');
+      const ciPatient = ptTotal > 0 ? ((ptLarv / ptTotal) * 100) : 0;
+
+      const radTotal = n('dc_rad_in_total') + n('dc_rad_out_total');
+      const radLarv = n('dc_rad_in_larvae') + n('dc_rad_out_larvae');
+      const ci100m = radTotal > 0 ? ((radLarv / radTotal) * 100) : 0;
+
+      const housesTotal = n('dc_rad_houses_total');
+      const housesPos = n('dc_rad_houses_positive');
+      const hi = housesTotal > 0 ? ((housesPos / housesTotal) * 100) : 0;
+
+      const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v.toFixed(2); };
+      setEl('dc_ci_patient_display', ciPatient);
+      setEl('dc_ci_100m_display', ci100m);
+      setEl('dc_hi_display', hi);
+      return {
+        ciPatient: parseFloat(ciPatient.toFixed(2)),
+        ci100m: parseFloat(ci100m.toFixed(2)),
+        hi100m: parseFloat(hi.toFixed(2))
+      };
+    }
+
+    function autoFillDcRadiusHouses() {
+      const pid = document.getElementById('dc_patient_id')?.value;
+      const p = patientsData.find(x => x.id === pid);
+      if (!p) return;
+      let lat = parseFloat(p.lat);
+      let lng = parseFloat(p.lng);
+      if ((isNaN(lat) || isNaN(lng)) && typeof findBestPersonMatchForPatient === 'function') {
+        const match = findBestPersonMatchForPatient(p);
+        if (match && match.lat != null && match.lng != null) {
+          lat = match.lat;
+          lng = match.lng;
+        }
+      }
+      if (isNaN(lat) || isNaN(lng)) {
+        Swal.fire({ icon: 'info', title: 'ยังไม่มีพิกัด GPS ผู้ป่วย', text: 'กรุณาระบุจำนวนบ้านในรัศมี 100 เมตรด้วยตนเอง หรืออัปเดตพิกัดบ้านผู้ป่วยก่อน' });
+        return;
+      }
+      const neighbors = typeof findPersonsWithinRadius === 'function' ? findPersonsWithinRadius(lat, lng, 100) : [];
+      const houses = new Set(neighbors.map(n => `${n.house_no || '-'}_${n.village_no || '-'}_${n.subdistrict || '-'}`));
+      const hEl = document.getElementById('dc_rad_houses_total');
+      if (hEl) hEl.value = houses.size;
+      recalcDcIndices();
+      Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `ดึงจำนวนบ้านในรัศมี 100 ม. ได้ ${houses.size} หลัง`, timer: 2000, showConfirmButton: false });
+    }
+
+    function renderDcPhotoGrids() {
+      const renderGrid = (gridId, arr, type) => {
+        const grid = document.getElementById(gridId);
+        if (!grid) return;
+        grid.innerHTML = [0, 1, 2, 3].map(idx => {
+          const dataUrl = arr[idx];
+          return `
+            <div class="bg-white border border-slate-200 rounded-xl p-2 flex flex-col items-center gap-1.5">
+              <div class="text-[11px] font-bold text-slate-600">ภาพที่ ${idx + 1}</div>
+              ${dataUrl
+                ? `<img src="${dataUrl}" class="w-full h-24 object-cover rounded-lg border border-slate-100">`
+                : `<div class="w-full h-24 rounded-lg bg-slate-50 border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[11px]">ยังไม่มีภาพ</div>`
+              }
+              <div class="flex items-center gap-1 w-full">
+                <label class="flex-1 text-center cursor-pointer bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-lg py-1 text-[10px] font-bold transition">
+                  เลือกรูป
+                  <input type="file" accept="image/*" class="hidden" onchange="handleDcPhotoChange(event, '${type}', ${idx})">
+                </label>
+                ${dataUrl ? `<button type="button" onclick="removeDcPhoto('${type}', ${idx})" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold">ลบ</button>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+      };
+      renderGrid('dcIndoorPhotoGrid', dcIndoorPhotos, 'indoor');
+      renderGrid('dcOutdoorPhotoGrid', dcOutdoorPhotos, 'outdoor');
+    }
+
+    function compressImageToDataUrl(file, maxW = 800, quality = 0.72) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            const scale = img.width > maxW ? (maxW / img.width) : 1;
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.onerror = reject;
+          img.src = ev.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleDcPhotoChange(e, type, idx) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      try {
+        const dataUrl = await compressImageToDataUrl(file, 800, 0.72);
+        if (type === 'indoor') dcIndoorPhotos[idx] = dataUrl;
+        else dcOutdoorPhotos[idx] = dataUrl;
+        renderDcPhotoGrids();
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'ไม่สามารถอ่านรูปภาพได้', text: err.message });
+      }
+    }
+
+    function removeDcPhoto(type, idx) {
+      if (type === 'indoor') dcIndoorPhotos[idx] = null;
+      else dcOutdoorPhotos[idx] = null;
+      renderDcPhotoGrids();
+    }
+
+    function openDiseaseControlModal(patientId) {
+      const p = patientsData.find(item => item.id === patientId || item.patientCode === patientId);
+      if (!p) {
+        Swal.fire({ icon: 'warning', title: 'ไม่พบข้อมูลผู้ป่วย' });
+        return;
+      }
+      if (!currentUser) {
+        Swal.fire({ icon: 'warning', title: 'กรุณาเข้าสู่ระบบก่อนดำเนินการ' });
+        openLoginModal();
+        return;
+      }
+      if (!isLocalConfirmedForControl(p)) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'เคสยังไม่ได้รับการยืนยันในพื้นที่',
+          text: 'ต้องให้หน่วยบริการเจ้าของพื้นที่กดยืนยัน "ป่วยในพื้นที่จริง" (3 ชม.แรก) ก่อน จึงจะบันทึกรายงานควบคุมโรคเบื้องต้น (3 ชม.ที่ 2) ได้'
+        });
+        return;
+      }
+      if (!canUserConfirmCase(currentUser, p)) {
+        Swal.fire({
+          icon: 'error',
+          title: 'ไม่มีสิทธิ์บันทึกควบคุมโรคแทนพื้นที่',
+          html: `สิทธิ์บันทึกรายงานควบคุมโรคเบื้องต้นสงวนไว้เฉพาะเจ้าหน้าที่ <b>${p.healthCenter || 'เจ้าของพื้นที่'}</b> เท่านั้น (แอดมินและหน่วยอื่นไม่สามารถบันทึกแทนได้)`
+        });
+        return;
+      }
+
+      document.getElementById('diseaseControlForm')?.reset();
+      document.getElementById('dc_patient_id').value = p.id;
+      document.getElementById('dcModalTitle').innerText = `รายงานควบคุมโรคเบื้องต้น (3-3-1) : ${p.fullName}`;
+
+      const firstTreat = (p.treatments && p.treatments[0]) || {};
+      const notifDisp = p.notifiedDatetime ? formatControlDateTimeBE(p.notifiedDatetime) : '-';
+      document.getElementById('dcPatientBanner').innerHTML = `
+        <div class="font-bold text-teal-900 text-sm">${p.fullName} • เพศ: ${p.gender || '-'} • อายุ: ${p.ageYear ?? 0} ปี ${p.ageMonth ?? 0} เดือน</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px] text-slate-600 mt-1">
+          <div>🏠 ที่อยู่: บ้านเลขที่ <b>${p.addressNo || '-'}</b> ม.<b>${p.villageNo || '-'}</b> ต.<b>${p.subdistrict || '-'}</b></div>
+          <div>🏥 หน่วยบริการ: <b>${p.healthCenter || '-'}</b> (${p.hcode || getHCodeByName(p.healthCenter) || '-'})</div>
+          <div>📅 วันเริ่มป่วย: <b>${formatBEDateOnlySlash(p.illnessDate)}</b> | รับรักษา: <b>${formatBEDateOnlySlash(firstTreat.date || p.treatmentDate)}</b> (${firstTreat.hospital || p.hospitalType || '-'})</div>
+          <div>📢 รับแจ้ง: <b>${notifDisp}</b> | วินิจฉัย: <b class="text-teal-700">${p.diagnosis || 'DF'}</b> (${p.patientType || 'IPD'})</div>
+        </div>
+      `;
+
+      const existing = getDiseaseControlReport(p);
+      const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ''; };
+
+      setVal('dc_control_datetime', existing?.controlDatetime ? toLocalDatetimeInput(existing.controlDatetime) : toLocalDatetimeInput(new Date().toISOString()));
+      setVal('dc_stay_domicile', existing?.stayDomicile || (p.stayDomicile === false ? 'ไม่ใช่' : 'ใช่'));
+      toggleDcOtherAddress();
+      setVal('dc_other_address_no', existing?.otherAddressNo || (p.stayDomicile === false ? (p.stayAddress || '') : ''));
+      setVal('dc_other_village_no', existing?.otherVillageNo || '');
+      setVal('dc_other_subdistrict', existing?.otherSubdistrict || '');
+      setVal('dc_other_district', existing?.otherDistrict || '');
+      setVal('dc_other_province', existing?.otherProvince || '');
+
+      setVal('dc_travel_places', existing?.travelPlaces ?? (p.travelHistory || ''));
+      setVal('dc_travel_dates', existing?.travelDates || '');
+
+      const fillContactGroup = (prefix, sickVal, list = []) => {
+        setVal(`dc_${prefix}_sick`, sickVal || 'ไม่มี');
+        const short = prefix === 'household' ? 'hh' : (prefix === 'workplace' ? 'wp' : 'nb');
+        [0, 1].forEach(i => {
+          const item = list[i] || {};
+          setVal(`dc_${short}_${i + 1}_name`, item.name || '');
+          setVal(`dc_${short}_${i + 1}_age`, item.age ?? '');
+          setVal(`dc_${short}_${i + 1}_date`, item.illnessDate || '');
+        });
+        toggleDcContactGroup(prefix);
+      };
+      fillContactGroup('household', existing?.householdSick14d, existing?.householdContacts);
+      fillContactGroup('workplace', existing?.workplaceSick14d, existing?.workplaceContacts);
+      fillContactGroup('neighbor', existing?.neighborSick14d, existing?.neighborContacts);
+
+      setVal('dc_pt_in_total', existing?.patientIndoorContainers ?? 0);
+      setVal('dc_pt_in_larvae', existing?.patientIndoorLarvae ?? 0);
+      setVal('dc_pt_out_total', existing?.patientOutdoorContainers ?? 0);
+      setVal('dc_pt_out_larvae', existing?.patientOutdoorLarvae ?? 0);
+
+      setVal('dc_rad_in_total', existing?.radiusIndoorContainers ?? 0);
+      setVal('dc_rad_in_larvae', existing?.radiusIndoorLarvae ?? 0);
+      setVal('dc_rad_out_total', existing?.radiusOutdoorContainers ?? 0);
+      setVal('dc_rad_out_larvae', existing?.radiusOutdoorLarvae ?? 0);
+      setVal('dc_rad_houses_total', existing?.radiusTotalHouses ?? 0);
+      setVal('dc_rad_houses_positive', existing?.radiusPositiveHouses ?? 0);
+
+      dcIndoorPhotos = [0, 1, 2, 3].map(i => existing?.indoorPhotos?.[i] || null);
+      dcOutdoorPhotos = [0, 1, 2, 3].map(i => existing?.outdoorPhotos?.[i] || null);
+      renderDcPhotoGrids();
+      recalcDcIndices();
+
+      setVal('dc_controller_name', existing?.controllerName || currentUser.fullName || '');
+      setVal('dc_controller_position', existing?.controllerPosition || currentUser.position || '');
+
+      document.getElementById('diseaseControlModal').classList.remove('hidden');
+    }
+
+    function closeDiseaseControlModal() {
+      document.getElementById('diseaseControlModal')?.classList.add('hidden');
+    }
+
+    function buildDiseaseControlTelegramMessage(p, r) {
+      const dtText = formatControlDateTimeBE(r.controlDatetime);
+      const addrNo = (p.addressNo || '-').trim();
+      const moo = (p.villageNo || '-').trim();
+      const fullName = (p.fullName || '-').trim();
+      const ciPatient = Number(r.ciPatient || 0).toFixed(2);
+      const ci100m = Number(r.ci100m || 0).toFixed(2);
+      const hi = Number(r.hi100m || 0).toFixed(2);
+      const ctrlName = (r.controllerName || '-').trim();
+      const ctrlPos = (r.controllerPosition || '-').trim();
+
+      return `พื้นที่ควบคุมโรคหลังได้รับแจ้งแล้ว
+วันที่ควบคุมโรค :${dtText}
+บ้านเลขที่ :${addrNo} หมู่ที่ ${moo}
+ชื่อ :${fullName}
+ค่าCIบ้านผู้ป่วย :${ciPatient} %  ค่าCIรัศมี100เมตร :${ci100m} %
+ค่าHI :${hi} %
+ชื่อผู้ควบคุมโรค :${ctrlName}
+ตำแหน่ง:${ctrlPos}`;
+    }
+
+    function buildDiseaseControlPdfHtml(p, r) {
+      const firstTreat = (p.treatments && p.treatments[0]) || {};
+      const hospType = firstTreat.hospital || p.hospitalType || '-';
+      const hospOther = hospType === 'รพ.เทพา' ? '-' : (p.hospitalOther || hospType);
+      const notifiedStr = p.notifiedDatetime ? formatControlDateTimeBE(p.notifiedDatetime) : '-';
+      const ctrlStr = r.controlDatetime ? formatControlDateTimeBE(r.controlDatetime) : '-';
+      const stayDomText = r.stayDomicile === 'ไม่ใช่' ? 'ไม่อยู่ตามภูมิลำเนา (อยู่ที่อื่น)' : 'อยู่ตามภูมิลำเนา';
+      const val = (v) => (v !== undefined && v !== null && String(v).trim() !== '') ? String(v) : '-';
+
+      const renderContactRows = (status, list = []) => {
+        const items = [0, 1].map(i => {
+          const c = list[i] || {};
+          return `<div style="margin-left:14px;">${i + 1}.ระบุ(ชื่อ-สกุล): <b>${val(c.name)}</b> &nbsp;&nbsp; อายุ: <b>${c.age ? c.age : '-'}</b> ปี &nbsp;&nbsp; วันเริ่มป่วย: <b>${c.illnessDate ? formatBEDateOnlySlash(c.illnessDate) : '-'}</b></div>`;
+        }).join('');
+        return `<div style="margin-top:4px;"><b>${status || 'ไม่มี'}</b>${items}</div>`;
+      };
+
+      const renderPhotoCell = (src, label) => {
+        if (src) {
+          return `<td style="border:1px solid #475569; width:50%; height:145px; text-align:center; vertical-align:middle; padding:4px; background:#fff;">
+            <img src="${src}" style="max-width:100%; max-height:132px; object-fit:contain; display:block; margin:0 auto;">
+          </td>`;
+        }
+        return `<td style="border:1px solid #94a3b8; width:50%; height:110px; text-align:center; vertical-align:middle; color:#94a3b8; font-size:11px;">(${label} - ไม่มีภาพ)</td>`;
+      };
+
+      const inPhotos = r.indoorPhotos || [];
+      const outPhotos = r.outdoorPhotos || [];
+
+      return `
+        <div style="width:760px; margin:0 auto; font-family:'Sarabun','Kanit',Tahoma,sans-serif; color:#0f172a; font-size:12.5px; line-height:1.52; background:#fff; padding:12px 16px;">
+          <div style="text-align:center; border-bottom:2px solid #0f766e; padding-bottom:6px; margin-bottom:10px;">
+            <div style="font-size:17px; font-weight:bold; color:#0f172a;">แบบสอบสวนโรคไข้เลือดออก</div>
+            <div style="font-size:11.5px; color:#475569;">รายงานควบคุมโรคเบื้องต้น (มาตรการ 3-3-1) อำเภอเทพา จังหวัดสงขลา</div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; background:#f8fafc; border:1px solid #cbd5e1; padding:6px 10px; border-radius:6px; margin-bottom:8px;">
+            <div><b>วัน/เวลาที่ได้รับแจ้ง:</b> ${notifiedStr}</div>
+            <div><b>วันที่ควบคุมโรค:</b> ${ctrlStr}</div>
+          </div>
+
+          <div style="background:#0f766e; color:#fff; font-weight:bold; padding:4px 10px; border-radius:4px; margin-bottom:6px;">ข้อมูลผู้ป่วย</div>
+          <div style="border:1px solid #cbd5e1; border-radius:6px; padding:8px 10px; margin-bottom:10px;">
+            <div>
+              <b>ชื่อ-สกุล ผู้ป่วย:</b> ${val(p.fullName)} &nbsp;|&nbsp;
+              <b>เพศ:</b> ${val(p.gender)} &nbsp;|&nbsp;
+              <b>สถานภาพ:</b> ${val(p.maritalStatus)} &nbsp;|&nbsp;
+              <b>สัญชาติ:</b> ${val(p.nationality || 'ไทย')} &nbsp;|&nbsp;
+              <b>อายุ(ปี):</b> ${p.ageYear ?? 0} &nbsp;|&nbsp;
+              <b>อายุ(เดือน):</b> ${p.ageMonth ?? 0}
+            </div>
+            <div>
+              <b>บ้านเลขที่:</b> ${val(p.addressNo)} &nbsp;|&nbsp;
+              <b>หมู่ที่:</b> ${val(p.villageNo)} &nbsp;|&nbsp;
+              <b>ตำบล:</b> ${val(p.subdistrict)} &nbsp;|&nbsp;
+              <b>เขตพื้นที่ รพ.สต./PCU:</b> ${val(p.healthCenter)} (${val(p.hcode || getHCodeByName(p.healthCenter))}) &nbsp;|&nbsp;
+              <b>โทรศัพท์:</b> ${val(p.phone)}
+            </div>
+            <div>
+              <b>อาชีพ:</b> ${val(p.occupation)} &nbsp;|&nbsp;
+              <b>ลักษณะงาน:</b> ${val(p.workDesc)} &nbsp;|&nbsp;
+              <b>สถานที่ทำงาน/โรงเรียน:</b> ${val(p.workplace)} &nbsp;|&nbsp;
+              <b>ชั้น/แผนก/คณะ:</b> ${val(p.department)}
+            </div>
+            <div><b>ยืนยันที่อยู่ขณะป่วย:</b> ${stayDomText}</div>
+            ${r.stayDomicile === 'ไม่ใช่' ? `
+              <div style="margin-left:10px; color:#334155;">
+                <b>บ้านเลขที่(กรณีอยู่ที่อื่น):</b> ${val(r.otherAddressNo)} &nbsp;|&nbsp;
+                <b>หมู่ที่(กรณีอยู่ที่อื่น):</b> ${val(r.otherVillageNo)} &nbsp;|&nbsp;
+                <b>ตำบล(กรณีอยู่ที่อื่น):</b> ${val(r.otherSubdistrict)} &nbsp;|&nbsp;
+                <b>อำเภอ:</b> ${val(r.otherDistrict)} &nbsp;|&nbsp;
+                <b>จังหวัด:</b> ${val(r.otherProvince)}
+              </div>
+            ` : ''}
+            <div>
+              <b>วันเริ่มป่วย:</b> ${formatBEDateOnlySlash(p.illnessDate)} &nbsp;|&nbsp;
+              <b>วันที่รับการรักษา:</b> ${formatBEDateOnlySlash(firstTreat.date || p.treatmentDate)} &nbsp;|&nbsp;
+              <b>รักษาที่:</b> ${val(hospType)} &nbsp;|&nbsp;
+              <b>ระบุ(รพ.):</b> ${val(hospOther)}
+            </div>
+            <div>
+              <b>ประเภทผู้ป่วย:</b> ${val(firstTreat.patientType || p.patientType)} &nbsp;|&nbsp;
+              <b>วินิจฉัย:</b> ${val(p.diagnosis)}
+            </div>
+          </div>
+
+          <div style="background:#0f766e; color:#fff; font-weight:bold; padding:4px 10px; border-radius:4px; margin-bottom:6px;">แหล่งรังโรค/การค้นหาผู้ป่วยเพิ่มเติม</div>
+          <div style="border:1px solid #cbd5e1; border-radius:6px; padding:8px 10px; margin-bottom:10px;">
+            <div><b>ในช่วง 14 วันก่อนป่วย ผู้ป่วยเดินทางไปไหนบ้าง:</b> ระบุ: ${val(r.travelPlaces)} &nbsp;|&nbsp; <b>วันที่เดินทาง:</b> ${val(r.travelDates)}</div>
+            <div style="margin-top:4px;"><b>ผู้ที่อาศัยร่วมบ้าน ป่วยเป็นโรคไข้เลือดออกในช่วง 14 วันก่อน/หลัง วันเริ่มป่วยของผู้ป่วยรายนี้:</b> ${renderContactRows(r.householdSick14d, r.householdContacts)}</div>
+            <div style="margin-top:4px;"><b>ที่ทำงาน/โรงเรียน มีผู้ป่วยเป็นโรคไข้เลือดออกในช่วง 14 วันก่อน/หลัง วันเริ่มป่วยของผู้ป่วยรายนี้:</b> ${renderContactRows(r.workplaceSick14d, r.workplaceContacts)}</div>
+            <div style="margin-top:4px;"><b>ผู้ที่อยู่บ้านติดกันหรือละแวกบ้านเดียวกัน ป่วยเป็นโรคไข้เลือดออกในช่วง 14 วันก่อน/หลัง วันเริ่มป่วยของผู้ป่วยรายนี้:</b> ${renderContactRows(r.neighborSick14d, r.neighborContacts)}</div>
+          </div>
+
+          <div style="background:#0f766e; color:#fff; font-weight:bold; padding:4px 10px; border-radius:4px; margin-bottom:6px;">แหล่งเพาะพันธุ์ลูกน้ำยุงลาย</div>
+          <div style="border:1px solid #cbd5e1; border-radius:6px; padding:8px 10px; margin-bottom:10px;">
+            <div><b>บ้านผู้ป่วย CI บ้านผู้ป่วย:</b> <span style="font-weight:bold; color:#be123c;">${Number(r.ciPatient || 0).toFixed(2)} %</span></div>
+            <div style="margin-left:12px;">
+              จำนวนภาชนะในบ้าน: <b>${r.patientIndoorContainers ?? 0}</b> ภาชนะ &nbsp; พบลูกน้ำยุงลาย: <b>${r.patientIndoorLarvae ?? 0}</b> ภาชนะ<br>
+              จำนวนภาชนะนอกบ้าน: <b>${r.patientOutdoorContainers ?? 0}</b> ภาชนะ &nbsp; พบลูกน้ำยุงลาย: <b>${r.patientOutdoorLarvae ?? 0}</b> ภาชนะ
+            </div>
+            <div style="margin-top:6px;">
+              <b>รอบบ้านผู้ป่วย(รัศมี100เมตร)</b> &nbsp;&nbsp;
+              <b>ค่า CI :</b> <span style="font-weight:bold; color:#b45309;">${Number(r.ci100m || 0).toFixed(2)} %</span> &nbsp;&nbsp;
+              <b>ค่า HI :</b> <span style="font-weight:bold; color:#1d4ed8;">${Number(r.hi100m || 0).toFixed(2)} %</span>
+            </div>
+            <div style="margin-left:12px;">
+              จำนวนภาชนะในบ้าน: <b>${r.radiusIndoorContainers ?? 0}</b> ภาชนะ &nbsp; พบลูกน้ำ: <b>${r.radiusIndoorLarvae ?? 0}</b> ภาชนะ<br>
+              จำนวนภาชนะนอกบ้าน: <b>${r.radiusOutdoorContainers ?? 0}</b> ภาชนะ &nbsp; พบลูกน้ำ: <b>${r.radiusOutdoorLarvae ?? 0}</b> ภาชนะ<br>
+              จำนวนบ้าน ในรัศมี100เมตร ทั้งหมด: <b>${r.radiusTotalHouses ?? 0}</b> หลัง &nbsp; พบลูกน้ำยุงลาย: <b>${r.radiusPositiveHouses ?? 0}</b> หลัง
+            </div>
+          </div>
+
+          <div style="font-weight:bold; margin-bottom:4px; color:#0f766e;">ภาพสำรวจ/ทำลายภายในบ้าน</div>
+          <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
+            <tr>${renderPhotoCell(inPhotos[0], 'ภายในบ้าน 1')}${renderPhotoCell(inPhotos[1], 'ภายในบ้าน 2')}</tr>
+            <tr>${renderPhotoCell(inPhotos[2], 'ภายในบ้าน 3')}${renderPhotoCell(inPhotos[3], 'ภายในบ้าน 4')}</tr>
+          </table>
+
+          <div style="font-weight:bold; margin-bottom:4px; color:#b45309;">ภาพสำรวจ/ทำลายภายนอกบ้าน</div>
+          <table style="width:100%; border-collapse:collapse; margin-bottom:12px;">
+            <tr>${renderPhotoCell(outPhotos[0], 'ภายนอกบ้าน 1')}${renderPhotoCell(outPhotos[1], 'ภายนอกบ้าน 2')}</tr>
+            <tr>${renderPhotoCell(outPhotos[2], 'ภายนอกบ้าน 3')}${renderPhotoCell(outPhotos[3], 'ภายนอกบ้าน 4')}</tr>
+          </table>
+
+          <div style="border-top:1px solid #cbd5e1; padding-top:8px; display:flex; justify-content:space-between; align-items:center;">
+            <div><b>ชื่อผู้ควบคุมโรค:</b> ${val(r.controllerName)} &nbsp;&nbsp;&nbsp; <b>ตำแหน่ง:</b> ${val(r.controllerPosition)}</div>
+            <div style="font-size:11px; color:#64748b;">วันที่บันทึก: ${ctrlStr}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function openDiseaseControlPrintWindow(p, r) {
+      const reportHtml = buildDiseaseControlPdfHtml(p, r);
+      const printWindow = window.open('', '_blank', 'width=850,height=950');
+      if (printWindow) {
+        printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>รายงานควบคุมโรค_${p.fullName || ''}</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet"><style>@page{size:A4 portrait;margin:8mm;}body{margin:0;padding:10px;background:#fff;font-family:'Sarabun',Tahoma,sans-serif;}@media print{.no-print{display:none!important;}}</style></head><body><div class="no-print" style="margin-bottom:10px;padding:8px;background:#f1f5f9;display:flex;justify-content:space-between;"><span>🖨️ รายงานควบคุมโรคเบื้องต้น (3-3-1)</span><button onclick="window.print()" style="background:#0d9488;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;">พิมพ์ / บันทึก PDF</button></div>${reportHtml}<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
+        printWindow.document.close();
+      }
+    }
+
+    async function generateDiseaseControlPDF(patient, report, shouldDownload = true) {
+      const pName = (patient.fullName || 'ผู้ป่วย').replace(/\s+/g, '_');
+      const pCode = patient.patientCode || patient.id;
+      const fileName = `รายงานควบคุมโรค331_${pName}_${pCode}.pdf`;
+      const html = buildDiseaseControlPdfHtml(patient, report);
+      let pdfBlob = null;
+      try {
+        const res = await renderHtmlToPdfDirect(html, fileName, false, 794);
+        pdfBlob = res.blob;
+        if (shouldDownload && pdfBlob) {
+          const url = URL.createObjectURL(pdfBlob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } else if (!res.handled && shouldDownload) {
+          openDiseaseControlPrintWindow(patient, report);
+        }
+      } catch (err) {
+        console.warn('[TDDS] generateDiseaseControlPDF error:', err);
+        if (shouldDownload) openDiseaseControlPrintWindow(patient, report);
+      }
+      return { blob: pdfBlob, filename: fileName };
+    }
+
+    async function downloadDiseaseControlPDF(patientId) {
+      const p = patientsData.find(x => x.id === patientId || x.patientCode === patientId);
+      const r = getDiseaseControlReport(p);
+      if (!p || !r) {
+        Swal.fire({ icon: 'warning', title: 'ยังไม่มีรายงานควบคุมโรคเบื้องต้นสำหรับเคสนี้' });
+        return;
+      }
+      showLoading('กำลังสร้างไฟล์ .PDF รายงานควบคุมโรค (3-3-1)...');
+      await generateDiseaseControlPDF(p, r, true);
+      hideLoading();
+    }
+
+    async function saveDiseaseControlReportToSupabase(p, report) {
+      const cfg = getSupabasePersonConfig();
+      if (!cfg.url || !cfg.key) return { ok: false, error: 'Missing Supabase config' };
+      try {
+        const rowPayload = {
+          patient_id: p.supabaseId || null,
+          patient_code: p.patientCode || null,
+          patient_full_name: p.fullName || '-',
+          hcode: p.hcode || getHCodeByName(p.healthCenter) || null,
+          health_center: p.healthCenter || null,
+          subdistrict: p.subdistrict || null,
+          village_no: p.villageNo ? String(p.villageNo) : null,
+          address_no: p.addressNo || null,
+          notified_datetime: toIsoTimestampOrNull(p.notifiedDatetime),
+          control_datetime: toIsoTimestampOrNull(report.controlDatetime),
+          stay_domicile: report.stayDomicile || 'ใช่',
+          other_address_no: report.otherAddressNo || null,
+          other_village_no: report.otherVillageNo || null,
+          other_subdistrict: report.otherSubdistrict || null,
+          other_district: report.otherDistrict || null,
+          other_province: report.otherProvince || null,
+          travel_places: report.travelPlaces || null,
+          travel_dates: report.travelDates || null,
+          household_sick_14d: report.householdSick14d || 'ไม่มี',
+          household_contacts: report.householdContacts || [],
+          workplace_sick_14d: report.workplaceSick14d || 'ไม่มี',
+          workplace_contacts: report.workplaceContacts || [],
+          neighbor_sick_14d: report.neighborSick14d || 'ไม่มี',
+          neighbor_contacts: report.neighborContacts || [],
+          patient_indoor_containers: report.patientIndoorContainers ?? 0,
+          patient_indoor_larvae: report.patientIndoorLarvae ?? 0,
+          patient_outdoor_containers: report.patientOutdoorContainers ?? 0,
+          patient_outdoor_larvae: report.patientOutdoorLarvae ?? 0,
+          ci_patient: report.ciPatient ?? 0,
+          radius_indoor_containers: report.radiusIndoorContainers ?? 0,
+          radius_indoor_larvae: report.radiusIndoorLarvae ?? 0,
+          radius_outdoor_containers: report.radiusOutdoorContainers ?? 0,
+          radius_outdoor_larvae: report.radiusOutdoorLarvae ?? 0,
+          radius_total_houses: report.radiusTotalHouses ?? 0,
+          radius_positive_houses: report.radiusPositiveHouses ?? 0,
+          ci_100m: report.ci100m ?? 0,
+          hi_100m: report.hi100m ?? 0,
+          indoor_photos: report.indoorPhotos || [],
+          outdoor_photos: report.outdoorPhotos || [],
+          controller_name: report.controllerName || '-',
+          controller_position: report.controllerPosition || '-',
+          telegram_sent_at: report.telegramSentAt || new Date().toISOString()
+        };
+
+        let res;
+        if (p.supabaseId) {
+          res = await fetch(`${cfg.url}/rest/v1/disease_control_reports?on_conflict=patient_id`, {
+            method: 'POST',
+            headers: buildSupabaseHeaders(cfg.key, { 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+            body: JSON.stringify(rowPayload)
+          });
+        } else {
+          res = await fetch(`${cfg.url}/rest/v1/disease_control_reports`, {
+            method: 'POST',
+            headers: buildSupabaseHeaders(cfg.key, { 'Content-Type': 'application/json', 'Prefer': 'return=representation' }),
+            body: JSON.stringify(rowPayload)
+          });
+        }
+
+        // อัปเดตสถานะควบคุมโรคบนตาราง current_dengue_cases (หากรัน create_disease_control_reports.sql แล้ว)
+        if (p.supabaseId) {
+          const summaryPatch = {
+            control_completed_at: toIsoTimestampOrNull(report.controlDatetime) || new Date().toISOString(),
+            disease_control_summary: {
+              controlDatetime: report.controlDatetime,
+              ciPatient: report.ciPatient,
+              ci100m: report.ci100m,
+              hi100m: report.hi100m,
+              controllerName: report.controllerName,
+              controllerPosition: report.controllerPosition
+            }
+          };
+          fetch(`${cfg.url}/rest/v1/current_dengue_cases?id=eq.${encodeURIComponent(p.supabaseId)}`, {
+            method: 'PATCH',
+            headers: buildSupabaseHeaders(cfg.key, { 'Content-Type': 'application/json' }),
+            body: JSON.stringify(summaryPatch)
+          }).catch(() => {});
+        }
+
+        if (!res.ok) {
+          const txt = await res.text().catch(() => '');
+          return { ok: false, missingTable: res.status === 404, error: `HTTP ${res.status}: ${txt}` };
+        }
+        return { ok: true };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    }
+
+    async function fetchDiseaseControlReportsFromSupabase() {
+      const cfg = getSupabasePersonConfig();
+      if (!cfg.url || !cfg.key) return;
+      try {
+        const res = await fetch(`${cfg.url}/rest/v1/disease_control_reports?select=*&order=updated_at.desc&limit=2000`, {
+          headers: buildSupabaseHeaders(cfg.key)
+        });
+        if (!res.ok) return; // ข้ามเงียบๆ หากยังไม่สร้างตาราง disease_control_reports
+        const rows = await res.json();
+        if (!Array.isArray(rows) || rows.length === 0) return;
+
+        rows.forEach(r => {
+          const rep = {
+            controlDatetime: toLocalDatetimeInput(r.control_datetime),
+            stayDomicile: r.stay_domicile || 'ใช่',
+            otherAddressNo: r.other_address_no || '',
+            otherVillageNo: r.other_village_no || '',
+            otherSubdistrict: r.other_subdistrict || '',
+            otherDistrict: r.other_district || '',
+            otherProvince: r.other_province || '',
+            travelPlaces: r.travel_places || '',
+            travelDates: r.travel_dates || '',
+            householdSick14d: r.household_sick_14d || 'ไม่มี',
+            householdContacts: Array.isArray(r.household_contacts) ? r.household_contacts : [],
+            workplaceSick14d: r.workplace_sick_14d || 'ไม่มี',
+            workplaceContacts: Array.isArray(r.workplace_contacts) ? r.workplace_contacts : [],
+            neighborSick14d: r.neighbor_sick_14d || 'ไม่มี',
+            neighborContacts: Array.isArray(r.neighbor_contacts) ? r.neighbor_contacts : [],
+            patientIndoorContainers: r.patient_indoor_containers ?? 0,
+            patientIndoorLarvae: r.patient_indoor_larvae ?? 0,
+            patientOutdoorContainers: r.patient_outdoor_containers ?? 0,
+            patientOutdoorLarvae: r.patient_outdoor_larvae ?? 0,
+            ciPatient: Number(r.ci_patient || 0),
+            radiusIndoorContainers: r.radius_indoor_containers ?? 0,
+            radiusIndoorLarvae: r.radius_indoor_larvae ?? 0,
+            radiusOutdoorContainers: r.radius_outdoor_containers ?? 0,
+            radiusOutdoorLarvae: r.radius_outdoor_larvae ?? 0,
+            radiusTotalHouses: r.radius_total_houses ?? 0,
+            radiusPositiveHouses: r.radius_positive_houses ?? 0,
+            ci100m: Number(r.ci_100m || 0),
+            hi100m: Number(r.hi_100m || 0),
+            indoorPhotos: Array.isArray(r.indoor_photos) ? r.indoor_photos : [],
+            outdoorPhotos: Array.isArray(r.outdoor_photos) ? r.outdoor_photos : [],
+            controllerName: r.controller_name || '',
+            controllerPosition: r.controller_position || '',
+            telegramSentAt: r.telegram_sent_at || r.created_at,
+            submittedAt: r.updated_at || r.created_at
+          };
+          if (r.patient_id) diseaseControlReportsMap[r.patient_id] = rep;
+          if (r.patient_code) diseaseControlReportsMap[r.patient_code] = rep;
+          const match = patientsData.find(p =>
+            (r.patient_id && p.supabaseId === r.patient_id) || (r.patient_code && p.patientCode === r.patient_code)
+          );
+          if (match) {
+            match.diseaseControlReport = rep;
+            match.controlCompletedAt = r.control_datetime || rep.submittedAt;
+            diseaseControlReportsMap[match.id] = rep;
+          }
+        });
+        saveDiseaseControlStore();
+      } catch (e) {}
+    }
+
+    async function handleDiseaseControlSubmit(e) {
+      e.preventDefault();
+      const pid = document.getElementById('dc_patient_id')?.value;
+      const p = patientsData.find(x => x.id === pid);
+      if (!p) return;
+
+      const val = (id) => document.getElementById(id)?.value?.trim() || '';
+      const num = (id) => Math.max(0, parseInt(document.getElementById(id)?.value || '0', 10) || 0);
+      const readContacts = (short) => [1, 2].map(i => ({
+        name: val(`dc_${short}_${i}_name`),
+        age: val(`dc_${short}_${i}_age`),
+        illnessDate: val(`dc_${short}_${i}_date`)
+      })).filter(c => c.name || c.age || c.illnessDate);
+
+      const indices = recalcDcIndices();
+      const report = {
+        controlDatetime: val('dc_control_datetime') || new Date().toISOString(),
+        stayDomicile: val('dc_stay_domicile') || 'ใช่',
+        otherAddressNo: val('dc_other_address_no'),
+        otherVillageNo: val('dc_other_village_no'),
+        otherSubdistrict: val('dc_other_subdistrict'),
+        otherDistrict: val('dc_other_district'),
+        otherProvince: val('dc_other_province'),
+        travelPlaces: val('dc_travel_places'),
+        travelDates: val('dc_travel_dates'),
+        householdSick14d: val('dc_household_sick') || 'ไม่มี',
+        householdContacts: readContacts('hh'),
+        workplaceSick14d: val('dc_workplace_sick') || 'ไม่มี',
+        workplaceContacts: readContacts('wp'),
+        neighborSick14d: val('dc_neighbor_sick') || 'ไม่มี',
+        neighborContacts: readContacts('nb'),
+        patientIndoorContainers: num('dc_pt_in_total'),
+        patientIndoorLarvae: num('dc_pt_in_larvae'),
+        patientOutdoorContainers: num('dc_pt_out_total'),
+        patientOutdoorLarvae: num('dc_pt_out_larvae'),
+        ciPatient: indices.ciPatient,
+        radiusIndoorContainers: num('dc_rad_in_total'),
+        radiusIndoorLarvae: num('dc_rad_in_larvae'),
+        radiusOutdoorContainers: num('dc_rad_out_total'),
+        radiusOutdoorLarvae: num('dc_rad_out_larvae'),
+        radiusTotalHouses: num('dc_rad_houses_total'),
+        radiusPositiveHouses: num('dc_rad_houses_positive'),
+        ci100m: indices.ci100m,
+        hi100m: indices.hi100m,
+        indoorPhotos: dcIndoorPhotos.slice(0, 4),
+        outdoorPhotos: dcOutdoorPhotos.slice(0, 4),
+        controllerName: val('dc_controller_name'),
+        controllerPosition: val('dc_controller_position'),
+        submittedAt: new Date().toISOString(),
+        telegramSentAt: new Date().toISOString()
+      };
+
+      showLoading('กำลังบันทึกรายงานควบคุมโรค สร้างไฟล์ .PDF และส่ง Telegram...');
+
+      p.diseaseControlReport = report;
+      p.controlCompletedAt = toIsoTimestampOrNull(report.controlDatetime) || report.submittedAt;
+      diseaseControlReportsMap[p.id] = report;
+      if (p.supabaseId) diseaseControlReportsMap[p.supabaseId] = report;
+      if (p.patientCode) diseaseControlReportsMap[p.patientCode] = report;
+      saveDiseaseControlStore();
+      savePatients();
+
+      const sbRes = await saveDiseaseControlReportToSupabase(p, report);
+      const tgMsg = buildDiseaseControlTelegramMessage(p, report);
+      let pdfRes = null;
+      let tgOk = false;
+
+      try {
+        pdfRes = await generateDiseaseControlPDF(p, report, true);
+        if (pdfRes && pdfRes.blob) {
+          const formData = new FormData();
+          formData.append('chat_id', TELEGRAM_CONFIG.chatId);
+          formData.append('document', pdfRes.blob, pdfRes.filename);
+          formData.append('caption', tgMsg.length > 1000 ? tgMsg.slice(0, 995) + '...' : tgMsg);
+          const docRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendDocument`, { method: 'POST', body: formData });
+          const docJson = await docRes.json();
+          if (docJson && docJson.ok) tgOk = true;
+        }
+      } catch (err) {
+        console.warn('[TDDS] DC PDF+Telegram sendDocument error:', err);
+      }
+
+      if (!tgOk) {
+        try {
+          const msgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: TELEGRAM_CONFIG.chatId, text: tgMsg })
+          });
+          const msgJson = await msgRes.json();
+          if (msgJson && msgJson.ok) tgOk = true;
+        } catch (err) {}
+      }
+
+      addAuditLog('DISEASE_CONTROL_331', `บันทึกรายงานควบคุมโรคเบื้องต้น: ${p.fullName} (CI บ้าน ${report.ciPatient}%, CI 100ม. ${report.ci100m}%, HI ${report.hi100m}%)`);
+      hideLoading();
+      closeDiseaseControlModal();
+      renderPatientTable();
+      renderDiseaseControlView();
+
+      Swal.fire({
+        icon: 'success',
+        title: 'บันทึกรายงานควบคุมโรคเบื้องต้นสำเร็จ!',
+        html: `
+          <div class="text-left text-xs space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <div>✅ สร้างและดาวน์โหลดไฟล์ <b>.PDF</b> ตามแบบสอบสวนโรคแล้ว</div>
+            <div>${tgOk ? '📲 ส่งข้อความและไฟล์รายงานเข้ากลุ่ม Telegram เรียบร้อยแล้ว' : '⚠️ ส่งเข้า Telegram ไม่สำเร็จ (กรุณาตรวจสอบอินเทอร์เน็ต)'}</div>
+            ${sbRes && sbRes.missingTable ? '<div class="text-[11px] text-amber-700 pt-1">ℹ️ หมายเหตุ: หากต้องการเก็บรายงานควบคุมโรคขึ้นตารางกลางบน Supabase ด้วย กรุณารันไฟล์ <code>create_disease_control_reports.sql</code> ใน Supabase SQL Editor</div>' : ''}
+          </div>
+        `,
+        confirmButtonColor: '#0D9488'
+      });
+    }
+
+    // ตรวจสอบเคสที่พื้นที่ยืนยันแล้วเกิน 3 ชม. แต่ยังไม่มีการบันทึกควบคุมโรคเบื้องต้น (3 ชม.ที่ 2)
+    async function checkUncontrolledCases3Hours() {
+      if (!patientsData || patientsData.length === 0) return;
+      const now = Date.now();
+      const cfg = typeof getSupabasePersonConfig === 'function' ? getSupabasePersonConfig() : null;
+
+      for (const p of patientsData) {
+        const is2569 = (p.year === '2569' || p.year === 2569 || (p.illnessDate && p.illnessDate.startsWith('2026')));
+        if (!is2569) continue;
+        if (!isLocalConfirmedForControl(p)) continue;
+        if (hasDiseaseControlReport(p)) continue;
+        if (p.controlAlert3hSentAt) continue;
+
+        if (!p.confirmedTime) {
+          p.controlAlert3hSentAt = 'OLD_CASE_SKIPPED';
+          continue;
+        }
+        const confMs = new Date(p.confirmedTime).getTime();
+        if (isNaN(confMs)) {
+          p.controlAlert3hSentAt = 'OLD_CASE_SKIPPED';
+          continue;
+        }
+        const elapsedHours = (now - confMs) / 3600000;
+        if (elapsedHours > 24) {
+          p.controlAlert3hSentAt = 'OLD_CASE_SKIPPED';
+          continue;
+        }
+
+        if (elapsedHours >= 3 && elapsedHours <= 24) {
+          const confTimeText = formatControlDateTimeBE(p.confirmedTime);
+          const msg = `🚨 [แจ้งเตือน 3 ชม.ที่ 2: ยังไม่มีการบันทึกควบคุมโรคเบื้องต้น (มาตรการ 3-3-1)]
+🏥 เรียน เจ้าหน้าที่: ${p.healthCenter || 'รพ.สต./PCU'} (${p.hcode || getHCodeByName(p.healthCenter) || '-'})
+
+พื้นที่ยืนยันรับเคสเกิน 3 ชั่วโมงแล้ว แต่ยังไม่ได้บันทึกรายงานควบคุมโรคเบื้องต้น:
+• ผู้ป่วย : ${p.fullName || '-'} (${p.diagnosis || 'DF'})
+• ที่อยู่ : บ้านเลขที่ ${p.addressNo || '-'} หมู่ที่ ${p.villageNo || '-'} ต.${p.subdistrict || '-'}
+• ยืนยันเคสเมื่อ : ${confTimeText} (เกิน 3 ชม. ที่ 2 แล้ว)
+
+👉 กรุณาเข้าสู่ระบบ TDDS เพื่อบันทึกรายงานควบคุมโรคเบื้องต้น (CI/HI และภาพถ่าย) ทันที:
+https://dengue-thepha.github.io/tdds/`;
+
+          try {
+            const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chat_id: TELEGRAM_CONFIG.chatId, text: msg })
+            });
+            const data = await res.json();
+            if (data && data.ok) {
+              p.controlAlert3hSentAt = new Date().toISOString();
+              savePatients();
+              addAuditLog('AUTO_CONTROL_ALERT_3H', `ส่งแจ้งเตือน 3 ชม.ที่ 2 (ยังไม่บันทึกควบคุมโรค): ${p.fullName} (${p.healthCenter})`);
+              if (cfg && cfg.url && cfg.key && p.supabaseId) {
+                fetch(`${cfg.url}/rest/v1/current_dengue_cases?id=eq.${encodeURIComponent(p.supabaseId)}`, {
+                  method: 'PATCH',
+                  headers: buildSupabaseHeaders(cfg.key, { 'Content-Type': 'application/json' }),
+                  body: JSON.stringify({ control_alert_3h_sent_at: p.controlAlert3hSentAt })
+                }).catch(() => {});
+              }
+            }
+          } catch (err) {
+            console.warn('[TDDS Alert] Failed to send 3h control alert:', err);
+          }
+        }
+      }
     }
 
     // ฟังก์ชันจัดการ Modal ตั้งค่า Cloud & Telegram
@@ -11378,6 +12683,9 @@ ${topHcText}${noteBlock}
         confirmedBy: row.confirmed_by || null,
         confirmedTime: row.confirmed_time || null,
         confirmedNote: row.confirmed_note || '',
+        controlCompletedAt: row.control_completed_at || (existingLocal?.controlCompletedAt ?? null),
+        controlAlert3hSentAt: row.control_alert_3h_sent_at || (existingLocal?.controlAlert3hSentAt ?? null),
+        diseaseControlReport: existingLocal?.diseaseControlReport || (row.disease_control_summary || null),
         lat: row.latitude != null ? Number(row.latitude) : (existingLocal?.lat ?? null),
         lng: row.longitude != null ? Number(row.longitude) : (existingLocal?.lng ?? null),
         createdAt: row.created_at || (existingLocal?.createdAt ?? null),
@@ -11455,9 +12763,14 @@ ${topHcText}${noteBlock}
 
         markOldCasesAlertSkipped(merged);
         patientsData = merged;
+        loadDiseaseControlStore();
         savePatients();
+        if (typeof fetchDiseaseControlReportsFromSupabase === 'function') {
+          await fetchDiseaseControlReportsFromSupabase();
+        }
         applyDashboardFilters();
         renderPatientTable();
+        if (typeof renderDiseaseControlView === 'function') renderDiseaseControlView();
         renderMapMarkers();
         if (typeof populatePersonFilters === 'function') populatePersonFilters();
 
