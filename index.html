@@ -205,12 +205,8 @@
         <!-- Right: Actions & User Menu -->
         <div class="flex items-center gap-2 sm:gap-3">
           
-          <!-- Not Logged In: Public Event Report + Login Button -->
+          <!-- Not Logged In: Login Button -->
           <div id="unauthHeaderActions" class="flex items-center gap-2">
-            <button onclick="openPublicEventModal()" class="flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white text-xs sm:text-sm font-bold px-3.5 py-2 rounded-xl shadow-md shadow-rose-500/20 transition active:scale-95">
-              <span>🚨</span>
-              <span>แจ้งเหตุผิดปกติ/แจ้งโรค</span>
-            </button>
             <button onclick="openLoginModal()" class="flex items-center gap-2 bg-[#26A69A] hover:bg-[#00897B] text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl shadow-md shadow-teal-500/20 transition active:scale-95">
               <span>🔑</span>
               <span>เข้าสู่ระบบ (Login)</span>
@@ -291,10 +287,10 @@
             <span>แผนที่พิกัดบ้านผู้ป่วย</span>
           </button>
 
-          <!-- Menu: Public Event & Disease Report (Visible for Everyone / Public) -->
-          <button onclick="openPublicEventModal()" id="menu-event-report" class="sidebar-menu-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-rose-700 bg-rose-50/60 hover:bg-rose-100/80 border border-rose-200/70 transition">
+          <!-- Menu: Public Event & Disease Report (Hidden in Sidebar for Clean Dashboard) -->
+          <button onclick="openPublicEventModal()" id="menu-event-report" class="sidebar-menu-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-700 hover:text-rose-700 hover:bg-rose-50/70 transition">
             <span class="w-5 text-center text-base">🚨</span>
-            <span>แจ้งเหตุผิดปกติ / แจ้งโรค</span>
+            <span>รายงานแจ้งเหตุผิดปกติ / แจ้งโรค</span>
           </button>
 
           <!-- Menu: Patient Registry (Visible for Logged In) -->
@@ -431,11 +427,6 @@
               <option value="สะกอม" class="text-slate-800">ต.สะกอม</option>
             </select>
 
-            <button onclick="openPublicEventModal()" class="text-xs bg-gradient-to-r from-amber-400 to-rose-500 hover:from-amber-500 hover:to-rose-600 text-white font-bold px-3.5 py-2 rounded-xl shadow-md transition active:scale-95 flex items-center gap-1.5 border border-white/25">
-              <span>🚨</span>
-              <span>แจ้งเหตุผิดปกติ/แจ้งโรค</span>
-            </button>
-
             <button onclick="refreshData()" class="text-xs bg-white text-teal-800 hover:bg-teal-50 font-bold px-3.5 py-2 rounded-xl shadow-sm transition active:scale-95 flex items-center gap-1.5">
               <span>🔄</span>
               <span>อัปเดตข้อมูล</span>
@@ -556,39 +547,6 @@
             <div class="absolute bottom-0 left-0 right-0 h-1.5 bg-[#AED581]"></div>
           </div>
 
-        </div>
-
-        <!-- PUBLIC EVENT / ABNORMAL DISEASE REPORTING BANNER CARD (สำหรับประชาชนทั่วไป ไม่ต้อง Login) -->
-        <div id="publicEventReportBannerCard" class="bg-gradient-to-r from-cyan-50 via-teal-50 to-sky-50 border border-cyan-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-          <div class="flex items-start gap-3.5">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500 to-amber-500 text-white flex items-center justify-center text-2xl shadow-md shrink-0">
-              <span>📢</span>
-            </div>
-            <div>
-              <div class="flex flex-wrap items-center gap-2">
-                <h3 class="text-sm sm:text-base font-extrabold text-slate-900">รายงานแจ้งเหตุการณ์ผิดปกติ / แจ้งโรคในหมู่บ้าน (สำหรับประชาชนทั่วไป)</h3>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">🌐 ไม่ต้องเข้าสู่ระบบ</span>
-              </div>
-              <p class="text-xs text-slate-600 mt-1 leading-relaxed">
-                พบผู้ป่วยสงสัยไข้เลือดออก อาการป่วยเป็นกลุ่มก้อน โรคระบาดในหมู่บ้าน หรือเหตุการณ์ที่อาจเป็นอันตรายต่อสุขภาพ ประชาชน/ผู้นำชุมชน/อสม. สามารถแจ้งข้อมูลเข้าสู่ระบบทะเบียนรับแจ้งเพื่อให้เจ้าหน้าที่และพื้นที่เข้าตรวจสอบได้ทันที
-              </p>
-              <div class="flex flex-wrap items-center gap-3 mt-2 text-[11px] font-semibold text-slate-600">
-                <span>📋 รับแจ้งสะสม: <b id="publicEventTotalCount" class="text-cyan-800">0</b> เรื่อง</span>
-                <span>⏳ รอตรวจสอบ: <b id="publicEventPendingCount" class="text-amber-700">0</b> เรื่อง</span>
-                <span>✅ ตรวจสอบ/นำเรียนพื้นที่แล้ว: <b id="publicEventResolvedCount" class="text-emerald-700">0</b> เรื่อง</span>
-              </div>
-            </div>
-          </div>
-          <div class="flex flex-wrap items-center gap-2 shrink-0 w-full lg:w-auto justify-end">
-            <button type="button" onclick="openPublicEventModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-700 hover:to-amber-600 text-white text-xs sm:text-sm font-bold shadow-md shadow-rose-500/20 transition active:scale-95 flex items-center gap-2">
-              <span>🚨</span>
-              <span>เปิดแบบฟอร์มรายงานแจ้งเหตุ</span>
-            </button>
-            <button type="button" onclick="navigateTo('event-registry')" class="admin-only hidden px-3.5 py-2.5 rounded-xl bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
-              <span>🛡️</span>
-              <span>ทะเบียนเหตุการณ์ (Admin)</span>
-            </button>
-          </div>
         </div>
 
         <!-- EPIDEMIOLOGICAL CURVE SECTION: จำนวนผู้ป่วยจำแนกรายเดือน เทียบกับ Median 5 ปีย้อนหลัง และปี 2568 -->
@@ -11438,6 +11396,7 @@ https://dengue-thepha.github.io/tdds/`;
     }
 
     function openPublicEventModal() {
+      if (typeof toggleSidebar === 'function') toggleSidebar(false);
       document.getElementById('publicEventForm')?.reset();
       const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ''; };
       setVal('pe_event_code', generateNextEventCode());
