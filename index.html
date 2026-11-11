@@ -9630,10 +9630,25 @@ ${topHcText}${noteBlock}
         syncPopulationFromImportedPersons();
         applyDashboardFilters();
       }
-      // ถ้าตั้งค่า Supabase ไว้และเครื่องยังว่าง ให้ดึงจาก Supabase อัตโนมัติ
+      // ถ้าตั้งค่า Supabase ไว้และเครื่องยังว่าง หรือแคชในเครื่องน้อยกว่าฐานข้อมูลจริง ให้ดึงจาก Supabase อัตโนมัติ
       const cfg = getSupabasePersonConfig();
-      if (personsData.length === 0 && cfg.url && cfg.key) {
-        await fetchPersonsFromSupabase(true);
+      if (cfg.url && cfg.key) {
+        if (personsData.length === 0) {
+          await fetchPersonsFromSupabase(true);
+        } else {
+          // ตรวจสอบจำนวนแถวใน Supabase แบบเบาๆ (หากแคชในเครื่องยังขาดบาง รพ.สต. ให้ซิงค์เพิ่มในพื้นหลัง)
+          try {
+            const headRes = await fetch(`${cfg.url}/rest/v1/person?select=id&limit=1`, {
+              headers: buildSupabaseHeaders(cfg.key, { 'Prefer': 'count=exact' })
+            });
+            const cr = headRes.headers.get('content-range') || '';
+            const totalMatch = cr.match(/\/(\d+)$/);
+            const sbTotal = totalMatch ? parseInt(totalMatch[1], 10) : 0;
+            if (sbTotal > personsData.length) {
+              fetchPersonsFromSupabase(true);
+            }
+          } catch (e) {}
+        }
       }
     }
 
@@ -9644,16 +9659,22 @@ ${topHcText}${noteBlock}
         .trim();
     }
 
+    function isAllDistrictPersonScopeUser(user) {
+      if (!user) return false;
+      const uUnit = normalizeThaiStr(user.unit || '');
+      return user.role === 'admin' || uUnit === 'สสอ.เทพา' || uUnit === 'รพ.เทพา';
+    }
+
     function getPersonScopeInfo() {
       if (!currentUser) {
         return { allowed: false, isAdmin: false, isOsm: false, label: '🔒 กรุณาเข้าสู่ระบบเพื่อใช้งานข้อมูลประชากร' };
       }
-      if (currentUser.role === 'admin') {
+      if (isAllDistrictPersonScopeUser(currentUser)) {
         return {
           allowed: true,
-          isAdmin: true,
+          isAdmin: currentUser.role === 'admin',
           isOsm: false,
-          label: '👑 สิทธิ์ผู้ดูแลระบบ (Admin): ค้นหาและดูข้อมูลประชากร (person) ได้ทั้งหมดทุกหน่วยบริการ'
+          label: '👑 สิทธิ์ระดับอำเภอ: ค้นหาและดูข้อมูลประชากร (person) ได้ทั้งหมดทุกหน่วยบริการ'
         };
       }
       const isOsm = currentUser.position === 'อสม.' || currentUser.role === 'OSM' || currentUser.role === 'osm';
@@ -9682,7 +9703,7 @@ ${topHcText}${noteBlock}
 
     function getFilteredPersonsForUser() {
       if (!currentUser || !Array.isArray(personsData)) return [];
-      if (currentUser.role === 'admin') return personsData;
+      if (isAllDistrictPersonScopeUser(currentUser)) return personsData;
 
       const isOsm = currentUser.position === 'อสม.' || currentUser.role === 'OSM' || currentUser.role === 'osm';
       const userUnit = normalizeThaiStr(currentUser.unit || '');
@@ -9792,6 +9813,120 @@ ${topHcText}${noteBlock}
       }
     }
 
+    function mapSupabasePersonRow(r) {
+      const ageInfo = computeAgeAndGroup(r.dob, r.age_year);
+      return {
+        uid: `${r.pcucodeperson || ''}_${r.pid || r.id}`,
+        pcucodeperson: String(r.pcucodeperson || '').trim(),
+        pid: String(r.pid || '').trim(),
+        cid: String(r.cid || '').trim(),
+        fullname: normalizeThaiStr(r.fullname || ''),
+        gender: normalizeThaiStr(r.gender || ''),
+        dob: r.dob || null,
+        age_year: r.age_year != null ? Number(r.age_year) : ageInfo.ageYear,
+        age_group: r.age_group || ageInfo.ageGroup,
+        occupation: normalizeThaiStr(r.occupation || ''),
+        residence_type: normalizeThaiStr(r.residence_type || ''),
+        house_no: normalizeThaiStr(r.house_no || ''),
+        village_no: normalizeThaiStr(r.village_no || ''),
+        subdistrict: normalizeThaiStr(r.subdistrict || ''),
+        district: normalizeThaiStr(r.district || ''),
+        province: normalizeThaiStr(r.province || ''),
+        lat: r.lat != null ? Number(r.lat) : null,
+        lng: r.lng != null ? Number(r.lng) : null,
+        osm_name: normalizeThaiStr(r.osm_name || '')
+      };
+    }
+
+    function parsePersonSearchTokens(rawQuery) {
+      const cleaned = normalizeThaiStr(rawQuery || '')
+        .toLowerCase()
+        .replace(/^(บ้านเลขที่|เลขที่)\s*/g, '');
+      const rawTokens = cleaned.split(/\s+/).filter(Boolean);
+      const res = {
+        raw: cleaned,
+        houseToken: '',
+        villageToken: '',
+        subdistrictToken: '',
+        textTokens: []
+      };
+      rawTokens.forEach(tok => {
+        if (/^(ม\.|หมู่ที่|หมู่)\s*\d+$/.test(tok)) {
+          res.villageToken = tok.replace(/^(ม\.|หมู่ที่|หมู่)\s*/g, '');
+        } else if (/^(ต\.|ตำบล).+$/.test(tok)) {
+          res.subdistrictToken = tok.replace(/^(ต\.|ตำบล)\s*/g, '');
+        } else {
+          res.textTokens.push(tok);
+        }
+      });
+      if (res.textTokens.length > 0 && /^[\d/]+$/.test(res.textTokens[0])) {
+        res.houseToken = res.textTokens[0];
+      }
+      return res;
+    }
+
+    function matchesPersonSearchQuery(p, rawQuery) {
+      const parsed = typeof rawQuery === 'string' ? parsePersonSearchTokens(rawQuery) : rawQuery;
+      if (!parsed || !parsed.raw) return true;
+      const vNo = String(p.village_no || '').trim();
+      const sub = normalizeThaiStr(p.subdistrict || '').toLowerCase();
+      if (parsed.villageToken && vNo !== parsed.villageToken) return false;
+      if (parsed.subdistrictToken && !sub.includes(parsed.subdistrictToken)) return false;
+
+      const hNo = normalizeThaiStr(p.house_no || '').toLowerCase();
+      const hCode = String(p.pcucodeperson || '').trim().toLowerCase();
+      const hName = normalizeThaiStr(getHNameByCode(p.pcucodeperson) || '').toLowerCase();
+      const haystack = `${(p.fullname || '').toLowerCase()} ${hNo} ม.${vNo} หมู่${vNo} ต.${sub} ${sub} ${hCode} ${hName} ${(p.osm_name || '').toLowerCase()} ${p.cid || ''}`;
+      return parsed.textTokens.every(tok => haystack.includes(tok));
+    }
+
+    async function searchPersonFromSupabaseLive({ houseNo = '', villageNo = '', subdistrict = '', cleanName = '', queryText = '', requireCoords = false, limit = 50 } = {}) {
+      const cfg = getSupabasePersonConfig();
+      if (!cfg.url || !cfg.key || !currentUser) return [];
+      const params = ['select=*'];
+      if (requireCoords) {
+        params.push('lat=not.is.null', 'lng=not.is.null');
+      }
+      if (!isAllDistrictPersonScopeUser(currentUser)) {
+        const uHcode = currentUser.hcode || getHCodeByName(currentUser.unit);
+        if (!uHcode) return [];
+        params.push(`pcucodeperson=eq.${encodeURIComponent(uHcode)}`);
+      }
+      const isOsm = currentUser.position === 'อสม.' || currentUser.role === 'OSM' || currentUser.role === 'osm';
+      if (isOsm && currentUser.villageNo && !villageNo) {
+        params.push(`village_no=eq.${encodeURIComponent(String(currentUser.villageNo).trim())}`);
+      }
+      if (villageNo) params.push(`village_no=eq.${encodeURIComponent(String(villageNo).trim())}`);
+      if (subdistrict) params.push(`subdistrict=eq.${encodeURIComponent(normalizeThaiStr(subdistrict))}`);
+      if (cleanName) {
+        params.push(`fullname=ilike.${encodeURIComponent('*' + cleanName + '*')}`);
+      } else if (houseNo) {
+        params.push(`house_no=ilike.${encodeURIComponent(houseNo + '*')}`);
+      } else if (queryText) {
+        const parsed = parsePersonSearchTokens(queryText);
+        if (parsed.villageToken && !villageNo) params.push(`village_no=eq.${encodeURIComponent(parsed.villageToken)}`);
+        if (parsed.subdistrictToken && !subdistrict) params.push(`subdistrict=ilike.${encodeURIComponent('*' + parsed.subdistrictToken + '*')}`);
+        if (parsed.houseToken) {
+          params.push(`house_no=ilike.${encodeURIComponent(parsed.houseToken + '*')}`);
+        } else if (parsed.textTokens.length > 0) {
+          const kw = parsed.textTokens[0];
+          params.push(`or=(fullname.ilike.*${encodeURIComponent(kw)}*,house_no.ilike.*${encodeURIComponent(kw)}*,osm_name.ilike.*${encodeURIComponent(kw)}*)`);
+        }
+      }
+      params.push(`limit=${limit}`);
+      try {
+        const res = await fetch(`${cfg.url}/rest/v1/person?${params.join('&')}`, {
+          headers: buildSupabaseHeaders(cfg.key)
+        });
+        if (!res.ok) return [];
+        const rows = await res.json();
+        if (!Array.isArray(rows)) return [];
+        return rows.map(mapSupabasePersonRow);
+      } catch (e) {
+        return [];
+      }
+    }
+
     async function fetchPersonsFromSupabase(silent = false) {
       const cfg = getSupabasePersonConfig();
       if (!cfg.url || !cfg.key) return;
@@ -9800,42 +9935,39 @@ ${topHcText}${noteBlock}
         const fetched = [];
         let offset = 0;
         const limit = 1000;
-        while (true) {
-          const res = await fetch(`${cfg.url}/rest/v1/person?select=*&order=id.asc&limit=${limit}&offset=${offset}`, {
-            headers: buildSupabaseHeaders(cfg.key)
-          });
-          if (!res.ok) {
-            const errTxt = await res.text();
-            throw new Error(`HTTP ${res.status}: ${errTxt}`);
+        const batchSize = 5;
+        let done = false;
+        while (!done) {
+          const pagePromises = [];
+          for (let b = 0; b < batchSize; b++) {
+            const pageOffset = offset + b * limit;
+            pagePromises.push(
+              fetch(`${cfg.url}/rest/v1/person?select=*&order=id.asc&limit=${limit}&offset=${pageOffset}`, {
+                headers: buildSupabaseHeaders(cfg.key)
+              }).then(async res => {
+                if (!res.ok) {
+                  const errTxt = await res.text();
+                  throw new Error(`HTTP ${res.status}: ${errTxt}`);
+                }
+                return res.json();
+              })
+            );
           }
-          const page = await res.json();
-          if (!Array.isArray(page) || page.length === 0) break;
-          for (const r of page) {
-            const ageInfo = computeAgeAndGroup(r.dob, r.age_year);
-            fetched.push({
-              uid: `${r.pcucodeperson || ''}_${r.pid || r.id}`,
-              pcucodeperson: String(r.pcucodeperson || '').trim(),
-              pid: String(r.pid || '').trim(),
-              cid: String(r.cid || '').trim(),
-              fullname: normalizeThaiStr(r.fullname || ''),
-              gender: normalizeThaiStr(r.gender || ''),
-              dob: r.dob || null,
-              age_year: r.age_year != null ? Number(r.age_year) : ageInfo.ageYear,
-              age_group: r.age_group || ageInfo.ageGroup,
-              occupation: normalizeThaiStr(r.occupation || ''),
-              residence_type: normalizeThaiStr(r.residence_type || ''),
-              house_no: normalizeThaiStr(r.house_no || ''),
-              village_no: normalizeThaiStr(r.village_no || ''),
-              subdistrict: normalizeThaiStr(r.subdistrict || ''),
-              district: normalizeThaiStr(r.district || ''),
-              province: normalizeThaiStr(r.province || ''),
-              lat: r.lat != null ? Number(r.lat) : null,
-              lng: r.lng != null ? Number(r.lng) : null,
-              osm_name: normalizeThaiStr(r.osm_name || '')
-            });
+          const pages = await Promise.all(pagePromises);
+          for (const page of pages) {
+            if (!Array.isArray(page) || page.length === 0) {
+              done = true;
+              break;
+            }
+            for (const r of page) {
+              fetched.push(mapSupabasePersonRow(r));
+            }
+            if (page.length < limit) {
+              done = true;
+              break;
+            }
           }
-          if (page.length < limit) break;
-          offset += limit;
+          offset += batchSize * limit;
         }
         if (fetched.length > 0) {
           personsData = fetched;
@@ -10460,31 +10592,14 @@ ${topHcText}${noteBlock}
       return res;
     }
 
-    function renderRadiusPersonQuickMatches() {
-      const inputEl = document.getElementById('radiusPersonQuickSearch');
-      const dropEl = document.getElementById('radiusPersonQuickDropdown');
-      if (!inputEl || !dropEl) return;
-      const q = normalizeThaiStr(inputEl.value).toLowerCase();
-      if (!q) {
-        dropEl.classList.add('hidden');
-        dropEl.innerHTML = '';
-        return;
-      }
-      const scopedPersons = getFilteredPersonsForUser();
-      const matches = scopedPersons.filter(p =>
-        p.lat !== null && p.lng !== null && (
-          (p.fullname || '').toLowerCase().includes(q) ||
-          (p.house_no || '').toLowerCase().includes(q) ||
-          (p.osm_name || '').toLowerCase().includes(q)
-        )
-      ).slice(0, 20);
+    let _radiusQuickLiveTimer = null;
 
-      if (matches.length === 0) {
+    function renderRadiusPersonQuickDropdownItems(dropEl, matches, qLabel) {
+      if (!matches || matches.length === 0) {
         dropEl.classList.remove('hidden');
-        dropEl.innerHTML = `<div class="px-3 py-2 text-slate-400">ไม่พบบ้านที่มีพิกัดในเขตรับผิดชอบสำหรับ "${q}"</div>`;
+        dropEl.innerHTML = `<div class="px-3 py-2 text-slate-400">ไม่พบบ้านที่มีพิกัดในเขตรับผิดชอบสำหรับ "${qLabel}"</div>`;
         return;
       }
-
       window._radiusQuickMatches = matches;
       dropEl.classList.remove('hidden');
       dropEl.innerHTML = matches.map((m, idx) => `
@@ -10492,10 +10607,62 @@ ${topHcText}${noteBlock}
           <div>
             <span class="font-bold text-slate-900">${m.fullname}</span>
             <span class="text-slate-500">• บ้านเลขที่ ${m.house_no || '-'} ม.${m.village_no || '-'} ต.${m.subdistrict || '-'}</span>
+            <span class="text-[10px] text-teal-700 font-medium">(${m.pcucodeperson || '-'}${getHNameByCode(m.pcucodeperson) ? ' ' + getHNameByCode(m.pcucodeperson) : ''})</span>
           </div>
           <span class="text-[10px] font-mono text-teal-700 shrink-0">${m.lat.toFixed(5)}, ${m.lng.toFixed(5)}</span>
         </button>
       `).join('');
+    }
+
+    function renderRadiusPersonQuickMatches() {
+      const inputEl = document.getElementById('radiusPersonQuickSearch');
+      const dropEl = document.getElementById('radiusPersonQuickDropdown');
+      if (!inputEl || !dropEl) return;
+      const rawQ = normalizeThaiStr(inputEl.value);
+      if (!rawQ) {
+        dropEl.classList.add('hidden');
+        dropEl.innerHTML = '';
+        return;
+      }
+      const parsed = parsePersonSearchTokens(rawQ);
+      const scopedPersons = getFilteredPersonsForUser();
+      const matchedList = scopedPersons.filter(p =>
+        p.lat !== null && p.lng !== null && matchesPersonSearchQuery(p, parsed)
+      );
+
+      // จัดอันดับให้บ้านเลขที่ตรงตัว (exact) ขึ้นก่อนบ้านทับ เช่น 128 ก่อน 128/1
+      if (parsed.houseToken) {
+        matchedList.sort((a, b) => {
+          const aExact = normalizeThaiStr(a.house_no).toLowerCase() === parsed.houseToken ? 0 : 1;
+          const bExact = normalizeThaiStr(b.house_no).toLowerCase() === parsed.houseToken ? 0 : 1;
+          return aExact - bExact;
+        });
+      }
+
+      const matches = matchedList.slice(0, 50);
+      if (matches.length > 0) {
+        renderRadiusPersonQuickDropdownItems(dropEl, matches, rawQ);
+        return;
+      }
+
+      // หากยังไม่มีในแคชเครื่อง (หรือแคชยังไม่ครบ 66,000+ แถว) ให้ค้นหาจาก Supabase person โดยตรง
+      dropEl.classList.remove('hidden');
+      dropEl.innerHTML = `<div class="px-3 py-2 text-slate-400">กำลังค้นหา "${rawQ}" จากฐานข้อมูล person...</div>`;
+      clearTimeout(_radiusQuickLiveTimer);
+      _radiusQuickLiveTimer = setTimeout(async () => {
+        const liveRows = await searchPersonFromSupabaseLive({ queryText: rawQ, requireCoords: true, limit: 80 });
+        const filteredLive = liveRows.filter(p => matchesPersonSearchQuery(p, parsed));
+        if (parsed.houseToken) {
+          filteredLive.sort((a, b) => {
+            const aExact = normalizeThaiStr(a.house_no).toLowerCase() === parsed.houseToken ? 0 : 1;
+            const bExact = normalizeThaiStr(b.house_no).toLowerCase() === parsed.houseToken ? 0 : 1;
+            return aExact - bExact;
+          });
+        }
+        if (normalizeThaiStr(inputEl.value) === rawQ) {
+          renderRadiusPersonQuickDropdownItems(dropEl, filteredLive.slice(0, 50), rawQ);
+        }
+      }, 280);
     }
 
     function selectRadiusPersonCenter(idx) {
@@ -10716,12 +10883,8 @@ ${topHcText}${noteBlock}
       let list = getFilteredPersonsForUser();
       if (hcodeFilter !== 'all') list = list.filter(p => p.pcucodeperson === hcodeFilter);
       if (q) {
-        list = list.filter(p =>
-          (p.fullname || '').toLowerCase().includes(q) ||
-          (p.house_no || '').toLowerCase().includes(q) ||
-          (p.cid || '').includes(q) ||
-          (p.osm_name || '').toLowerCase().includes(q)
-        );
+        const parsed = parsePersonSearchTokens(q);
+        list = list.filter(p => matchesPersonSearchQuery(p, parsed));
       }
 
       tbody.innerHTML = '';
@@ -10749,7 +10912,8 @@ ${topHcText}${noteBlock}
       const scopedPersons = getFilteredPersonsForUser();
       if (!scopedPersons || scopedPersons.length === 0 || !patient) return null;
       const pName = normalizeThaiStr(patient.fullName || '').replace(/^(นาย|นางสาว|น\.ส\.|นาง|ด\.ช\.|ด\.ญ\.|เด็กชาย|เด็กหญิง)\s*/i, '').trim();
-      const pHouse = normalizeThaiStr(patient.addressNo || '');
+      const pHouse = normalizeThaiStr(patient.addressNo || '').replace(/^(บ้านเลขที่|เลขที่)\s*/g, '').trim();
+      const pVillage = String(patient.villageNo || '').trim();
       const pSub = normalizeThaiStr(patient.subdistrict || '');
 
       const exact = scopedPersons.find(x =>
@@ -10761,48 +10925,81 @@ ${topHcText}${noteBlock}
         return scopedPersons.find(x =>
           x.lat !== null && x.lng !== null &&
           normalizeThaiStr(x.house_no) === pHouse &&
+          (!pVillage || String(x.village_no || '').trim() === pVillage) &&
           (!pSub || normalizeThaiStr(x.subdistrict) === pSub)
+        ) || scopedPersons.find(x =>
+          x.lat !== null && x.lng !== null &&
+          normalizeThaiStr(x.house_no) === pHouse &&
+          (!pVillage || String(x.village_no || '').trim() === pVillage)
         ) || null;
       }
       return null;
     }
 
-    // ดึงพิกัดบ้านจากตาราง person สำหรับฟอร์มบันทึก/แก้ไขผู้ป่วย
-    function lookupCoordsFromPerson() {
-      const scopedPersons = getFilteredPersonsForUser();
-      if (!scopedPersons || scopedPersons.length === 0) {
-        Swal.fire({
-          icon: 'info',
-          title: 'ไม่พบข้อมูลประชากรในเขตรับผิดชอบ',
-          text: personsData.length === 0
-            ? 'ยังไม่มีข้อมูลตาราง person ในระบบ (กรุณาให้ Admin นำเข้าไฟล์ Excel)'
-            : 'ไม่พบข้อมูล person ในขอบเขตที่ท่านรับผิดชอบ'
-        });
+    // ดึงพิกัดบ้านจากตาราง person สำหรับฟอร์มบันทึก/แก้ไขผู้ป่วย (ค้นหาทั้งในเครื่องและ Supabase โดยตรง)
+    async function lookupCoordsFromPerson() {
+      if (!currentUser) {
+        Swal.fire({ icon: 'warning', title: 'กรุณาเข้าสู่ระบบก่อนใช้งาน' });
         return;
       }
-
+      const scopedPersons = getFilteredPersonsForUser();
       const rawName = normalizeThaiStr(document.getElementById('p_full_name')?.value || '');
       const cleanName = rawName.replace(/^(นาย|นางสาว|น\.ส\.|นาง|ด\.ช\.|ด\.ญ\.|เด็กชาย|เด็กหญิง)\s*/i, '').trim();
-      const addrNo = normalizeThaiStr(document.getElementById('p_address_no')?.value || '');
+      const rawAddrNo = normalizeThaiStr(document.getElementById('p_address_no')?.value || '');
+      const addrNo = rawAddrNo.replace(/^(บ้านเลขที่|เลขที่)\s*/g, '').trim();
+      const villageNo = String(document.getElementById('p_village_no')?.value || '').trim();
       const subdist = normalizeThaiStr(document.getElementById('p_subdistrict')?.value || '');
 
+      const filterByAddr = (src, strictSub = true) => {
+        if (!addrNo) return [];
+        const exact = src.filter(p =>
+          p.lat !== null && p.lng !== null &&
+          normalizeThaiStr(p.house_no) === addrNo &&
+          (!villageNo || String(p.village_no || '').trim() === villageNo) &&
+          (!strictSub || !subdist || normalizeThaiStr(p.subdistrict) === subdist)
+        );
+        if (exact.length > 0) return exact;
+        return src.filter(p =>
+          p.lat !== null && p.lng !== null &&
+          normalizeThaiStr(p.house_no).startsWith(addrNo) &&
+          (!villageNo || String(p.village_no || '').trim() === villageNo) &&
+          (!strictSub || !subdist || normalizeThaiStr(p.subdistrict) === subdist)
+        );
+      };
+
       let matches = [];
-      if (cleanName) {
+      if (cleanName && scopedPersons.length > 0) {
         matches = scopedPersons.filter(p => normalizeThaiStr(p.fullname).includes(cleanName) && p.lat !== null);
       }
-      if (matches.length === 0 && addrNo) {
-        matches = scopedPersons.filter(p =>
-          normalizeThaiStr(p.house_no) === addrNo &&
-          (!subdist || normalizeThaiStr(p.subdistrict) === subdist) &&
-          p.lat !== null
-        );
+      if (matches.length === 0 && addrNo && scopedPersons.length > 0) {
+        matches = filterByAddr(scopedPersons, true);
+        if (matches.length === 0) matches = filterByAddr(scopedPersons, false);
+      }
+
+      // หากไม่พบในเครื่อง (เช่น แคชยังไม่ครบหรือยังซิงค์ไม่เสร็จ) ให้ค้นหาตรงจากตาราง person บน Supabase ทันที
+      if (matches.length === 0) {
+        showLoading('กำลังค้นหาพิกัดจากตาราง person บน Supabase...');
+        let liveRows = [];
+        if (addrNo) {
+          liveRows = await searchPersonFromSupabaseLive({ houseNo: addrNo, villageNo, subdistrict: subdist, requireCoords: true, limit: 50 });
+          if (liveRows.length === 0 && subdist) {
+            liveRows = await searchPersonFromSupabaseLive({ houseNo: addrNo, villageNo, requireCoords: true, limit: 50 });
+          }
+          matches = filterByAddr(liveRows, true);
+          if (matches.length === 0) matches = filterByAddr(liveRows, false);
+        }
+        if (matches.length === 0 && cleanName) {
+          liveRows = await searchPersonFromSupabaseLive({ cleanName, requireCoords: true, limit: 50 });
+          matches = liveRows.filter(p => p.lat !== null && p.lng !== null);
+        }
+        hideLoading();
       }
 
       if (matches.length === 0) {
         Swal.fire({
           icon: 'warning',
           title: 'ไม่พบพิกัดในตาราง person',
-          text: `ไม่พบข้อมูลที่มีพิกัด GPS สำหรับ "${rawName || addrNo || '-'}"`
+          text: `ไม่พบข้อมูลที่มีพิกัด GPS สำหรับ "${rawName || addrNo || '-'}"${villageNo ? ` ม.${villageNo}` : ''}${subdist ? ` ต.${subdist}` : ''}`
         });
         return;
       }
@@ -10812,10 +11009,10 @@ ${topHcText}${noteBlock}
         return;
       }
 
-      const listHtml = matches.slice(0, 12).map((m, idx) => `
+      const listHtml = matches.slice(0, 15).map((m, idx) => `
         <button type="button" onclick="window._pickPersonCoordIdx(${idx})" class="w-full text-left p-2.5 rounded-xl border border-slate-200 hover:bg-teal-50 hover:border-teal-300 transition mb-1.5 text-xs">
           <div class="font-bold text-slate-900">${m.fullname} (${m.age_year ?? '-'} ปี)</div>
-          <div class="text-[11px] text-slate-600">บ้านเลขที่ ${m.house_no || '-'} ม.${m.village_no || '-'} ต.${m.subdistrict || '-'} | GPS: <span class="font-mono text-teal-700">${m.lat}, ${m.lng}</span></div>
+          <div class="text-[11px] text-slate-600">บ้านเลขที่ ${m.house_no || '-'} ม.${m.village_no || '-'} ต.${m.subdistrict || '-'} • ${m.pcucodeperson || '-'} ${getHNameByCode(m.pcucodeperson) || ''} | GPS: <span class="font-mono text-teal-700">${m.lat}, ${m.lng}</span></div>
         </button>
       `).join('');
 
