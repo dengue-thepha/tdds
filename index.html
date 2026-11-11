@@ -2124,7 +2124,13 @@
 
         <!-- 4. ภาพสำรวจ/ทำลายภายในบ้าน และ ภายนอกบ้าน -->
         <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-4">
-          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5"><span>📷</span> ภาพสำรวจ / ทำลายแหล่งเพาะพันธุ์ลูกน้ำยุงลาย (สูงสุดอย่างละ 4 ภาพ)</h4>
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5"><span>📷</span> ภาพสำรวจ / ทำลายแหล่งเพาะพันธุ์ลูกน้ำยุงลาย (สูงสุดอย่างละ 4 ภาพ)</h4>
+            <a href="https://drive.google.com/drive/folders/1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm?usp=sharing" target="_blank" class="text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-lg font-semibold transition flex items-center gap-1">
+              <span>☁️</span> โฟลเดอร์ Google Drive เก็บภาพ ↗️
+            </a>
+          </div>
+          <div id="dcDriveStatusNote" class="text-[11px] text-slate-500"></div>
           <div class="space-y-2">
             <div class="font-semibold text-teal-800">ภาพสำรวจ/ทำลายภายในบ้าน (1–4)</div>
             <div id="dcIndoorPhotoGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
@@ -2859,19 +2865,25 @@
           <span class="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full border border-emerald-200">ปลายทาง</span>
         </div>
         <div class="text-[11px] text-slate-600 space-y-1">
-          <div><b>Folder ID:</b> <span class="font-mono text-slate-800 bg-white px-1.5 py-0.5 rounded border border-emerald-200">1qTXv5IZaE5NAUA5Y_Q7vd6l68u-OLzGA</span></div>
-          <div class="truncate"><b>Link:</b> <a href="https://drive.google.com/drive/folders/1qTXv5IZaE5NAUA5Y_Q7vd6l68u-OLzGA" target="_blank" class="text-teal-700 underline font-mono text-[10px]">drive.google.com/.../1qTXv5IZaE5NAUA5Y_Q7vd6l68u-OLzGA</a></div>
+          <div><b>โฟลเดอร์รายงาน .PDF:</b> <span class="font-mono text-slate-800 bg-white px-1.5 py-0.5 rounded border border-emerald-200">1qTXv5IZaE5NAUA5Y_Q7vd6l68u-OLzGA</span></div>
+          <div><b>โฟลเดอร์ภาพควบคุมโรค (3-3-1):</b> <span class="font-mono text-slate-800 bg-white px-1.5 py-0.5 rounded border border-emerald-200">1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm</span></div>
+          <div class="truncate"><b>Link ภาพควบคุมโรค:</b> <a href="https://drive.google.com/drive/folders/1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm?usp=sharing" target="_blank" class="text-teal-700 underline font-mono text-[10px]">drive.google.com/.../1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm</a></div>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Google Apps Script Web App URL (ถ้ามีเพื่ออัปโหลดตรงอัตโนมัติ):</label>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Google Apps Script Web App URL (สำหรับอัปโหลดภาพและ PDF เข้า Google Drive อัตโนมัติ):</label>
           <input type="text" id="setting_gas_url" placeholder="เช่น https://script.google.com/macros/s/.../exec" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-teal-500 font-mono text-[11px]">
-          <p class="text-[10px] text-slate-400 mt-1">ไฟล์สคริปต์พร้อมใช้งานอยู่ที่ <code class="text-teal-700 font-mono">webapp/google_apps_script_drive_uploader.js</code> นำไปวางใน Google Apps Script ได้ทันที</p>
+          <p class="text-[10px] text-slate-400 mt-1">ไฟล์สคริปต์พร้อมใช้งานอยู่ที่ <code class="text-teal-700 font-mono">webapp/google_apps_script_drive_uploader.js</code> นำไปวางใน Google Apps Script แล้ว Deploy เป็น Web App</p>
         </div>
 
-        <button type="button" onclick="window.open('https://drive.google.com/drive/folders/1qTXv5IZaE5NAUA5Y_Q7vd6l68u-OLzGA', '_blank')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-2 px-3 rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5 shadow-xs">
-          <span>📂</span> เปิดโฟลเดอร์ Google Drive ในแท็บใหม่
-        </button>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button type="button" onclick="window.open('https://drive.google.com/drive/folders/1qTXv5IZaE5NAUA5Y_Q7vd6l68u-OLzGA', '_blank')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-2 px-3 rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5 shadow-xs">
+            <span>📂</span> เปิดโฟลเดอร์รายงาน .PDF
+          </button>
+          <button type="button" onclick="window.open('https://drive.google.com/drive/folders/1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm?usp=sharing', '_blank')" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs py-2 px-3 rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5 shadow-xs">
+            <span>🖼️</span> เปิดโฟลเดอร์ภาพควบคุมโรค
+          </button>
+        </div>
       </div>
 
       <div class="pt-3 border-t flex justify-end gap-2">
@@ -3062,6 +3074,8 @@
     const STORAGE_AUDIT_KEY = 'tdds_audit_logs_prod_v1';
     const STORAGE_SESSION_KEY = 'tdds_current_user_prod_v1';
     const STORAGE_DISEASE_CONTROL_KEY = 'tdds_disease_control_reports_v1';
+    const DISEASE_CONTROL_PHOTOS_DRIVE_FOLDER_ID = '1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm';
+    const DISEASE_CONTROL_PHOTOS_DRIVE_URL = 'https://drive.google.com/drive/folders/1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm?usp=sharing';
     let diseaseControlReportsMap = {};
 
     // Unicode Normalization (NFC) & String Sanitization Helper for Thai Text
@@ -9039,6 +9053,18 @@ https://dengue-thepha.github.io/tdds/`;
       renderDcPhotoGrids();
       recalcDcIndices();
 
+      const driveNoteEl = document.getElementById('dcDriveStatusNote');
+      if (driveNoteEl) {
+        const gasUrl = (localStorage.getItem('tdds_gas_webapp_url') || '').trim();
+        if (existing?.driveFolderUrl) {
+          driveNoteEl.innerHTML = `✅ อัปโหลดภาพเข้า Google Drive แล้ว: <a href="${existing.driveFolderUrl}" target="_blank" class="text-teal-700 underline font-semibold">เปิดโฟลเดอร์เคสนี้ ↗️</a>`;
+        } else if (gasUrl) {
+          driveNoteEl.innerHTML = `☁️ ระบบจะอัปโหลดภาพและไฟล์ .PDF เข้า Google Drive โฟลเดอร์ <code>${DISEASE_CONTROL_PHOTOS_DRIVE_FOLDER_ID}</code> อัตโนมัติเมื่อบันทึก`;
+        } else {
+          driveNoteEl.innerHTML = `ℹ️ ภาพจะถูกเก็บในฐานข้อมูลและไฟล์ .PDF — หากต้องการให้อัปโหลดเป็นไฟล์ภาพเข้า Google Drive (<code>${DISEASE_CONTROL_PHOTOS_DRIVE_FOLDER_ID}</code>) อัตโนมัติ กรุณาใส่ Web App URL ในเมนู <b>ตั้งค่า Drive & Telegram</b>`;
+        }
+      }
+
       setVal('dc_controller_name', existing?.controllerName || currentUser.fullName || '');
       setVal('dc_controller_position', existing?.controllerPosition || currentUser.position || '');
 
@@ -9407,6 +9433,89 @@ https://dengue-thepha.github.io/tdds/`;
       } catch (e) {}
     }
 
+    function blobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function uploadDiseaseControlPhotosToDrive(p, report, pdfBlob = null) {
+      const gasUrl = (localStorage.getItem('tdds_gas_webapp_url') || '').trim();
+      if (!gasUrl) {
+        return { ok: false, skipped: true, reason: 'missing_gas_url' };
+      }
+
+      const files = [];
+      const safeName = (p.fullName || 'ผู้ป่วย').replace(/[^\w\u0E00-\u0E7F.-]+/g, '_');
+      const code = p.patientCode || p.id || 'CASE';
+
+      (report.indoorPhotos || []).forEach((dataUrl, idx) => {
+        if (dataUrl) {
+          files.push({
+            type: 'indoor',
+            slot: idx + 1,
+            mimeType: 'image/jpeg',
+            filename: `${code}_${safeName}_ภายในบ้าน_${idx + 1}.jpg`,
+            base64: dataUrl
+          });
+        }
+      });
+      (report.outdoorPhotos || []).forEach((dataUrl, idx) => {
+        if (dataUrl) {
+          files.push({
+            type: 'outdoor',
+            slot: idx + 1,
+            mimeType: 'image/jpeg',
+            filename: `${code}_${safeName}_ภายนอกบ้าน_${idx + 1}.jpg`,
+            base64: dataUrl
+          });
+        }
+      });
+      if (pdfBlob) {
+        try {
+          const pdfB64 = await blobToBase64(pdfBlob);
+          files.push({
+            type: 'pdf',
+            slot: 1,
+            mimeType: 'application/pdf',
+            filename: `รายงานควบคุมโรค331_${safeName}_${code}.pdf`,
+            base64: pdfB64
+          });
+        } catch (e) {}
+      }
+
+      if (files.length === 0) {
+        return { ok: true, count: 0 };
+      }
+
+      try {
+        const res = await fetch(gasUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'uploadControlBundle',
+            folderId: DISEASE_CONTROL_PHOTOS_DRIVE_FOLDER_ID,
+            subfolderName: `${code}_${safeName}`,
+            files
+          })
+        });
+        const data = await res.json();
+        if (data && data.status === 'success') {
+          report.driveFolderUrl = data.folderUrl || DISEASE_CONTROL_PHOTOS_DRIVE_URL;
+          report.indoorPhotoDriveUrls = (data.files || []).filter(f => f.type === 'indoor').map(f => f.fileUrl);
+          report.outdoorPhotoDriveUrls = (data.files || []).filter(f => f.type === 'outdoor').map(f => f.fileUrl);
+          return { ok: true, count: (data.files || []).length, folderUrl: report.driveFolderUrl };
+        }
+        return { ok: false, error: data?.message || 'Upload failed' };
+      } catch (err) {
+        console.warn('[TDDS] uploadDiseaseControlPhotosToDrive error:', err);
+        return { ok: false, error: err.message };
+      }
+    }
+
     async function handleDiseaseControlSubmit(e) {
       e.preventDefault();
       const pid = document.getElementById('dc_patient_id')?.value;
@@ -9501,11 +9610,27 @@ https://dengue-thepha.github.io/tdds/`;
         } catch (err) {}
       }
 
+      // อัปโหลดภาพสำรวจ/ทำลาย (และ PDF) เข้า Google Drive โฟลเดอร์ 1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm
+      const driveRes = await uploadDiseaseControlPhotosToDrive(p, report, pdfRes ? pdfRes.blob : null);
+      if (driveRes && driveRes.ok && driveRes.folderUrl) {
+        saveDiseaseControlStore();
+        savePatients();
+      }
+
       addAuditLog('DISEASE_CONTROL_331', `บันทึกรายงานควบคุมโรคเบื้องต้น: ${p.fullName} (CI บ้าน ${report.ciPatient}%, CI 100ม. ${report.ci100m}%, HI ${report.hi100m}%)`);
       hideLoading();
       closeDiseaseControlModal();
       renderPatientTable();
       renderDiseaseControlView();
+
+      let driveStatusHtml = '';
+      if (driveRes && driveRes.ok) {
+        driveStatusHtml = `<div>☁️ อัปโหลดภาพและไฟล์ขึ้น <a href="${driveRes.folderUrl || DISEASE_CONTROL_PHOTOS_DRIVE_URL}" target="_blank" class="text-teal-700 underline font-bold">Google Drive (${driveRes.count || 0} ไฟล์) ↗️</a> เรียบร้อยแล้ว</div>`;
+      } else if (driveRes && driveRes.skipped) {
+        driveStatusHtml = `<div class="text-[11px] text-amber-700">⚠️ ภาพเก็บในระบบและ PDF แล้ว — หากต้องการให้อัปโหลดตรงเข้า <a href="${DISEASE_CONTROL_PHOTOS_DRIVE_URL}" target="_blank" class="underline font-semibold">Google Drive โฟลเดอร์ภาพ</a> อัตโนมัติ กรุณาใส่ Web App URL ใน <b>ตั้งค่า Drive & Telegram</b></div>`;
+      } else {
+        driveStatusHtml = `<div class="text-[11px] text-rose-700">⚠️ อัปโหลด Google Drive ไม่สำเร็จ (${driveRes?.error || 'ตรวจสอบ Web App URL'})</div>`;
+      }
 
       Swal.fire({
         icon: 'success',
@@ -9514,6 +9639,7 @@ https://dengue-thepha.github.io/tdds/`;
           <div class="text-left text-xs space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
             <div>✅ สร้างและดาวน์โหลดไฟล์ <b>.PDF</b> ตามแบบสอบสวนโรคแล้ว</div>
             <div>${tgOk ? '📲 ส่งข้อความและไฟล์รายงานเข้ากลุ่ม Telegram เรียบร้อยแล้ว' : '⚠️ ส่งเข้า Telegram ไม่สำเร็จ (กรุณาตรวจสอบอินเทอร์เน็ต)'}</div>
+            ${driveStatusHtml}
             ${sbRes && sbRes.missingTable ? '<div class="text-[11px] text-amber-700 pt-1">ℹ️ หมายเหตุ: หากต้องการเก็บรายงานควบคุมโรคขึ้นตารางกลางบน Supabase ด้วย กรุณารันไฟล์ <code>create_disease_control_reports.sql</code> ใน Supabase SQL Editor</div>' : ''}
           </div>
         `,
