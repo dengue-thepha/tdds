@@ -896,8 +896,8 @@
                   <option value="11915">11915 - รพ.สต.ทุ่งโดน</option>
                   <option value="15109">15109 - PCU1</option>
                   <option value="15107">15107 - PCU2</option>
-                  <option value="99901">00860 - สสอ.เทพา</option>
-                  <option value="10729">11390 - รพ.เทพา</option>
+                  <option value="99901">99901 - สสอ.เทพา</option>
+                  <option value="10729">10729 - รพ.เทพา</option>
                 </select>
               </div>
 
@@ -1560,8 +1560,8 @@
                 <option value="รพ.สต.ทุ่งโดน">11915 - รพ.สต.ทุ่งโดน</option>
                 <option value="PCU1">15109 - PCU1</option>
                 <option value="PCU2">15107 - PCU2</option>
-                <option value="สสอ.เทพา">00860 - สสอ.เทพา</option>
-                <option value="รพ.เทพา">11390 - รพ.เทพา</option>
+                <option value="สสอ.เทพา">99901 - สสอ.เทพา</option>
+                <option value="รพ.เทพา">10729 - รพ.เทพา</option>
               </select>
             </div>
 
@@ -2001,8 +2001,8 @@
                 <option value="รพ.สต.ทุ่งโดน" data-hcode="11915">11915 - รพ.สต.ทุ่งโดน</option>
                 <option value="PCU1" data-hcode="15109">15109 - PCU1</option>
                 <option value="PCU2" data-hcode="15107">15107 - PCU2</option>
-                <option value="สสอ.เทพา" data-hcode="99901">00860 - สสอ.เทพา</option>
-                <option value="รพ.เทพา" data-hcode="10729">11390 - รพ.เทพา</option>
+                <option value="สสอ.เทพา" data-hcode="99901">99901 - สสอ.เทพา</option>
+                <option value="รพ.เทพา" data-hcode="10729">10729 - รพ.เทพา</option>
               </select>
             </div>
 
@@ -2750,8 +2750,8 @@
       { hcode: '11915', name: 'รพ.สต.ทุ่งโดน', subdistrict: 'ท่าม่วง', zone: 'ทานตะวัน', population: 3456 },
       { hcode: '15109', name: 'PCU1', subdistrict: 'เทพา', zone: 'บานชื่น', population: 7279 },
       { hcode: '15107', name: 'PCU2', subdistrict: 'ปากบาง', zone: 'ทานตะวัน', population: 4222 },
-      { hcode: '00860', name: 'สสอ.เทพา', subdistrict: 'เทพา', zone: 'ศูนย์ประสานงาน', population: 0 },
-      { hcode: '11390', name: 'รพ.เทพา', subdistrict: 'เทพา', zone: 'ศูนย์ประสานงาน', population: 0 }
+      { hcode: '99901', name: 'สสอ.เทพา', subdistrict: 'เทพา', zone: 'ศูนย์ประสานงาน', population: 0 },
+      { hcode: '10729', name: 'รพ.เทพา', subdistrict: 'เทพา', zone: 'ศูนย์ประสานงาน', population: 0 }
     ];
 
     function getHCodeByName(name) {
@@ -13795,18 +13795,64 @@
       }
     };
 
+    // ข้อมูลรายเดือนปี 2568 และ Median 5 ปี (2564-2568) แยกรายสถานพยาบาล (คำนวณตรงจาก import_historical_dengue_5y.sql)
+    const healthCenterHistoricalMonthly = {
+      '09491': { name: 'รพ.สต.ตูหยง', median5Years: [0,0,0,1,0,0,1,0,0,0,0,0], cases2568: [2,0,0,1,0,0,1,0,0,0,0,0] },
+      '09492': { name: 'รพ.สต.ตาแปด', median5Years: [0,0,0,0,0,0,1,0,0,0,0,0], cases2568: [2,1,0,0,0,0,1,0,0,0,0,0] },
+      '09493': { name: 'รพ.สต.เกาะสะบ้า', median5Years: [0,0,0,0,0,0,0,0,0,0,0,1], cases2568: [0,1,0,0,0,0,0,0,0,0,0,1] },
+      '09494': { name: 'รพ.สต.ลำไพล', median5Years: [0,1,0,0,0,0,0,0,0,0,0,1], cases2568: [1,0,0,0,1,0,0,0,0,0,0,1] },
+      '09495': { name: 'รพ.สต.ท่าไทร', median5Years: [0,0,0,0,0,0,0,0,0,2,0,0], cases2568: [0,0,0,0,0,0,0,0,0,0,0,0] },
+      '09496': { name: 'รพ.สต.ท่าม่วง', median5Years: [0,0,0,0,0,0,0,1,0,0,0,1], cases2568: [0,0,0,0,0,0,1,0,0,0,0,0] },
+      '09497': { name: 'รพ.สต.พรุชิง', median5Years: [0,0,0,0,0,0,0,1,0,0,0,0], cases2568: [0,0,0,0,0,0,0,1,0,0,0,0] },
+      '09498': { name: 'รพ.สต.วังใหญ่', median5Years: [0,1,0,0,0,0,0,0,0,0,0,0], cases2568: [1,2,0,0,0,0,0,0,0,0,0,0] },
+      '09499': { name: 'รพ.สต.สะกอม', median5Years: [2,1,2,0,0,1,0,0,0,0,0,0], cases2568: [2,5,3,2,0,1,0,0,0,0,0,0] },
+      '09500': { name: 'รพ.สต.ท่าแมงลัก', median5Years: [0,0,0,0,0,0,0,0,0,0,0,0], cases2568: [2,0,0,0,1,0,1,0,0,0,0,0] },
+      '11915': { name: 'รพ.สต.ทุ่งโดน', median5Years: [0,0,0,0,0,0,0,0,0,0,1,0], cases2568: [1,0,0,1,0,0,0,0,0,0,0,0] },
+      '15109': { name: 'PCU1', median5Years: [0,0,0,1,0,0,1,0,0,0,1,0], cases2568: [5,2,1,1,0,0,1,0,0,0,0,0] },
+      '15107': { name: 'PCU2', median5Years: [0,0,1,1,0,0,0,0,0,0,0,0], cases2568: [0,0,1,2,1,1,0,0,0,0,0,0] },
+      '15108': { name: 'PCU3', median5Years: [1,0,0,0,0,0,0,0,0,0,0,0], cases2568: [3,0,1,0,0,0,0,0,0,0,0,0] }
+    };
+
+    function getLoggedInHealthCenterHistContext() {
+      if (!currentUser || currentUser.role === 'admin') return null;
+      const userUnit = normalizeThaiStr(currentUser.unit || '');
+      if (!userUnit || userUnit === 'สสอ.เทพา' || userUnit === 'รพ.เทพา') return null;
+      const userHcode = currentUser.hcode || getHCodeByName(userUnit);
+      let hist = (userHcode && healthCenterHistoricalMonthly[userHcode]) ? healthCenterHistoricalMonthly[userHcode] : null;
+      if (!hist) {
+        hist = Object.values(healthCenterHistoricalMonthly).find(v => normalizeThaiStr(v.name) === userUnit) || null;
+      }
+      if (!hist) return null;
+      const hcMaster = HEALTH_CENTERS_MASTER.find(h => h.hcode === userHcode || normalizeThaiStr(h.name) === userUnit);
+      const pop = (hcMaster && hcMaster.population > 0)
+        ? hcMaster.population
+        : (thephaPopulationData.healthCenters[userUnit] || 0);
+      return {
+        hcode: userHcode || (hcMaster ? hcMaster.hcode : ''),
+        name: hist.name || userUnit,
+        population: pop,
+        median5Years: hist.median5Years,
+        cases2568: hist.cases2568
+      };
+    }
+
     // ฟังก์ชันวิเคราะห์และประเมินสถานการณ์ทางระบาดวิทยาแบบไดนามิกตามกราฟที่แสดง
     function updateEpidemicAlertBox(subKey, monthlyCurrent, median5Years, cases2568, list, monthsTh) {
       const box = document.getElementById('epidemicAlertBox');
       if (!box) return;
 
+      const hcHistCtx = getLoggedInHealthCenterHistContext();
       const totalCases = list.length;
       const isAll = (subKey === 'all' || !subKey);
-      const areaTitle = isAll ? 'ภาพรวม อ.เทพา' : `ต.${subKey}`;
+      const areaTitle = hcHistCtx
+        ? `${hcHistCtx.hcode ? hcHistCtx.hcode + ' ' : ''}${hcHistCtx.name}`
+        : (isAll ? 'ภาพรวม อ.เทพา' : `ต.${subKey}`);
 
       // คำนวณอัตราป่วยต่อแสน
       let targetPop = thephaPopulationData.total;
-      if (!isAll && thephaPopulationData.subdistricts[subKey]) {
+      if (hcHistCtx && hcHistCtx.population > 0) {
+        targetPop = hcHistCtx.population;
+      } else if (!isAll && thephaPopulationData.subdistricts[subKey]) {
         targetPop = thephaPopulationData.subdistricts[subKey];
       }
       const morbidityRate = targetPop > 0 ? ((totalCases / targetPop) * 100000).toFixed(2) : '0.00';
@@ -13944,24 +13990,33 @@
       // 1. Monthly Cases vs 5-Year Median & 2568 Chart
       //    (ออกแบบตามรูป Excel: พื้นที่เขียวอ่อน Median, เส้นน้ำเงิน 2568, เส้นแดงจุดเขียว 2569)
       // -----------------------------------------------------------
+      const hcHistCtx = getLoggedInHealthCenterHistContext();
       const subKey = selectedSubdistrict || document.getElementById('dashSubdistrictFilter')?.value || 'all';
       const monthsTh = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-      const histData = subdistrictHistoricalMonthly[subKey] || subdistrictHistoricalMonthly['all'];
+      const histData = hcHistCtx || subdistrictHistoricalMonthly[subKey] || subdistrictHistoricalMonthly['all'];
       const median5Years = histData.median5Years;
       const cases2568 = histData.cases2568;
 
-      // ปรับปรุงชื่อหัวเรื่องกราฟตามตำบลที่เลือก
+      // ปรับปรุงชื่อหัวเรื่องกราฟตามสถานพยาบาลที่ล็อกอิน หรือตำบลที่เลือก
       const chartTitleEl = document.getElementById('monthlyChartTitle');
       const chartSubtitleEl = document.getElementById('monthlyChartSubtitle');
       if (chartTitleEl) {
-        chartTitleEl.innerText = (subKey !== 'all')
-          ? `จำนวนผู้ป่วยโรคไข้เลือดออก ต.${subKey} ปี 2569 จำแนกรายเดือน เปรียบเทียบกับ Median 5 ปีย้อนหลัง`
-          : 'จำนวนผู้ป่วยโรคไข้เลือดออก อ.เทพา ปี 2569 จำแนกรายเดือน เปรียบเทียบกับ Median 5 ปีย้อนหลัง';
+        if (hcHistCtx) {
+          chartTitleEl.innerText = `จำนวนผู้ป่วยโรคไข้เลือดออก ${hcHistCtx.name} (${hcHistCtx.hcode}) ปี 2569 จำแนกรายเดือน เปรียบเทียบกับ Median 5 ปีย้อนหลัง`;
+        } else {
+          chartTitleEl.innerText = (subKey !== 'all')
+            ? `จำนวนผู้ป่วยโรคไข้เลือดออก ต.${subKey} ปี 2569 จำแนกรายเดือน เปรียบเทียบกับ Median 5 ปีย้อนหลัง`
+            : 'จำนวนผู้ป่วยโรคไข้เลือดออก อ.เทพา ปี 2569 จำแนกรายเดือน เปรียบเทียบกับ Median 5 ปีย้อนหลัง';
+        }
       }
       if (chartSubtitleEl) {
-        chartSubtitleEl.innerText = (subKey !== 'all')
-          ? `เปรียบเทียบแนวโน้มการเกิดโรครายเดือนปี 2569 ตำบล${subKey} (เส้นสีแดง) เทียบกับปี 2568 (เส้นสีน้ำเงิน) และเส้นฐานค่ามัธยฐาน 5 ปีย้อนหลัง พ.ศ. 2564 - 2568 (พื้นที่สีเขียว)`
-          : 'เปรียบเทียบแนวโน้มการเกิดโรครายเดือนปี 2569 (เส้นสีแดง) เทียบกับปี 2568 (เส้นสีน้ำเงิน) และเส้นฐานค่ามัธยฐาน 5 ปีย้อนหลัง พ.ศ. 2564 - 2568 (พื้นที่สีเขียว)';
+        if (hcHistCtx) {
+          chartSubtitleEl.innerText = `เปรียบเทียบแนวโน้มการเกิดโรครายเดือนปี 2569 เฉพาะพื้นที่ ${hcHistCtx.name} (เส้นสีแดง) เทียบกับปี 2568 ของสถานพยาบาล (เส้นสีน้ำเงิน) และค่ามัธยฐาน 5 ปีย้อนหลัง พ.ศ. 2564 - 2568 (พื้นที่สีเขียว)`;
+        } else {
+          chartSubtitleEl.innerText = (subKey !== 'all')
+            ? `เปรียบเทียบแนวโน้มการเกิดโรครายเดือนปี 2569 ตำบล${subKey} (เส้นสีแดง) เทียบกับปี 2568 (เส้นสีน้ำเงิน) และเส้นฐานค่ามัธยฐาน 5 ปีย้อนหลัง พ.ศ. 2564 - 2568 (พื้นที่สีเขียว)`
+            : 'เปรียบเทียบแนวโน้มการเกิดโรครายเดือนปี 2569 (เส้นสีแดง) เทียบกับปี 2568 (เส้นสีน้ำเงิน) และเส้นฐานค่ามัธยฐาน 5 ปีย้อนหลัง พ.ศ. 2564 - 2568 (พื้นที่สีเขียว)';
+        }
       }
 
       const monthlyCurrent = Array(12).fill(0);
