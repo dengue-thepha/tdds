@@ -1531,7 +1531,7 @@
 
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1">ตำแหน่ง *</label>
-            <select id="reg_position" required class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500">
+            <select id="reg_position" required onchange="syncRegOsmRequirements()" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500">
               <option value="">-- เลือกตำแหน่ง --</option>
               <option value="นักวิชาการสาธารณสุขปฏิบัติการ">นักวิชาการสาธารณสุขปฏิบัติการ</option>
               <option value="นักวิชาการสาธารณสุขชำนาญการ">นักวิชาการสาธารณสุขชำนาญการ</option>
@@ -1539,6 +1539,7 @@
               <option value="นักสาธารณสุขชำนาญการ">นักสาธารณสุขชำนาญการ</option>
               <option value="พยาบาลวิชาชีพชำนาญการ">พยาบาลวิชาชีพชำนาญการ</option>
               <option value="แพทย์ชำนาญการ">แพทย์ชำนาญการ</option>
+              <option value="อสม.">อสม.</option>
             </select>
           </div>
 
@@ -1566,9 +1567,9 @@
             </div>
 
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">ตำบล *</label>
-              <select id="reg_subdistrict" required class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500">
-                <option value="">-- เลือกตำบล --</option>
+              <label id="reg_subdistrict_label" class="block text-xs font-semibold text-slate-700 mb-1">ตำบล <span class="text-slate-400 font-normal">(ระบุเฉพาะ อสม.)</span></label>
+              <select id="reg_subdistrict" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500">
+                <option value="">-- ไม่ระบุ / เลือกตำบล --</option>
                 <option value="เทพา">ต.เทพา</option>
                 <option value="ปากบาง">ต.ปากบาง</option>
                 <option value="เกาะสะบ้า">ต.เกาะสะบ้า</option>
@@ -1582,9 +1583,9 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">หมู่ที่ *</label>
-              <select id="reg_village_no" required class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500">
-                <option value="">-- เลือกหมู่ที่ (1-14) --</option>
+              <label id="reg_village_label" class="block text-xs font-semibold text-slate-700 mb-1">หมู่ที่ <span class="text-slate-400 font-normal">(ระบุเฉพาะ อสม.)</span></label>
+              <select id="reg_village_no" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500">
+                <option value="">-- ไม่ระบุ / หมู่ที่ (1-14) --</option>
                 <option value="1">หมู่ที่ 1</option>
                 <option value="2">หมู่ที่ 2</option>
                 <option value="3">หมู่ที่ 3</option>
@@ -1604,7 +1605,7 @@
 
             <div>
               <label class="block text-xs font-semibold text-slate-700 mb-1">สิทธิ์การใช้งาน *</label>
-              <select id="reg_role" required class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500">
+              <select id="reg_role" required onchange="syncRegOsmRequirements()" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-teal-500">
                 <option value="staff">เจ้าหน้าที่หน่วยบริการ (User / Staff)</option>
                 <option value="OSM">อสม. ประจำหมู่บ้าน (OSM)</option>
                 <option value="admin">ผู้ดูแลระบบ (Admin)</option>
@@ -13234,10 +13235,27 @@
         if (btnEl) btnEl.innerText = '👁️';
       }
     }
+    function syncRegOsmRequirements() {
+      const pos = document.getElementById('reg_position')?.value || '';
+      const role = document.getElementById('reg_role')?.value || '';
+      const isOsm = (pos === 'อสม.' || role === 'OSM');
+      const subEl = document.getElementById('reg_subdistrict');
+      const vilEl = document.getElementById('reg_village_no');
+      const subLbl = document.getElementById('reg_subdistrict_label');
+      const vilLbl = document.getElementById('reg_village_label');
+
+      if (subEl) subEl.required = isOsm;
+      if (vilEl) vilEl.required = isOsm;
+      if (subLbl) subLbl.innerHTML = isOsm ? 'ตำบล *' : 'ตำบล <span class="text-slate-400 font-normal">(ระบุเฉพาะ อสม.)</span>';
+      if (vilLbl) vilLbl.innerHTML = isOsm ? 'หมู่ที่ *' : 'หมู่ที่ <span class="text-slate-400 font-normal">(ระบุเฉพาะ อสม.)</span>';
+    }
     function onRegUnitChange() {
+      const pos = document.getElementById('reg_position')?.value || '';
+      const role = document.getElementById('reg_role')?.value || '';
+      const isOsm = (pos === 'อสม.' || role === 'OSM');
       const unitVal = document.getElementById('reg_unit')?.value;
       const subEl = document.getElementById('reg_subdistrict');
-      if (!unitVal || !subEl) return;
+      if (!isOsm || !unitVal || !subEl) return;
       const hc = getHealthCenterInfo(unitVal);
       if (hc && hc.subdistrict) {
         subEl.value = hc.subdistrict;
@@ -13317,7 +13335,7 @@
           health_center: userObj.unit,
           hcode: userObj.hcode || (hcInfo ? hcInfo.hcode : null),
           zone: userObj.zone || (hcInfo ? hcInfo.zone : null),
-          subdistrict: userObj.subdistrict || (hcInfo ? hcInfo.subdistrict : null),
+          subdistrict: userObj.subdistrict || null,
           village_no: userObj.villageNo ? String(userObj.villageNo) : null,
           role: sbRole,
           status: userObj.status || 'Active',
@@ -13354,8 +13372,14 @@
       const villageNo = document.getElementById('reg_village_no').value;
       const role = document.getElementById('reg_role').value || 'staff';
 
-      if (!username || !password || !fullName || !position || !unit || !subdistrict || !villageNo) {
-        Swal.fire({ icon: 'warning', title: 'กรุณากรอกข้อมูลให้ครบทุกช่อง' });
+      const isOsm = (position === 'อสม.' || role === 'OSM');
+
+      if (!username || !password || !fullName || !position || !unit) {
+        Swal.fire({ icon: 'warning', title: 'กรุณากรอกข้อมูลที่จำเป็นให้ครบ' });
+        return;
+      }
+      if (isOsm && (!subdistrict || !villageNo)) {
+        Swal.fire({ icon: 'warning', title: 'กรุณาระบุตำบลและหมู่ที่', text: 'สำหรับ อสม. จำเป็นต้องระบุตำบลและหมู่ที่ที่รับผิดชอบ' });
         return;
       }
 
@@ -13380,27 +13404,32 @@
         unit: unit,
         hcode: hcInfo ? hcInfo.hcode : '',
         zone: hcInfo ? hcInfo.zone : '',
-        subdistrict: subdistrict,
-        villageNo: String(villageNo),
+        subdistrict: subdistrict || '',
+        villageNo: villageNo ? String(villageNo) : '',
         role: role,
         status: 'Pending Approval',
         isActive: false
       };
 
+      const areaDesc = (subdistrict || villageNo)
+        ? `${unit}${subdistrict ? ' ต.' + subdistrict : ''}${villageNo ? ' ม.' + villageNo : ''}`
+        : unit;
+
       usersData.push(newUser);
       saveUsers();
       const sbRes = await upsertUserToSupabase(newUser);
-      addAuditLog('REGISTER_USER', `คำขอสมัครเข้าใช้งาน (รออนุมัติ): ${newUser.username} (${newUser.fullName} - ${newUser.unit} ม.${newUser.villageNo})`);
+      addAuditLog('REGISTER_USER', `คำขอสมัครเข้าใช้งาน (รออนุมัติ): ${newUser.username} (${newUser.fullName} - ${areaDesc})`);
       hideLoading();
       if (typeof renderUserTable === 'function') renderUserTable();
 
       document.getElementById('registerForm')?.reset();
+      syncRegOsmRequirements();
       switchAuthModalTab('login');
 
       Swal.fire({
         icon: 'info',
         title: 'ส่งคำขอสมัครเข้าใช้งานแล้ว',
-        html: `บันทึกคำขอของ <b>${fullName}</b> (${unit} ต.${subdistrict} ม.${villageNo}) เรียบร้อยแล้ว<br><br>⏳ <b>กรุณารอผู้ดูแลระบบ (Admin) อนุมัติบัญชีของท่านก่อน</b> จึงจะสามารถเข้าสู่ระบบได้` +
+        html: `บันทึกคำขอของ <b>${fullName}</b> (${areaDesc}) เรียบร้อยแล้ว<br><br>⏳ <b>กรุณารอผู้ดูแลระบบ (Admin) อนุมัติบัญชีของท่านก่อน</b> จึงจะสามารถเข้าสู่ระบบได้` +
           (sbRes && sbRes.rlsBlocked ? '<br><span class="text-[11px] text-amber-700">(หมายเหตุ: บันทึกในเครื่องแล้ว หากต้องการบันทึกลงตาราง staff_accounts บน Supabase ด้วย กรุณารัน enable_staff_registration_sync.sql)</span>' : ''),
         confirmButtonColor: '#0D9488'
       });
