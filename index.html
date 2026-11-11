@@ -293,10 +293,10 @@
             <span>ทะเบียนข้อมูลผู้ป่วย</span>
           </button>
 
-          <!-- Menu: Disease Control 3-3-1 (3 ชม.ที่ 2) -->
+          <!-- Menu: Disease Control 3-3-1 (3 ชม.ที่ 2 & พ่นเคมี 1 วัน) -->
           <button onclick="navigateTo('disease-control')" id="menu-disease-control" class="sidebar-menu-item auth-only hidden w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-700 hover:text-emerald-700 hover:bg-emerald-50/70 transition">
             <span class="w-5 text-center text-base">🛡️</span>
-            <span>ควบคุมโรคเบื้องต้น (3-3-1)</span>
+            <span>มาตรการ 3-3-1 (3ชม. / พ่น 1 วัน)</span>
           </button>
 
           <!-- Menu: New Patient Form (Visible for Logged In) -->
@@ -1215,7 +1215,7 @@
       </section>
 
       <!-- ======================================================== -->
-      <!-- VIEW 5.5: DISEASE CONTROL 3-3-1 (3 ชม.ที่ 2 หลังยืนยันเคส) -->
+      <!-- VIEW 5.5: DISEASE CONTROL 3-3-1 (3ชม.แรก > 3ชม.ที่2 > พ่น 1 วัน) -->
       <!-- ======================================================== -->
       <section id="view-disease-control" class="view-panel auth-only hidden space-y-4">
         <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
@@ -1223,10 +1223,10 @@
             <div>
               <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
                 <span class="text-lg">🛡️</span>
-                <span>รายงานควบคุมโรคเบื้องต้น (3 ชม.ที่ 2) ตามมาตรการ 3-3-1</span>
+                <span>ติดตามมาตรการ 3-3-1 (3 ชม.แรก ➔ 3 ชม.ที่ 2 ➔ พ่นสารเคมี 1 วัน)</span>
               </h2>
               <p class="text-xs text-slate-500 mt-0.5">
-                เชื่อมโยงอัตโนมัติจากเคสที่พื้นที่กดยืนยันแล้ว (3 ชม.แรก) เพื่อบันทึกการค้นหาผู้ป่วยเพิ่มเติม ค่า CI/HI ภาพสำรวจ และแจ้งผลเข้า Telegram พร้อมไฟล์ .PDF
+                เชื่อมโยงต่อเนื่องตั้งแต่พื้นที่ยืนยันเคส (3 ชม.แรก) ➔ รายงานควบคุมโรคเบื้องต้น (3 ชม.ที่ 2) ➔ รายงานพ่นสารเคมีกำจัดยุงตัวแก่และ HI/CI รัศมี 100 ม. (1 วันหลังได้รับแจ้ง)
               </p>
             </div>
             <div class="flex items-center gap-2">
@@ -1236,20 +1236,24 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
             <div class="p-3 rounded-xl bg-amber-50 border border-amber-200">
-              <div class="text-amber-700 font-semibold">⏳ รอควบคุมโรค (&lt; 3 ชม.)</div>
+              <div class="text-amber-700 font-semibold">⏳ รอควบคุม 3 ชม.ที่ 2</div>
               <div class="text-xl font-extrabold text-amber-800 mt-1" id="dcStatPendingUnder3h">0</div>
             </div>
             <div class="p-3 rounded-xl bg-rose-50 border border-rose-200">
-              <div class="text-rose-700 font-semibold">🚨 เกิน 3 ชม. (เร่งด่วน)</div>
+              <div class="text-rose-700 font-semibold">🚨 เกิน 3 ชม. / 1 วัน</div>
               <div class="text-xl font-extrabold text-rose-700 mt-1" id="dcStatOver3h">0</div>
             </div>
             <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
-              <div class="text-emerald-700 font-semibold">✅ บันทึกควบคุมโรคแล้ว</div>
+              <div class="text-emerald-700 font-semibold">✅ ควบคุม 3 ชม.ที่ 2 แล้ว</div>
               <div class="text-xl font-extrabold text-emerald-800 mt-1" id="dcStatDone">0</div>
             </div>
-            <div class="p-3 rounded-xl bg-teal-50 border border-teal-200">
+            <div class="p-3 rounded-xl bg-indigo-50 border border-indigo-200">
+              <div class="text-indigo-700 font-semibold">💨 พ่นเคมี 1 วันแล้ว</div>
+              <div class="text-xl font-extrabold text-indigo-800 mt-1" id="dcStatSprayDone">0</div>
+            </div>
+            <div class="p-3 rounded-xl bg-teal-50 border border-teal-200 col-span-2 lg:col-span-1">
               <div class="text-teal-700 font-semibold">📌 เคสยืนยันพื้นที่ทั้งหมด</div>
               <div class="text-xl font-extrabold text-teal-800 mt-1" id="dcStatTotalConfirmed">0</div>
             </div>
@@ -1259,9 +1263,12 @@
             <input type="text" id="dcSearchInput" oninput="renderDiseaseControlView()" placeholder="🔍 ค้นหาชื่อผู้ป่วย, บ้านเลขที่, ตำบล, หน่วยบริการ..." class="flex-1 text-xs bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-700 outline-none focus:border-teal-500">
             <select id="dcStatusFilter" onchange="renderDiseaseControlView()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-teal-500 font-medium">
               <option value="all">📋 เคสยืนยันทั้งหมด</option>
-              <option value="pending">⏳ ยังไม่บันทึกควบคุมโรค</option>
+              <option value="pending">⏳ ยังไม่บันทึก 3 ชม.ที่ 2</option>
               <option value="over3h">🚨 เกิน 3 ชม. หลังยืนยัน</option>
-              <option value="done">✅ บันทึกควบคุมโรคแล้ว</option>
+              <option value="done">✅ บันทึก 3 ชม.ที่ 2 แล้ว</option>
+              <option value="wait_spray">💨 รอพ่นเคมี (1 วัน)</option>
+              <option value="spray_over1d">🚨 เกิน 1 วันยังไม่พ่นเคมี</option>
+              <option value="spray_done">✅ พ่นเคมี 1 วันแล้ว</option>
             </select>
           </div>
         </div>
@@ -1275,9 +1282,9 @@
                   <th class="px-4 py-3">ชื่อผู้ป่วย / วินิจฉัย</th>
                   <th class="px-4 py-3">ที่อยู่</th>
                   <th class="px-4 py-3">หน่วยบริการ</th>
-                  <th class="px-4 py-3">ยืนยันเคส (3 ชม.แรก)</th>
-                  <th class="px-4 py-3">ควบคุมโรค (3 ชม.ที่ 2)</th>
-                  <th class="px-4 py-3 text-center">CI บ้าน / CI 100ม. / HI</th>
+                  <th class="px-4 py-3">① ยืนยันเคส (3 ชม.แรก)</th>
+                  <th class="px-4 py-3">② ควบคุมโรค (3 ชม.ที่ 2)</th>
+                  <th class="px-4 py-3">③ พ่นเคมี 1 วัน &amp; HI/CI 100ม.</th>
                   <th class="px-4 py-3 text-center">ดำเนินการ</th>
                 </tr>
               </thead>
@@ -2158,6 +2165,107 @@
           <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold rounded-xl shadow-md transition active:scale-95 flex items-center gap-1.5">
             <span>💾</span>
             <span>บันทึกรายงาน + แจ้ง Telegram + สร้าง .PDF</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- MODAL: รายงานพ่นสารเคมีกำจัดยุงตัวแก่ 1 วันหลังได้รับแจ้ง (มาตรการ 3-3-1 ขั้นสุดท้าย) -->
+  <div id="sprayControlModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop hidden transition-opacity overflow-y-auto">
+    <div class="bg-white w-full max-w-4xl my-6 rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh]">
+      <div class="bg-gradient-to-r from-indigo-700 to-blue-600 p-4 sm:p-5 text-white flex items-center justify-between shrink-0">
+        <div>
+          <h3 class="text-base sm:text-lg font-bold flex items-center gap-2">
+            <span>💨</span>
+            <span id="scModalTitle">รายงานพ่นสารเคมีกำจัดยุงตัวแก่ (1 วันหลังได้รับแจ้ง • 3-3-1)</span>
+          </h3>
+          <p class="text-xs text-indigo-100 mt-0.5">เชื่อมโยง 3 ชม.แรก &gt; 3 ชม.ที่ 2 &gt; 1 วันหลังได้รับแจ้ง พร้อมสำรวจ HI/CI รัศมี 100 เมตร ภาพทีมพ่น/ขณะพ่น ส่ง Telegram และ Google Drive</p>
+        </div>
+        <button type="button" onclick="closeSprayControlModal()" class="text-white/80 hover:text-white text-xl p-1 rounded-lg hover:bg-white/10 transition">✕</button>
+      </div>
+
+      <form id="sprayControlForm" onsubmit="handleSprayControlSubmit(event)" class="p-4 sm:p-6 overflow-y-auto space-y-5 flex-1 text-xs">
+        <input type="hidden" id="sc_patient_id">
+
+        <!-- Chain Timeline: 3 ชม.แรก > 3 ชม.ที่ 2 > 1 วัน -->
+        <div id="scChainBanner" class="bg-indigo-50/70 border border-indigo-200 rounded-2xl p-3.5 space-y-2 text-slate-700"></div>
+
+        <!-- 1. วันที่พ่นสารเคมี & วิธีการพ่น -->
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+          <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5"><span>💨</span> ข้อมูลการพ่นสารเคมีกำจัดยุงตัวแก่</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">วันที่/เวลาพ่นเคมี *</label>
+              <input type="datetime-local" id="sc_spray_datetime" required class="w-full p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-500">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">วิธีการพ่น / ทีมปฏิบัติการ</label>
+              <input type="text" id="sc_spray_method" placeholder="เช่น พ่นหมอกควัน / ULV ร่วมกับ อปท." class="w-full p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-500">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">ชื่อสารเคมีที่ใช้</label>
+              <input type="text" id="sc_chemical_name" placeholder="เช่น Deltamethrin / Cypermethrin" class="w-full p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-indigo-500">
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. สำรวจค่า HI / CI บ้านรัศมี 100 เมตร -->
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5"><span>🎯</span> การสำรวจค่า HI / CI และความครอบคลุมการพ่นเคมี (รัศมี 100 เมตร)</h4>
+            <div class="flex flex-wrap items-center gap-2 text-[11px] font-bold">
+              <span class="px-2.5 py-1 rounded-lg bg-blue-100 text-blue-800 border border-blue-200">ค่า HI : <span id="sc_hi_display">0.00</span> %</span>
+              <span class="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 border border-amber-200">ค่า CI : <span id="sc_ci_display">0.00</span> %</span>
+              <button type="button" onclick="autoFillScRadiusHouses()" class="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold transition">🎯 ดึงจำนวนบ้าน 100 ม. / ค่า 3 ชม.ที่ 2</button>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 bg-white p-3.5 rounded-xl border border-slate-200">
+            <div><label class="block text-[11px] font-semibold text-blue-800 mb-1">บ้านในรัศมี 100 ม. (หลัง) *</label><input type="number" min="0" id="sc_rad_houses_total" value="0" required oninput="recalcScIndices()" class="w-full p-2 bg-blue-50/40 border border-blue-200 rounded-lg"></div>
+            <div><label class="block text-[11px] font-semibold text-indigo-800 mb-1">จำนวนบ้านที่พ่น (หลัง) *</label><input type="number" min="0" id="sc_rad_houses_sprayed" value="0" required oninput="recalcScIndices()" class="w-full p-2 bg-indigo-50/40 border border-indigo-200 rounded-lg"></div>
+            <div><label class="block text-[11px] font-semibold text-rose-700 mb-1">บ้านที่พบลูกน้ำ (หลัง)</label><input type="number" min="0" id="sc_rad_houses_positive" value="0" oninput="recalcScIndices()" class="w-full p-2 bg-rose-50/40 border border-rose-200 rounded-lg"></div>
+            <div><label class="block text-[11px] font-semibold text-slate-700 mb-1">ภาชนะที่สำรวจทั้งหมด</label><input type="number" min="0" id="sc_rad_containers_total" value="0" oninput="recalcScIndices()" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg"></div>
+            <div><label class="block text-[11px] font-semibold text-rose-700 mb-1">ภาชนะที่พบลูกน้ำ</label><input type="number" min="0" id="sc_rad_containers_positive" value="0" oninput="recalcScIndices()" class="w-full p-2 bg-rose-50/40 border border-rose-200 rounded-lg"></div>
+          </div>
+        </div>
+
+        <!-- 3. ภาพถ่ายทีมพ่นสารเคมี และ ขณะพ่นสารเคมี -->
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5"><span>📷</span> ภาพถ่ายการพ่นสารเคมีกำจัดยุงตัวแก่ (สูงสุดอย่างละ 4 ภาพ)</h4>
+            <a href="https://drive.google.com/drive/folders/1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm?usp=sharing" target="_blank" class="text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-lg font-semibold transition flex items-center gap-1">
+              <span>☁️</span> โฟลเดอร์ Google Drive เก็บภาพ ↗️
+            </a>
+          </div>
+          <div id="scDriveStatusNote" class="text-[11px] text-slate-500"></div>
+          <div class="space-y-2">
+            <div class="font-semibold text-indigo-800">ภาพทีมพ่นสารเคมี (1–4)</div>
+            <div id="scTeamPhotoGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+          </div>
+          <div class="space-y-2">
+            <div class="font-semibold text-blue-800">ภาพขณะพ่นสารเคมี (1–4)</div>
+            <div id="scActionPhotoGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+          </div>
+        </div>
+
+        <!-- 4. ผู้รายงาน -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">ชื่อผู้รายงาน / หัวหน้าทีมพ่น *</label>
+            <input type="text" id="sc_controller_name" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">ตำแหน่ง *</label>
+            <input type="text" id="sc_controller_position" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-indigo-500">
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="closeSprayControlModal()" class="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition">ยกเลิก</button>
+          <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white text-xs font-bold rounded-xl shadow-md transition active:scale-95 flex items-center gap-1.5">
+            <span>💾</span>
+            <span>บันทึกรายงานพ่นเคมี + แจ้ง Telegram + .PDF</span>
           </button>
         </div>
       </form>
@@ -3076,7 +3184,9 @@
     const STORAGE_DISEASE_CONTROL_KEY = 'tdds_disease_control_reports_v1';
     const DISEASE_CONTROL_PHOTOS_DRIVE_FOLDER_ID = '1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm';
     const DISEASE_CONTROL_PHOTOS_DRIVE_URL = 'https://drive.google.com/drive/folders/1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm?usp=sharing';
+    const STORAGE_SPRAY_CONTROL_KEY = 'tdds_spray_control_reports_v1';
     let diseaseControlReportsMap = {};
+    let sprayControlReportsMap = {};
 
     // Unicode Normalization (NFC) & String Sanitization Helper for Thai Text
     function normalizeThaiStr(str) {
@@ -3373,6 +3483,18 @@
               }
             }
           }
+          if (!p.sprayAlert1dSentAt) {
+            const isConfLocal = p.confirmedStatus === 'confirmed_local' || ((p.areaConfirmed === 'ยืนยัน' || p.areaConfirmed === 'ยืนยันแล้ว') && p.confirmedStatus !== 'confirmed_external');
+            if (isConfLocal) {
+              const baseRaw = p.notifiedDatetime || p.createdAt;
+              const baseTime = baseRaw ? new Date(baseRaw).getTime() : 0;
+              const elapsedBase = baseTime > 0 ? (initNow - baseTime) / (1000 * 3600) : 999;
+              if (!baseRaw || elapsedBase > 72) {
+                p.sprayAlert1dSentAt = 'OLD_CASE_SKIPPED';
+                hasUpdatedOld = true;
+              }
+            }
+          }
         });
       } catch (err) {
         console.warn('[TDDS] init old cases alert skip error:', err);
@@ -3405,6 +3527,34 @@
         localStorage.setItem(STORAGE_DISEASE_CONTROL_KEY, JSON.stringify(diseaseControlReportsMap));
       } catch (e) {
         console.warn('[TDDS] saveDiseaseControlStore error:', e);
+      }
+    }
+
+    function loadSprayControlStore() {
+      try {
+        const raw = localStorage.getItem(STORAGE_SPRAY_CONTROL_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        sprayControlReportsMap = (parsed && typeof parsed === 'object') ? parsed : {};
+      } catch (e) {
+        sprayControlReportsMap = {};
+      }
+      if (Array.isArray(patientsData)) {
+        patientsData.forEach(p => {
+          const rep = sprayControlReportsMap[p.id]
+            || (p.supabaseId && sprayControlReportsMap[p.supabaseId])
+            || (p.patientCode && sprayControlReportsMap[p.patientCode]);
+          if (rep && (!p.sprayControlReport || (!p.sprayControlReport.teamPhotos && rep.teamPhotos))) {
+            p.sprayControlReport = rep;
+          }
+        });
+      }
+    }
+
+    function saveSprayControlStore() {
+      try {
+        localStorage.setItem(STORAGE_SPRAY_CONTROL_KEY, JSON.stringify(sprayControlReportsMap));
+      } catch (e) {
+        console.warn('[TDDS] saveSprayControlStore error:', e);
       }
     }
 
@@ -3466,8 +3616,9 @@
         });
       }
 
-      // ปิดการแจ้งเตือน 3 ชม. สำหรับเคสเก่าที่บันทึกมาเกิน 24 ชม.
+      // ปิดการแจ้งเตือน 3 ชม. และ 1 วัน สำหรับเคสเก่า
       loadDiseaseControlStore();
+      loadSprayControlStore();
       if (markOldCasesAlertSkipped(patientsData)) {
         savePatients();
       }
@@ -6509,7 +6660,9 @@
         }
 
         const dcReport = typeof getDiseaseControlReport === 'function' ? getDiseaseControlReport(p) : null;
+        const spReport = typeof getSprayControlReport === 'function' ? getSprayControlReport(p) : null;
         let dcChipHtml = '';
+        let spChipHtml = '';
         if (isConfirmedLocal) {
           if (dcReport) {
             dcChipHtml = `<button onclick="openDiseaseControlModal('${p.id}')" class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-teal-50 text-teal-800 border border-teal-300 hover:bg-teal-100 transition" title="ควบคุมโรคแล้ว (${dcReport.controllerName || '-'}) • คลิกดู/แก้ไข">🛡️ ควบคุมแล้ว (CI ${dcReport.ciPatient ?? 0}% / HI ${dcReport.hi100m ?? 0}%)</button>`;
@@ -6520,6 +6673,19 @@
               dcChipHtml = `<button onclick="openDiseaseControlModal('${p.id}')" class="mt-1 animate-pulse inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-100 text-rose-800 border border-rose-300 hover:bg-rose-200 transition" title="เกิน 3 ชม. หลังยืนยันเคส! คลิกบันทึกควบคุมโรคเบื้องต้น">🚨 รอควบคุมโรคเกิน 3 ชม.</button>`;
             } else {
               dcChipHtml = `<button onclick="openDiseaseControlModal('${p.id}')" class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition" title="คลิกบันทึกรายงานควบคุมโรคเบื้องต้น (3 ชม.ที่ 2)">🛡️ บันทึกควบคุมโรค (3-3-1)</button>`;
+            }
+          }
+
+          if (spReport) {
+            spChipHtml = `<button onclick="openSprayControlModal('${p.id}')" class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-300 hover:bg-indigo-100 transition" title="พ่นเคมีแล้ว (${formatBEDateOnlySlash(spReport.sprayDatetime)}) • คลิกดู/แก้ไข">💨 พ่นแล้ว (${spReport.radiusSprayedHouses ?? 0} หลัง / HI ${Number(spReport.hi100m || 0).toFixed(1)}%)</button>`;
+          } else {
+            const baseNotifyRaw = p.notifiedDatetime || p.createdAt;
+            const baseNotifyObj = baseNotifyRaw ? new Date(baseNotifyRaw) : null;
+            const notifyHrs = (baseNotifyObj && !isNaN(baseNotifyObj.getTime())) ? (now.getTime() - baseNotifyObj.getTime()) / 3600000 : 0;
+            if (baseNotifyObj && notifyHrs >= 24 && notifyHrs <= 72) {
+              spChipHtml = `<button onclick="openSprayControlModal('${p.id}')" class="mt-1 animate-pulse inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-100 text-rose-800 border border-rose-300 hover:bg-rose-200 transition" title="เกิน 1 วันหลังได้รับแจ้ง! คลิกบันทึกรายงานพ่นเคมี">🚨 เกิน 1 วันยังไม่พ่นเคมี</button>`;
+            } else {
+              spChipHtml = `<button onclick="openSprayControlModal('${p.id}')" class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-blue-50 text-blue-800 border border-blue-300 hover:bg-blue-100 transition" title="คลิกบันทึกรายงานพ่นสารเคมี 1 วันหลังได้รับแจ้ง">💨 บันทึกพ่นเคมี (1 วัน)</button>`;
             }
           }
         }
@@ -6559,12 +6725,14 @@
             </span>
           </td>
           <td class="px-4 py-3">${badgeHtml}</td>
-          <td class="px-4 py-3 text-center"><div class="flex flex-col items-center">${confirmBadgeHtml}${dcChipHtml}</div></td>
+          <td class="px-4 py-3 text-center"><div class="flex flex-col items-center">${confirmBadgeHtml}${dcChipHtml}${spChipHtml}</div></td>
           <td class="px-4 py-3 text-center">
             <div class="flex items-center justify-center gap-1.5">
               <button onclick="openPatientViewModal('${p.id}')" title="ดูข้อมูลผู้ป่วยรายบุคคลและผล LAB" class="p-1.5 rounded-lg text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 transition border border-emerald-200"><span>👁️</span></button>
               ${isConfirmedLocal ? `<button onclick="openDiseaseControlModal('${p.id}')" title="รายงานควบคุมโรคเบื้องต้น (3 ชม.ที่ 2)" class="p-1.5 rounded-lg ${dcReport ? 'text-teal-700 bg-teal-50 border border-teal-200' : 'text-amber-700 bg-amber-50 border border-amber-200'} hover:bg-teal-100 transition"><span>🛡️</span></button>` : ''}
               ${dcReport ? `<button onclick="downloadDiseaseControlPDF('${p.id}')" title="ดาวน์โหลดรายงานควบคุมโรค 3-3-1 (.PDF)" class="p-1.5 rounded-lg text-emerald-700 hover:bg-emerald-50 transition border border-emerald-200"><span class="text-sm">📑</span></button>` : ''}
+              ${isConfirmedLocal ? `<button onclick="openSprayControlModal('${p.id}')" title="รายงานพ่นสารเคมี 1 วันหลังได้รับแจ้ง" class="p-1.5 rounded-lg ${spReport ? 'text-indigo-700 bg-indigo-50 border border-indigo-200' : 'text-blue-700 bg-blue-50 border border-blue-200'} hover:bg-indigo-100 transition"><span>💨</span></button>` : ''}
+              ${spReport ? `<button onclick="downloadSprayControlPDF('${p.id}')" title="ดาวน์โหลดรายงานพ่นเคมี 1 วัน (.PDF)" class="p-1.5 rounded-lg text-indigo-700 hover:bg-indigo-50 transition border border-indigo-200"><span class="text-sm">📋</span></button>` : ''}
               <button onclick="downloadPatientReportPDF('${p.id}')" title="สร้าง/ดาวน์โหลดรายงานสอบสวนโรค .PDF" class="p-1.5 rounded-lg text-slate-500 hover:text-blue-700 hover:bg-blue-50 transition">
                 <span class="text-sm">📄</span>
               </button>
@@ -7025,7 +7193,10 @@
               ` : `
                 ${isConfirmedLocal ? `
                   <button onclick="closePatientViewModal(); openDiseaseControlModal('${p.id}')" class="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5">
-                    <span>🛡️</span> ${(typeof getDiseaseControlReport === 'function' && getDiseaseControlReport(p)) ? 'ดู/แก้ไขควบคุมโรค (3-3-1)' : 'บันทึกควบคุมโรคเบื้องต้น (3 ชม.ที่ 2)'}
+                    <span>🛡️</span> ${(typeof getDiseaseControlReport === 'function' && getDiseaseControlReport(p)) ? 'ดู/แก้ไขควบคุมโรค (3ชม.)' : 'บันทึกควบคุมโรค (3 ชม.ที่ 2)'}
+                  </button>
+                  <button onclick="closePatientViewModal(); openSprayControlModal('${p.id}')" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5">
+                    <span>💨</span> ${(typeof getSprayControlReport === 'function' && getSprayControlReport(p)) ? 'ดู/แก้ไขพ่นเคมี (1 วัน)' : 'บันทึกพ่นเคมี (1 วัน)'}
                   </button>
                 ` : ''}
                 <button onclick="confirmPatientCase('${p.id}')" class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-300 shadow-2xs transition flex items-center gap-1">
@@ -7039,7 +7210,12 @@
             `}
             ${(typeof getDiseaseControlReport === 'function' && getDiseaseControlReport(p)) ? `
               <button onclick="downloadDiseaseControlPDF('${p.id}')" class="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-300 transition flex items-center gap-1">
-                <span>📑</span> PDF ควบคุมโรค 3-3-1
+                <span>📑</span> PDF ควบคุม 3ชม.
+              </button>
+            ` : ''}
+            ${(typeof getSprayControlReport === 'function' && getSprayControlReport(p)) ? `
+              <button onclick="downloadSprayControlPDF('${p.id}')" class="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold text-xs border border-blue-300 transition flex items-center gap-1">
+                <span>📋</span> PDF พ่นเคมี 1 วัน
               </button>
             ` : ''}
           </div>
@@ -8649,15 +8825,17 @@ https://dengue-thepha.github.io/tdds/`;
       }
     }
 
-    // เริ่มต้นระบบตรวจสอบเคสรอยืนยัน 3 ชั่วโมง และเคสยืนยันแล้วรอควบคุมโรคเบื้องต้น (3 ชม.ที่ 2)
+    // เริ่มต้นระบบตรวจสอบเคสรอยืนยัน 3 ชั่วโมง, ควบคุมโรคเบื้องต้น (3 ชม.ที่ 2) และพ่นสารเคมี 1 วันหลังได้รับแจ้ง
     function initUnconfirmedCases3HoursScheduler() {
       setTimeout(() => {
         checkUnconfirmedPatients3Hours();
         if (typeof checkUncontrolledCases3Hours === 'function') checkUncontrolledCases3Hours();
+        if (typeof checkUnsprayedCases1Day === 'function') checkUnsprayedCases1Day();
       }, 3000);
       setInterval(() => {
         checkUnconfirmedPatients3Hours();
         if (typeof checkUncontrolledCases3Hours === 'function') checkUncontrolledCases3Hours();
+        if (typeof checkUnsprayedCases1Day === 'function') checkUnsprayedCases1Day();
       }, 60000);
     }
 
@@ -8725,24 +8903,42 @@ https://dengue-thepha.github.io/tdds/`;
       const now = Date.now();
 
       let pendingUnder3h = 0;
-      let over3h = 0;
+      let overDelay = 0;
       let doneCount = 0;
+      let sprayDoneCount = 0;
+
+      const getElapsedSinceNotifyHrs = (p) => {
+        const baseRaw = p.notifiedDatetime || p.createdAt;
+        const bt = baseRaw ? new Date(baseRaw).getTime() : 0;
+        return bt > 0 ? (now - bt) / 3600000 : 0;
+      };
 
       confirmedList.forEach(p => {
-        if (hasDiseaseControlReport(p)) {
+        const hasDc = hasDiseaseControlReport(p);
+        const hasSp = typeof hasSprayControlReport === 'function' ? hasSprayControlReport(p) : false;
+        let isOver = false;
+        if (hasDc) {
           doneCount++;
         } else {
           const ct = p.confirmedTime ? new Date(p.confirmedTime).getTime() : 0;
           const hrs = ct > 0 ? (now - ct) / 3600000 : 0;
-          if (ct > 0 && hrs >= 3) over3h++;
+          if (ct > 0 && hrs >= 3) isOver = true;
           else pendingUnder3h++;
         }
+        if (hasSp) {
+          sprayDoneCount++;
+        } else {
+          const notifyHrs = getElapsedSinceNotifyHrs(p);
+          if (notifyHrs >= 24 && notifyHrs <= 72) isOver = true;
+        }
+        if (isOver) overDelay++;
       });
 
       const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v; };
       setTxt('dcStatPendingUnder3h', pendingUnder3h);
-      setTxt('dcStatOver3h', over3h);
+      setTxt('dcStatOver3h', overDelay);
       setTxt('dcStatDone', doneCount);
+      setTxt('dcStatSprayDone', sprayDoneCount);
       setTxt('dcStatTotalConfirmed', confirmedList.length);
 
       const q = normalizeThaiStr(document.getElementById('dcSearchInput')?.value || '').toLowerCase();
@@ -8750,11 +8946,17 @@ https://dengue-thepha.github.io/tdds/`;
 
       let filtered = confirmedList.filter(p => {
         const done = hasDiseaseControlReport(p);
+        const spDone = typeof hasSprayControlReport === 'function' ? hasSprayControlReport(p) : false;
         const ct = p.confirmedTime ? new Date(p.confirmedTime).getTime() : 0;
         const hrs = ct > 0 ? (now - ct) / 3600000 : 0;
+        const notifyHrs = getElapsedSinceNotifyHrs(p);
+
         if (statusFilter === 'pending' && done) return false;
         if (statusFilter === 'over3h' && (done || !(ct > 0 && hrs >= 3))) return false;
         if (statusFilter === 'done' && !done) return false;
+        if (statusFilter === 'wait_spray' && spDone) return false;
+        if (statusFilter === 'spray_over1d' && (spDone || !(notifyHrs >= 24 && notifyHrs <= 72))) return false;
+        if (statusFilter === 'spray_done' && !spDone) return false;
         if (q) {
           const hay = `${p.fullName || ''} ${p.addressNo || ''} ${p.subdistrict || ''} ${p.healthCenter || ''} ${p.patientCode || ''}`.toLowerCase();
           if (!hay.includes(q)) return false;
@@ -8763,8 +8965,8 @@ https://dengue-thepha.github.io/tdds/`;
       });
 
       filtered.sort((a, b) => {
-        const aDone = hasDiseaseControlReport(a) ? 1 : 0;
-        const bDone = hasDiseaseControlReport(b) ? 1 : 0;
+        const aDone = (hasDiseaseControlReport(a) ? 1 : 0) + (typeof hasSprayControlReport === 'function' && hasSprayControlReport(a) ? 1 : 0);
+        const bDone = (hasDiseaseControlReport(b) ? 1 : 0) + (typeof hasSprayControlReport === 'function' && hasSprayControlReport(b) ? 1 : 0);
         if (aDone !== bDone) return aDone - bDone;
         const ta = new Date(a.confirmedTime || a.notifiedDatetime || a.illnessDate || 0).getTime() || 0;
         const tb = new Date(b.confirmedTime || b.notifiedDatetime || b.illnessDate || 0).getTime() || 0;
@@ -8779,23 +8981,32 @@ https://dengue-thepha.github.io/tdds/`;
 
       filtered.forEach((p, idx) => {
         const rep = getDiseaseControlReport(p);
+        const spRep = typeof getSprayControlReport === 'function' ? getSprayControlReport(p) : null;
         const ct = p.confirmedTime ? new Date(p.confirmedTime).getTime() : 0;
         const hrs = ct > 0 ? (now - ct) / 3600000 : 0;
+        const notifyHrs = getElapsedSinceNotifyHrs(p);
 
         let step2Html = '';
         if (rep) {
-          step2Html = `<div class="inline-flex flex-col gap-0.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">✅ บันทึกควบคุมโรคแล้ว</span><span class="text-[10px] text-slate-500">${formatControlDateTimeBE(rep.controlDatetime)}</span></div>`;
+          step2Html = `<div class="inline-flex flex-col gap-0.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">✅ ควบคุมโรคแล้ว</span><span class="text-[10px] text-slate-500">${formatControlDateTimeBE(rep.controlDatetime)}</span><span class="font-mono text-[10px] text-slate-700">CI ${Number(rep.ciPatient || 0).toFixed(1)}% / ${Number(rep.ci100m || 0).toFixed(1)}% • HI ${Number(rep.hi100m || 0).toFixed(1)}%</span></div>`;
         } else if (ct > 0 && hrs >= 3 && hrs <= 24) {
           step2Html = `<span class="animate-pulse px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">🚨 เกิน 3 ชม. (${Math.floor(hrs)}ชม.)</span>`;
         } else if (ct > 0 && hrs < 3) {
-          step2Html = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">⏳ รอบันทึก (${Math.floor(hrs)}ชม. ${Math.floor((hrs % 1) * 60)}น.)</span>`;
+          step2Html = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">⏳ รอ 3 ชม.ที่ 2 (${Math.floor(hrs)}ชม. ${Math.floor((hrs % 1) * 60)}น.)</span>`;
         } else {
           step2Html = `<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200">⚪ ยังไม่บันทึก</span>`;
         }
 
-        const ciHiHtml = rep
-          ? `<div class="font-mono text-[11px] font-bold text-slate-800">${Number(rep.ciPatient || 0).toFixed(2)}% / ${Number(rep.ci100m || 0).toFixed(2)}% / <span class="text-blue-700">${Number(rep.hi100m || 0).toFixed(2)}%</span></div>`
-          : '<span class="text-slate-400">-</span>';
+        let step3Html = '';
+        if (spRep) {
+          step3Html = `<div class="inline-flex flex-col gap-0.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">💨 พ่นเคมีแล้ว (${formatBEDateOnlySlash(spRep.sprayDatetime)})</span><span class="text-[10px] text-slate-600">พ่น <b>${spRep.radiusSprayedHouses ?? 0}</b>/${spRep.radiusTotalHouses ?? 0} หลัง • HI <b class="text-blue-700">${Number(spRep.hi100m || 0).toFixed(2)}%</b> CI <b class="text-amber-700">${Number(spRep.ci100m || 0).toFixed(2)}%</b></span></div>`;
+        } else if (notifyHrs >= 24 && notifyHrs <= 72) {
+          step3Html = `<span class="animate-pulse px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">🚨 เกิน 1 วันยังไม่พ่น (${Math.floor(notifyHrs)}ชม.)</span>`;
+        } else if (notifyHrs > 0 && notifyHrs < 24) {
+          step3Html = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">⏳ รอพ่น 1 วัน (${Math.floor(notifyHrs)}ชม.)</span>`;
+        } else {
+          step3Html = `<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200">⚪ ยังไม่พ่นเคมี</span>`;
+        }
 
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 transition';
@@ -8815,13 +9026,17 @@ https://dengue-thepha.github.io/tdds/`;
             <div class="text-[10px] text-slate-400">${p.confirmedBy || ''}</div>
           </td>
           <td class="px-4 py-3">${step2Html}</td>
-          <td class="px-4 py-3 text-center">${ciHiHtml}</td>
+          <td class="px-4 py-3">${step3Html}</td>
           <td class="px-4 py-3 text-center">
-            <div class="flex items-center justify-center gap-1.5">
-              <button onclick="openDiseaseControlModal('${p.id}')" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold ${rep ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' : 'bg-teal-600 hover:bg-teal-700 text-white'} transition">
-                ${rep ? '✏️ แก้ไข' : '🛡️ บันทึก 3-3-1'}
+            <div class="flex flex-wrap items-center justify-center gap-1">
+              <button onclick="openDiseaseControlModal('${p.id}')" class="px-2 py-1.5 rounded-lg text-[10px] font-bold ${rep ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' : 'bg-teal-600 hover:bg-teal-700 text-white'} transition" title="รายงานควบคุมโรคเบื้องต้น (3 ชม.ที่ 2)">
+                ${rep ? '✏️ 3ชม.' : '🛡️ 3ชม.'}
               </button>
-              ${rep ? `<button onclick="downloadDiseaseControlPDF('${p.id}')" title="ดาวน์โหลดรายงานควบคุมโรค .PDF" class="px-2 py-1.5 rounded-lg text-[11px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition">📄 .PDF</button>` : ''}
+              ${rep ? `<button onclick="downloadDiseaseControlPDF('${p.id}')" title="PDF ควบคุมโรค 3 ชม.ที่ 2" class="px-1.5 py-1.5 rounded-lg text-[10px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition">📄</button>` : ''}
+              <button onclick="openSprayControlModal('${p.id}')" class="px-2 py-1.5 rounded-lg text-[10px] font-bold ${spRep ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-indigo-600 hover:bg-indigo-700 text-white'} transition" title="รายงานพ่นสารเคมีกำจัดยุงตัวแก่ (1 วันหลังได้รับแจ้ง)">
+                ${spRep ? '✏️ พ่น 1วัน' : '💨 พ่น 1วัน'}
+              </button>
+              ${spRep ? `<button onclick="downloadSprayControlPDF('${p.id}')" title="PDF พ่นสารเคมี 1 วัน" class="px-1.5 py-1.5 rounded-lg text-[10px] font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition">📑</button>` : ''}
             </div>
           </td>
         `;
@@ -9709,6 +9924,749 @@ https://dengue-thepha.github.io/tdds/`;
             }
           } catch (err) {
             console.warn('[TDDS Alert] Failed to send 3h control alert:', err);
+          }
+        }
+      }
+    }
+
+    // =============================================================
+    // 9.8 รายงานพ่นสารเคมีกำจัดยุงตัวแก่ 1 วันหลังได้รับแจ้ง (มาตรการ 3-3-1)
+    // =============================================================
+    let scTeamPhotos = [null, null, null, null];
+    let scActionPhotos = [null, null, null, null];
+
+    function getSprayControlReport(p) {
+      if (!p) return null;
+      return p.sprayControlReport
+        || sprayControlReportsMap[p.id]
+        || (p.supabaseId && sprayControlReportsMap[p.supabaseId])
+        || (p.patientCode && sprayControlReportsMap[p.patientCode])
+        || null;
+    }
+
+    function hasSprayControlReport(p) {
+      const r = getSprayControlReport(p);
+      return !!(r && (r.sprayDatetime || r.submittedAt || p.sprayCompletedAt));
+    }
+
+    function stripSubdistrictPrefix(sub) {
+      return String(sub || '-').replace(/^(ตำบล|ต\.)\s*/g, '').trim() || '-';
+    }
+
+    function getRadius100mHouseCount(p) {
+      if (!p) return null;
+      let lat = parseFloat(p.lat);
+      let lng = parseFloat(p.lng);
+      if ((isNaN(lat) || isNaN(lng)) && typeof findBestPersonMatchForPatient === 'function') {
+        const match = findBestPersonMatchForPatient(p);
+        if (match && match.lat != null && match.lng != null) {
+          lat = match.lat;
+          lng = match.lng;
+        }
+      }
+      if (isNaN(lat) || isNaN(lng)) return null;
+      const neighbors = typeof findPersonsWithinRadius === 'function' ? findPersonsWithinRadius(lat, lng, 100) : [];
+      const houses = new Set(neighbors.map(n => `${n.house_no || '-'}_${n.village_no || '-'}_${n.subdistrict || '-'}`));
+      return houses.size;
+    }
+
+    function recalcScIndices() {
+      const num = (id) => Math.max(0, parseInt(document.getElementById(id)?.value || '0', 10) || 0);
+      const totalHouses = num('sc_rad_houses_total');
+      const posHouses = num('sc_rad_houses_positive');
+      const totalCont = num('sc_rad_containers_total');
+      const posCont = num('sc_rad_containers_positive');
+
+      const hi100m = totalHouses > 0 ? Number(((posHouses / totalHouses) * 100).toFixed(2)) : 0;
+      const ci100m = totalCont > 0 ? Number(((posCont / totalCont) * 100).toFixed(2)) : 0;
+
+      const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val.toFixed(2); };
+      setTxt('sc_hi_display', hi100m);
+      setTxt('sc_ci_display', ci100m);
+
+      return { hi100m, ci100m };
+    }
+
+    function autoFillScRadiusHouses(silent = false) {
+      const pid = document.getElementById('sc_patient_id')?.value;
+      const p = patientsData.find(x => x.id === pid);
+      if (!p) return;
+
+      const dc = getDiseaseControlReport(p);
+      const gpsCount = getRadius100mHouseCount(p);
+      const hEl = document.getElementById('sc_rad_houses_total');
+      const sEl = document.getElementById('sc_rad_houses_sprayed');
+
+      let sourceMsg = '';
+      if (gpsCount !== null && gpsCount > 0) {
+        if (hEl) hEl.value = gpsCount;
+        sourceMsg = `ดึงจากพิกัด 100 ม. ได้ ${gpsCount} หลัง`;
+      } else if (dc && dc.radiusTotalHouses > 0) {
+        if (hEl) hEl.value = dc.radiusTotalHouses;
+        sourceMsg = `ดึงจากรายงาน 3 ชม.ที่ 2 ได้ ${dc.radiusTotalHouses} หลัง`;
+      } else if (!silent) {
+        Swal.fire({ icon: 'info', title: 'ยังไม่มีข้อมูลจำนวนบ้าน 100 เมตร', text: 'กรุณาระบุจำนวนบ้านในรัศมี 100 เมตรด้วยตนเอง หรืออัปเดตพิกัดบ้านผู้ป่วยก่อน' });
+        return;
+      }
+
+      if (dc) {
+        const curCont = parseInt(document.getElementById('sc_rad_containers_total')?.value || '0', 10) || 0;
+        if (!silent && curCont === 0) {
+          const dcTotalCont = (dc.radiusIndoorContainers || 0) + (dc.radiusOutdoorContainers || 0);
+          const dcPosCont = (dc.radiusIndoorLarvae || 0) + (dc.radiusOutdoorLarvae || 0);
+          const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+          setVal('sc_rad_houses_positive', dc.radiusPositiveHouses || 0);
+          setVal('sc_rad_containers_total', dcTotalCont);
+          setVal('sc_rad_containers_positive', dcPosCont);
+          if (sEl && (!sEl.value || sEl.value === '0') && hEl) sEl.value = hEl.value;
+        }
+      }
+      recalcScIndices();
+      if (!silent && sourceMsg) {
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: sourceMsg, timer: 2000, showConfirmButton: false });
+      }
+    }
+
+    function renderScPhotoGrids() {
+      const renderGrid = (gridId, arr, type) => {
+        const grid = document.getElementById(gridId);
+        if (!grid) return;
+        grid.innerHTML = [0, 1, 2, 3].map(idx => {
+          const dataUrl = arr[idx];
+          return `
+            <div class="bg-white border border-slate-200 rounded-xl p-2 flex flex-col items-center gap-1.5">
+              <div class="text-[11px] font-bold text-slate-600">${type === 'team' ? 'ทีมพ่น' : 'ขณะพ่น'} ${idx + 1}</div>
+              ${dataUrl
+                ? `<img src="${dataUrl}" class="w-full h-24 object-cover rounded-lg border border-slate-100">`
+                : `<div class="w-full h-24 rounded-lg bg-slate-50 border border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-[11px]">ยังไม่มีภาพ</div>`
+              }
+              <div class="flex items-center gap-1 w-full">
+                <label class="flex-1 text-center cursor-pointer bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 rounded-lg py-1 text-[10px] font-bold transition">
+                  เลือกรูป
+                  <input type="file" accept="image/*" class="hidden" onchange="handleScPhotoChange(event, '${type}', ${idx})">
+                </label>
+                ${dataUrl ? `<button type="button" onclick="removeScPhoto('${type}', ${idx})" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold">ลบ</button>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+      };
+      renderGrid('scTeamPhotoGrid', scTeamPhotos, 'team');
+      renderGrid('scActionPhotoGrid', scActionPhotos, 'action');
+    }
+
+    async function handleScPhotoChange(event, type, idx) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      try {
+        const dataUrl = await compressImageToDataUrl(file, 800, 0.72);
+        if (type === 'team') scTeamPhotos[idx] = dataUrl;
+        else scActionPhotos[idx] = dataUrl;
+        renderScPhotoGrids();
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'ไม่สามารถอ่านรูปภาพได้', text: err.message });
+      }
+    }
+
+    function removeScPhoto(type, idx) {
+      if (type === 'team') scTeamPhotos[idx] = null;
+      else scActionPhotos[idx] = null;
+      renderScPhotoGrids();
+    }
+
+    function openSprayControlModal(patientId) {
+      const p = patientsData.find(item => item.id === patientId || item.patientCode === patientId);
+      if (!p) {
+        Swal.fire({ icon: 'warning', title: 'ไม่พบข้อมูลผู้ป่วย' });
+        return;
+      }
+      if (!currentUser) {
+        Swal.fire({ icon: 'warning', title: 'กรุณาเข้าสู่ระบบก่อนดำเนินการ' });
+        openLoginModal();
+        return;
+      }
+      if (!isLocalConfirmedForControl(p)) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'เคสยังไม่ได้รับการยืนยันในพื้นที่',
+          text: 'ต้องให้หน่วยบริการเจ้าของพื้นที่กดยืนยัน "ป่วยในพื้นที่จริง" (3 ชม.แรก) ก่อน จึงจะบันทึกรายงานพ่นสารเคมี 1 วันได้'
+        });
+        return;
+      }
+      if (!canUserConfirmCase(currentUser, p)) {
+        Swal.fire({
+          icon: 'error',
+          title: 'ไม่มีสิทธิ์บันทึกรายงานแทนพื้นที่',
+          html: `สิทธิ์บันทึกรายงานพ่นสารเคมี 1 วันสงวนไว้เฉพาะเจ้าหน้าที่ <b>${p.healthCenter || 'เจ้าของพื้นที่'}</b> เท่านั้น (แอดมินและหน่วยอื่นไม่สามารถบันทึกแทนได้)`
+        });
+        return;
+      }
+
+      document.getElementById('sprayControlForm')?.reset();
+      document.getElementById('sc_patient_id').value = p.id;
+      document.getElementById('scModalTitle').innerText = `รายงานพ่นสารเคมี 1 วัน (3-3-1) : ${p.fullName}`;
+
+      const dc = getDiseaseControlReport(p);
+      const existing = getSprayControlReport(p);
+      const notifyDisp = p.notifiedDatetime ? formatControlDateTimeBE(p.notifiedDatetime) : (p.createdAt ? formatControlDateTimeBE(p.createdAt) : '-');
+      const confDisp = p.confirmedTime ? formatControlDateTimeBE(p.confirmedTime) : 'ยืนยันแล้ว';
+      const dcDisp = dc ? `${formatControlDateTimeBE(dc.controlDatetime)} (CI บ้าน ${Number(dc.ciPatient || 0).toFixed(2)}% / HI ${Number(dc.hi100m || 0).toFixed(2)}%)` : 'ยังไม่ได้บันทึก 3 ชม.ที่ 2';
+
+      document.getElementById('scChainBanner').innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="font-bold text-indigo-950 text-sm">${p.fullName} • ${p.diagnosis || 'DF'} • บ้านเลขที่ ${p.addressNo || '-'} ม.${p.villageNo || '-'} ตำบล${stripSubdistrictPrefix(p.subdistrict)}</div>
+          <div class="text-[11px] font-bold text-indigo-700 bg-white px-2.5 py-1 rounded-lg border border-indigo-200">🏥 ${p.healthCenter || '-'} (${p.hcode || getHCodeByName(p.healthCenter) || '-'})</div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+          <div class="bg-white/90 border border-emerald-200 rounded-xl p-2">
+            <div class="font-bold text-emerald-800">① ยืนยันเคส (3 ชม.แรก)</div>
+            <div class="text-slate-600 mt-0.5">รับแจ้ง: ${notifyDisp}</div>
+            <div class="text-emerald-700 font-semibold">ยืนยัน: ${confDisp}</div>
+          </div>
+          <div class="bg-white/90 border ${dc ? 'border-teal-200' : 'border-amber-200'} rounded-xl p-2">
+            <div class="font-bold ${dc ? 'text-teal-800' : 'text-amber-800'}">② ควบคุมโรค (3 ชม.ที่ 2)</div>
+            <div class="text-slate-600 mt-0.5">${dcDisp}</div>
+          </div>
+          <div class="bg-white/90 border border-indigo-300 rounded-xl p-2">
+            <div class="font-bold text-indigo-800">③ พ่นสารเคมี (1 วันหลังแจ้ง)</div>
+            <div class="text-slate-600 mt-0.5">${existing ? '✅ บันทึกแล้วเมื่อ ' + formatBEDateOnlySlash(existing.sprayDatetime) : '⏳ กำลังบันทึกรายงานขั้นสุดท้าย'}</div>
+          </div>
+        </div>
+      `;
+
+      const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ''; };
+      setVal('sc_spray_datetime', existing?.sprayDatetime ? toLocalDatetimeInput(existing.sprayDatetime) : toLocalDatetimeInput(new Date().toISOString()));
+      setVal('sc_spray_method', existing?.sprayMethod || 'พ่นหมอกควัน (Fogging) ร่วมกับ ULV รัศมี 100 เมตร');
+      setVal('sc_chemical_name', existing?.chemicalName || '');
+
+      const defaultHouses = existing?.radiusTotalHouses ?? dc?.radiusTotalHouses ?? getRadius100mHouseCount(p) ?? 0;
+      setVal('sc_rad_houses_total', defaultHouses);
+      setVal('sc_rad_houses_sprayed', existing?.radiusSprayedHouses ?? 0);
+      setVal('sc_rad_houses_positive', existing?.radiusPositiveHouses ?? 0);
+      setVal('sc_rad_containers_total', existing?.radiusTotalContainers ?? 0);
+      setVal('sc_rad_containers_positive', existing?.radiusPositiveContainers ?? 0);
+      recalcScIndices();
+
+      scTeamPhotos = [0, 1, 2, 3].map(i => existing?.teamPhotos?.[i] || null);
+      scActionPhotos = [0, 1, 2, 3].map(i => existing?.actionPhotos?.[i] || null);
+      renderScPhotoGrids();
+
+      const driveNote = document.getElementById('scDriveStatusNote');
+      if (driveNote) {
+        const hasGas = !!(localStorage.getItem('tdds_gas_webapp_url') || '').trim();
+        driveNote.innerHTML = existing?.driveFolderUrl
+          ? `<span class="text-emerald-700 font-semibold">✅ อัปโหลดแล้วไปยังโฟลเดอร์ย่อย: <a href="${existing.driveFolderUrl}" target="_blank" class="underline">เปิดโฟลเดอร์ Google Drive ↗️</a></span>`
+          : (hasGas
+            ? '<span class="text-teal-700">☁️ เชื่อมต่อ Google Drive พร้อมแล้ว — ภาพทีมพ่น/ขณะพ่น และ .PDF จะถูกอัปโหลดเข้าโฟลเดอร์เก็บภาพอัตโนมัติ</span>'
+            : '<span class="text-amber-700">ℹ️ ภาพจะถูกเก็บในฐานข้อมูลและไฟล์ .PDF อัตโนมัติ (หากต้องการให้อัปโหลดตรงเข้า Google Drive กรุณาใส่ Web App URL ใน <b>⚙️ ตั้งค่า Drive & Telegram</b>)</span>');
+      }
+
+      setVal('sc_controller_name', existing?.controllerName || dc?.controllerName || currentUser?.fullName || '');
+      setVal('sc_controller_position', existing?.controllerPosition || dc?.controllerPosition || currentUser?.position || 'เจ้าหน้าที่สาธารณสุข / ผู้รับผิดชอบงานระบาด');
+
+      document.getElementById('sprayControlModal')?.classList.remove('hidden');
+    }
+
+    function closeSprayControlModal() {
+      document.getElementById('sprayControlModal')?.classList.add('hidden');
+    }
+
+    function buildSprayControlTelegramMessage(p, r) {
+      const subClean = stripSubdistrictPrefix(p.subdistrict);
+      return `พื้นที่พ่นเคมี 1 วันหลังได้รับแจ้ง
+วันที่พ่นเคมี:${formatBEDateOnlySlash(r.sprayDatetime)}
+หน่วยบริการที่ยืนยัน :${p.healthCenter || '-'}
+ผู้ป่วยชื่อ:${p.fullName || '-'}
+ที่อยู่ :${p.addressNo || '-'} หมู่ที่ ${p.villageNo || '-'} ตำบล${subClean}
+จำนวนบ้านในรัศมี 100 เมตร :${r.radiusTotalHouses ?? 0} หลัง
+จำนวนบ้านที่พ่น :${r.radiusSprayedHouses ?? 0} หลัง
+ค่า HI :${Number(r.hi100m || 0).toFixed(2)} % ค่า CI :${Number(r.ci100m || 0).toFixed(2)} %`;
+    }
+
+    function buildSprayControlPdfHtml(p, r) {
+      const val = (v) => (v !== undefined && v !== null && String(v).trim() !== '' ? String(v) : '-');
+      const dc = getDiseaseControlReport(p);
+      const notifyDisp = p.notifiedDatetime ? formatControlDateTimeBE(p.notifiedDatetime) : (p.createdAt ? formatControlDateTimeBE(p.createdAt) : '-');
+      const confDisp = p.confirmedTime ? formatControlDateTimeBE(p.confirmedTime) : 'ยืนยันแล้ว';
+      const dcDisp = dc ? formatControlDateTimeBE(dc.controlDatetime) : '-';
+      const sprayDateDisp = formatBEDateOnlySlash(r.sprayDatetime);
+      const sprayDateTimeDisp = formatControlDateTimeBE(r.sprayDatetime);
+      const subClean = stripSubdistrictPrefix(p.subdistrict);
+
+      const renderPhotoCell = (src, label) => `
+        <td style="width:50%; padding:5px; vertical-align:top; text-align:center; border:1px solid #cbd5e1; background:#f8fafc;">
+          ${src ? `<img src="${src}" style="width:100%; max-height:150px; object-fit:contain; border-radius:4px;">` : `<div style="height:105px; line-height:105px; color:#94a3b8; font-size:11px;">(ไม่มี${label})</div>`}
+          <div style="font-size:11px; color:#475569; margin-top:3px;">${label}</div>
+        </td>
+      `;
+
+      const teamPhotos = Array.isArray(r.teamPhotos) ? r.teamPhotos : [];
+      const actionPhotos = Array.isArray(r.actionPhotos) ? r.actionPhotos : [];
+
+      return `
+        <div style="font-family:'Sarabun',Tahoma,sans-serif; color:#0f172a; width:754px; padding:14px 18px; background:#fff; line-height:1.45; font-size:13px;">
+          <div style="text-align:center; border-bottom:2px solid #3730a3; padding-bottom:8px; margin-bottom:12px;">
+            <div style="font-size:18px; font-weight:bold; color:#312e81;">รายงานพ่นสารเคมีกำจัดยุงตัวแก่ 1 วันหลังได้รับแจ้ง (มาตรการ 3-3-1 ขั้นที่ 3)</div>
+            <div style="font-size:12px; color:#475569;">ศูนย์ปฏิบัติการเฝ้าระวังและควบคุมโรคติดต่อนำโดยยุงลาย อำเภอเทพา จังหวัดสงขลา</div>
+          </div>
+
+          <div style="background:#3730a3; color:#fff; font-weight:bold; padding:4px 10px; border-radius:4px; margin-bottom:6px;">ความเชื่อมโยงมาตรการ 3-3-1 (3 ชม.แรก ➔ 3 ชม.ที่ 2 ➔ พ่นเคมี 1 วัน)</div>
+          <div style="border:1px solid #cbd5e1; border-radius:6px; padding:8px 10px; margin-bottom:10px; background:#eef2ff;">
+            <div><b>① 3 ชม.แรก (ยืนยันเคส):</b> รับแจ้งเมื่อ ${notifyDisp} &nbsp;|&nbsp; ยืนยันโดย <b>${val(p.healthCenter)}</b> (${val(p.hcode || getHCodeByName(p.healthCenter))}) เมื่อ ${confDisp}</div>
+            <div style="margin-top:3px;"><b>② 3 ชม.ที่ 2 (ควบคุมโรคเบื้องต้น):</b> ${dc ? `บันทึกเมื่อ ${dcDisp} &nbsp;|&nbsp; CI บ้านผู้ป่วย: <b>${Number(dc.ciPatient || 0).toFixed(2)}%</b> &nbsp;|&nbsp; CI 100ม.: <b>${Number(dc.ci100m || 0).toFixed(2)}%</b> &nbsp;|&nbsp; HI: <b>${Number(dc.hi100m || 0).toFixed(2)}%</b>` : 'ยังไม่พบข้อมูลบันทึกขั้นที่ 2'}</div>
+            <div style="margin-top:3px;"><b>③ 1 วันหลังได้รับแจ้ง (พ่นสารเคมี):</b> วันที่พ่นเคมี <b>${sprayDateDisp}</b> (เวลาบันทึก: ${sprayDateTimeDisp})</div>
+          </div>
+
+          <div style="background:#1e40af; color:#fff; font-weight:bold; padding:4px 10px; border-radius:4px; margin-bottom:6px;">ข้อมูลผู้ป่วยและการพ่นสารเคมีกำจัดยุงตัวแก่</div>
+          <div style="border:1px solid #cbd5e1; border-radius:6px; padding:8px 10px; margin-bottom:10px;">
+            <div><b>ผู้ป่วยชื่อ:</b> ${val(p.fullName)} &nbsp;|&nbsp; <b>รหัสผู้ป่วย:</b> ${val(p.patientCode)} &nbsp;|&nbsp; <b>วินิจฉัย:</b> ${val(p.diagnosis || 'DF')} (${val(p.patientType || 'IPD')})</div>
+            <div><b>ที่อยู่:</b> บ้านเลขที่ ${val(p.addressNo)} &nbsp;<b>หมู่ที่</b> ${val(p.villageNo)} &nbsp;<b>ตำบล</b>${subClean} &nbsp;|&nbsp; <b>หน่วยบริการที่ยืนยัน:</b> ${val(p.healthCenter)}</div>
+            <div><b>วิธีการพ่น / ทีมปฏิบัติการ:</b> ${val(r.sprayMethod)} &nbsp;|&nbsp; <b>สารเคมีที่ใช้:</b> ${val(r.chemicalName)}</div>
+          </div>
+
+          <div style="background:#0f766e; color:#fff; font-weight:bold; padding:4px 10px; border-radius:4px; margin-bottom:6px;">ผลการพ่นสารเคมีและการสำรวจค่า HI / CI บ้านรัศมี 100 เมตร</div>
+          <div style="border:1px solid #cbd5e1; border-radius:6px; padding:8px 10px; margin-bottom:10px;">
+            <div>
+              <b>จำนวนบ้านในรัศมี 100 เมตร:</b> ${r.radiusTotalHouses ?? 0} หลัง &nbsp;&nbsp;|&nbsp;&nbsp;
+              <b>จำนวนบ้านที่พ่น:</b> ${r.radiusSprayedHouses ?? 0} หลัง &nbsp;&nbsp;|&nbsp;&nbsp;
+              <b>บ้านที่พบลูกน้ำ:</b> ${r.radiusPositiveHouses ?? 0} หลัง
+            </div>
+            <div style="margin-top:4px;">
+              <b>จำนวนภาชนะที่สำรวจทั้งหมด:</b> ${r.radiusTotalContainers ?? 0} ภาชนะ &nbsp;&nbsp;|&nbsp;&nbsp;
+              <b>ภาชนะที่พบลูกน้ำ:</b> ${r.radiusPositiveContainers ?? 0} ภาชนะ
+            </div>
+            <div style="margin-top:6px; font-size:14px;">
+              <b>ค่า HI :</b> <span style="font-weight:bold; color:#1d4ed8;">${Number(r.hi100m || 0).toFixed(2)} %</span> &nbsp;&nbsp;&nbsp;&nbsp;
+              <b>ค่า CI :</b> <span style="font-weight:bold; color:#b45309;">${Number(r.ci100m || 0).toFixed(2)} %</span>
+            </div>
+          </div>
+
+          <div style="font-weight:bold; margin-bottom:4px; color:#3730a3;">ภาพทีมพ่นสารเคมีกำจัดยุงตัวแก่</div>
+          <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
+            <tr>${renderPhotoCell(teamPhotos[0], 'ภาพทีมพ่น 1')}${renderPhotoCell(teamPhotos[1], 'ภาพทีมพ่น 2')}</tr>
+            <tr>${renderPhotoCell(teamPhotos[2], 'ภาพทีมพ่น 3')}${renderPhotoCell(teamPhotos[3], 'ภาพทีมพ่น 4')}</tr>
+          </table>
+
+          <div style="font-weight:bold; margin-bottom:4px; color:#1d4ed8;">ภาพขณะพ่นสารเคมีกำจัดยุงตัวแก่</div>
+          <table style="width:100%; border-collapse:collapse; margin-bottom:12px;">
+            <tr>${renderPhotoCell(actionPhotos[0], 'ภาพขณะพ่น 1')}${renderPhotoCell(actionPhotos[1], 'ภาพขณะพ่น 2')}</tr>
+            <tr>${renderPhotoCell(actionPhotos[2], 'ภาพขณะพ่น 3')}${renderPhotoCell(actionPhotos[3], 'ภาพขณะพ่น 4')}</tr>
+          </table>
+
+          <div style="border-top:1px solid #cbd5e1; padding-top:8px; display:flex; justify-content:space-between; align-items:center;">
+            <div><b>ผู้รายงาน / หัวหน้าทีมพ่น:</b> ${val(r.controllerName)} &nbsp;&nbsp;&nbsp; <b>ตำแหน่ง:</b> ${val(r.controllerPosition)}</div>
+            <div style="font-size:11px; color:#64748b;">วันที่พ่นเคมี: ${sprayDateDisp}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function openSprayControlPrintWindow(p, r) {
+      const reportHtml = buildSprayControlPdfHtml(p, r);
+      const printWindow = window.open('', '_blank', 'width=850,height=950');
+      if (printWindow) {
+        printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>รายงานพ่นเคมี1วัน_${p.fullName || ''}</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet"><style>@page{size:A4 portrait;margin:8mm;}body{margin:0;padding:10px;background:#fff;font-family:'Sarabun',Tahoma,sans-serif;}@media print{.no-print{display:none!important;}}</style></head><body><div class="no-print" style="margin-bottom:10px;padding:8px;background:#f1f5f9;display:flex;justify-content:space-between;"><span>🖨️ รายงานพ่นสารเคมี 1 วันหลังได้รับแจ้ง (3-3-1)</span><button onclick="window.print()" style="background:#4f46e5;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;">พิมพ์ / บันทึก PDF</button></div>${reportHtml}<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
+        printWindow.document.close();
+      }
+    }
+
+    async function generateSprayControlPDF(patient, report, shouldDownload = true) {
+      const pName = (patient.fullName || 'ผู้ป่วย').replace(/\s+/g, '_');
+      const pCode = patient.patientCode || patient.id;
+      const fileName = `รายงานพ่นเคมี1วัน_${pName}_${pCode}.pdf`;
+      const html = buildSprayControlPdfHtml(patient, report);
+      try {
+        const res = await renderHtmlToPdfDirect(html, fileName, shouldDownload, 794);
+        if (!res.handled && shouldDownload) openSprayControlPrintWindow(patient, report);
+        return { blob: res.blob, filename: fileName, handled: res.handled };
+      } catch (err) {
+        console.warn('[TDDS] generateSprayControlPDF fallback:', err);
+        if (shouldDownload) openSprayControlPrintWindow(patient, report);
+        return { blob: null, filename: fileName, handled: false };
+      }
+    }
+
+    function downloadSprayControlPDF(patientId) {
+      const p = patientsData.find(x => x.id === patientId || x.patientCode === patientId);
+      const r = getSprayControlReport(p);
+      if (!p || !r) {
+        Swal.fire({ icon: 'warning', title: 'ยังไม่มีรายงานพ่นสารเคมีสำหรับผู้ป่วยรายนี้' });
+        return;
+      }
+      generateSprayControlPDF(p, r, true);
+    }
+
+    async function saveSprayControlReportToSupabase(p, report) {
+      const cfg = typeof getSupabasePersonConfig === 'function' ? getSupabasePersonConfig() : null;
+      if (!cfg || !cfg.url || !cfg.key) return { ok: false, error: 'Missing Supabase config' };
+
+      try {
+        const dc = getDiseaseControlReport(p);
+        const rowPayload = {
+          patient_id: p.supabaseId || null,
+          patient_code: p.patientCode || p.id,
+          patient_full_name: p.fullName || '-',
+          hcode: p.hcode || getHCodeByName(p.healthCenter) || null,
+          health_center: p.healthCenter || null,
+          subdistrict: p.subdistrict || null,
+          village_no: p.villageNo || null,
+          address_no: p.addressNo || null,
+          notified_datetime: toIsoTimestampOrNull(p.notifiedDatetime || p.createdAt),
+          confirmed_time: toIsoTimestampOrNull(p.confirmedTime),
+          control_3h_datetime: dc ? toIsoTimestampOrNull(dc.controlDatetime || p.controlCompletedAt) : null,
+          spray_datetime: toIsoTimestampOrNull(report.sprayDatetime) || new Date().toISOString(),
+          spray_method: report.sprayMethod || null,
+          chemical_name: report.chemicalName || null,
+          radius_total_houses: report.radiusTotalHouses ?? 0,
+          radius_sprayed_houses: report.radiusSprayedHouses ?? 0,
+          radius_positive_houses: report.radiusPositiveHouses ?? 0,
+          radius_total_containers: report.radiusTotalContainers ?? 0,
+          radius_positive_containers: report.radiusPositiveContainers ?? 0,
+          hi_100m: report.hi100m ?? 0,
+          ci_100m: report.ci100m ?? 0,
+          team_photos: report.teamPhotos || [],
+          action_photos: report.actionPhotos || [],
+          drive_folder_url: report.driveFolderUrl || null,
+          controller_name: report.controllerName || '-',
+          controller_position: report.controllerPosition || '-',
+          telegram_sent_at: report.telegramSentAt || new Date().toISOString()
+        };
+
+        let res;
+        if (p.supabaseId) {
+          res = await fetch(`${cfg.url}/rest/v1/spray_control_reports?on_conflict=patient_id`, {
+            method: 'POST',
+            headers: buildSupabaseHeaders(cfg.key, { 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+            body: JSON.stringify(rowPayload)
+          });
+        } else {
+          res = await fetch(`${cfg.url}/rest/v1/spray_control_reports`, {
+            method: 'POST',
+            headers: buildSupabaseHeaders(cfg.key, { 'Content-Type': 'application/json', 'Prefer': 'return=representation' }),
+            body: JSON.stringify(rowPayload)
+          });
+        }
+
+        if (p.supabaseId) {
+          const summaryPatch = {
+            spray_completed_at: toIsoTimestampOrNull(report.sprayDatetime) || new Date().toISOString(),
+            spray_control_summary: {
+              sprayDatetime: report.sprayDatetime,
+              radiusTotalHouses: report.radiusTotalHouses,
+              radiusSprayedHouses: report.radiusSprayedHouses,
+              hi100m: report.hi100m,
+              ci100m: report.ci100m,
+              controllerName: report.controllerName,
+              controllerPosition: report.controllerPosition
+            }
+          };
+          fetch(`${cfg.url}/rest/v1/current_dengue_cases?id=eq.${encodeURIComponent(p.supabaseId)}`, {
+            method: 'PATCH',
+            headers: buildSupabaseHeaders(cfg.key, { 'Content-Type': 'application/json' }),
+            body: JSON.stringify(summaryPatch)
+          }).catch(() => {});
+        }
+
+        if (!res.ok) {
+          const txt = await res.text().catch(() => '');
+          return { ok: false, missingTable: res.status === 404, error: `HTTP ${res.status}: ${txt}` };
+        }
+        return { ok: true };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    }
+
+    async function fetchSprayControlReportsFromSupabase() {
+      const cfg = getSupabasePersonConfig();
+      if (!cfg.url || !cfg.key) return;
+      try {
+        const res = await fetch(`${cfg.url}/rest/v1/spray_control_reports?select=*&order=updated_at.desc&limit=2000`, {
+          headers: buildSupabaseHeaders(cfg.key)
+        });
+        if (!res.ok) return;
+        const rows = await res.json();
+        if (!Array.isArray(rows) || rows.length === 0) return;
+
+        rows.forEach(r => {
+          const rep = {
+            sprayDatetime: toLocalDatetimeInput(r.spray_datetime),
+            sprayMethod: r.spray_method || '',
+            chemicalName: r.chemical_name || '',
+            radiusTotalHouses: r.radius_total_houses ?? 0,
+            radiusSprayedHouses: r.radius_sprayed_houses ?? 0,
+            radiusPositiveHouses: r.radius_positive_houses ?? 0,
+            radiusTotalContainers: r.radius_total_containers ?? 0,
+            radiusPositiveContainers: r.radius_positive_containers ?? 0,
+            hi100m: Number(r.hi_100m || 0),
+            ci100m: Number(r.ci_100m || 0),
+            teamPhotos: Array.isArray(r.team_photos) ? r.team_photos : [],
+            actionPhotos: Array.isArray(r.action_photos) ? r.action_photos : [],
+            driveFolderUrl: r.drive_folder_url || null,
+            controllerName: r.controller_name || '',
+            controllerPosition: r.controller_position || '',
+            telegramSentAt: r.telegram_sent_at || r.created_at,
+            submittedAt: r.updated_at || r.created_at
+          };
+          if (r.patient_id) sprayControlReportsMap[r.patient_id] = rep;
+          if (r.patient_code) sprayControlReportsMap[r.patient_code] = rep;
+          const match = patientsData.find(p =>
+            (r.patient_id && p.supabaseId === r.patient_id) || (r.patient_code && p.patientCode === r.patient_code)
+          );
+          if (match) {
+            match.sprayControlReport = rep;
+            match.sprayCompletedAt = r.spray_datetime || rep.submittedAt;
+            sprayControlReportsMap[match.id] = rep;
+          }
+        });
+        saveSprayControlStore();
+      } catch (e) {}
+    }
+
+    async function uploadSprayControlPhotosToDrive(p, report, pdfBlob = null) {
+      const gasUrl = (localStorage.getItem('tdds_gas_webapp_url') || '').trim();
+      if (!gasUrl) {
+        return { ok: false, skipped: true, reason: 'missing_gas_url' };
+      }
+
+      const files = [];
+      const safeName = (p.fullName || 'ผู้ป่วย').replace(/[^\w\u0E00-\u0E7F.-]+/g, '_');
+      const code = p.patientCode || p.id || 'CASE';
+
+      (report.teamPhotos || []).forEach((dataUrl, idx) => {
+        if (dataUrl) {
+          files.push({
+            type: 'spray_team',
+            slot: idx + 1,
+            mimeType: 'image/jpeg',
+            filename: `${code}_${safeName}_ทีมพ่นเคมี_${idx + 1}.jpg`,
+            base64: dataUrl
+          });
+        }
+      });
+      (report.actionPhotos || []).forEach((dataUrl, idx) => {
+        if (dataUrl) {
+          files.push({
+            type: 'spray_action',
+            slot: idx + 1,
+            mimeType: 'image/jpeg',
+            filename: `${code}_${safeName}_ขณะพ่นเคมี_${idx + 1}.jpg`,
+            base64: dataUrl
+          });
+        }
+      });
+      if (pdfBlob) {
+        try {
+          const pdfB64 = await blobToBase64(pdfBlob);
+          files.push({
+            type: 'spray_pdf',
+            slot: 1,
+            mimeType: 'application/pdf',
+            filename: `รายงานพ่นเคมี1วัน_${safeName}_${code}.pdf`,
+            base64: pdfB64
+          });
+        } catch (e) {}
+      }
+
+      if (files.length === 0) {
+        return { ok: true, count: 0 };
+      }
+
+      try {
+        const res = await fetch(gasUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'uploadControlBundle',
+            folderId: DISEASE_CONTROL_PHOTOS_DRIVE_FOLDER_ID,
+            subfolderName: `${code}_${safeName}`,
+            files
+          })
+        });
+        const data = await res.json();
+        if (data && data.status === 'success') {
+          report.driveFolderUrl = data.folderUrl || DISEASE_CONTROL_PHOTOS_DRIVE_URL;
+          return { ok: true, count: (data.files || []).length, folderUrl: report.driveFolderUrl };
+        }
+        return { ok: false, error: data?.message || 'Upload failed' };
+      } catch (err) {
+        console.warn('[TDDS] uploadSprayControlPhotosToDrive error:', err);
+        return { ok: false, error: err.message };
+      }
+    }
+
+    async function handleSprayControlSubmit(e) {
+      e.preventDefault();
+      const pid = document.getElementById('sc_patient_id')?.value;
+      const p = patientsData.find(x => x.id === pid);
+      if (!p) return;
+
+      const val = (id) => document.getElementById(id)?.value?.trim() || '';
+      const num = (id) => Math.max(0, parseInt(document.getElementById(id)?.value || '0', 10) || 0);
+      const indices = recalcScIndices();
+
+      const report = {
+        sprayDatetime: val('sc_spray_datetime') || new Date().toISOString(),
+        sprayMethod: val('sc_spray_method'),
+        chemicalName: val('sc_chemical_name'),
+        radiusTotalHouses: num('sc_rad_houses_total'),
+        radiusSprayedHouses: num('sc_rad_houses_sprayed'),
+        radiusPositiveHouses: num('sc_rad_houses_positive'),
+        radiusTotalContainers: num('sc_rad_containers_total'),
+        radiusPositiveContainers: num('sc_rad_containers_positive'),
+        hi100m: indices.hi100m,
+        ci100m: indices.ci100m,
+        teamPhotos: scTeamPhotos.slice(0, 4),
+        actionPhotos: scActionPhotos.slice(0, 4),
+        controllerName: val('sc_controller_name'),
+        controllerPosition: val('sc_controller_position'),
+        submittedAt: new Date().toISOString(),
+        telegramSentAt: new Date().toISOString()
+      };
+
+      showLoading('กำลังบันทึกรายงานพ่นสารเคมี สร้าง .PDF และส่ง Telegram...');
+
+      p.sprayControlReport = report;
+      p.sprayCompletedAt = toIsoTimestampOrNull(report.sprayDatetime) || report.submittedAt;
+      sprayControlReportsMap[p.id] = report;
+      if (p.supabaseId) sprayControlReportsMap[p.supabaseId] = report;
+      if (p.patientCode) sprayControlReportsMap[p.patientCode] = report;
+      saveSprayControlStore();
+      savePatients();
+
+      const sbRes = await saveSprayControlReportToSupabase(p, report);
+      const tgMsg = buildSprayControlTelegramMessage(p, report);
+      let pdfRes = null;
+      let tgOk = false;
+
+      try {
+        pdfRes = await generateSprayControlPDF(p, report, true);
+        if (pdfRes && pdfRes.blob) {
+          const formData = new FormData();
+          formData.append('chat_id', TELEGRAM_CONFIG.chatId);
+          formData.append('document', pdfRes.blob, pdfRes.filename);
+          formData.append('caption', tgMsg.length > 1000 ? tgMsg.slice(0, 995) + '...' : tgMsg);
+          const docRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendDocument`, { method: 'POST', body: formData });
+          const docJson = await docRes.json();
+          if (docJson && docJson.ok) tgOk = true;
+        }
+      } catch (err) {
+        console.warn('[TDDS] Spray PDF+Telegram sendDocument error:', err);
+      }
+
+      if (!tgOk) {
+        try {
+          const msgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: TELEGRAM_CONFIG.chatId, text: tgMsg })
+          });
+          const msgJson = await msgRes.json();
+          if (msgJson && msgJson.ok) tgOk = true;
+        } catch (err) {}
+      }
+
+      const driveRes = await uploadSprayControlPhotosToDrive(p, report, pdfRes ? pdfRes.blob : null);
+      if (driveRes && driveRes.ok && driveRes.folderUrl) {
+        saveSprayControlStore();
+        savePatients();
+        if (sbRes && sbRes.ok) saveSprayControlReportToSupabase(p, report);
+      }
+
+      addAuditLog('SPRAY_CONTROL_331', `บันทึกรายงานพ่นเคมี 1 วัน: ${p.fullName} (พ่น ${report.radiusSprayedHouses}/${report.radiusTotalHouses} หลัง, HI ${report.hi100m}%, CI ${report.ci100m}%)`);
+      hideLoading();
+      closeSprayControlModal();
+      renderPatientTable();
+      renderDiseaseControlView();
+
+      let driveStatusHtml = '';
+      if (driveRes && driveRes.ok) {
+        driveStatusHtml = `<div>☁️ อัปโหลดภาพทีมพ่น/ขณะพ่น และไฟล์ขึ้น <a href="${driveRes.folderUrl || DISEASE_CONTROL_PHOTOS_DRIVE_URL}" target="_blank" class="text-indigo-700 underline font-bold">Google Drive (${driveRes.count || 0} ไฟล์) ↗️</a> เรียบร้อยแล้ว</div>`;
+      } else if (driveRes && driveRes.skipped) {
+        driveStatusHtml = `<div class="text-[11px] text-amber-700">⚠️ ภาพเก็บในระบบและ PDF แล้ว — หากต้องการอัปโหลดเข้า <a href="${DISEASE_CONTROL_PHOTOS_DRIVE_URL}" target="_blank" class="underline font-semibold">Google Drive</a> อัตโนมัติ กรุณาตั้งค่า Web App URL ใน <b>⚙️ ตั้งค่า Drive & Telegram</b></div>`;
+      } else {
+        driveStatusHtml = `<div class="text-[11px] text-rose-700">⚠️ อัปโหลด Google Drive ไม่สำเร็จ (${driveRes?.error || 'ตรวจสอบ Web App URL'})</div>`;
+      }
+
+      Swal.fire({
+        icon: 'success',
+        title: 'บันทึกรายงานพ่นสารเคมี 1 วันสำเร็จ!',
+        html: `
+          <div class="text-left text-xs space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <div>✅ สร้างและดาวน์โหลดไฟล์ <b>.PDF</b> รายงานพ่นสารเคมีแล้ว</div>
+            <div>${tgOk ? '📲 ส่งข้อความและไฟล์รายงานเข้ากลุ่ม Telegram เรียบร้อยแล้ว' : '⚠️ ส่งเข้า Telegram ไม่สำเร็จ (กรุณาตรวจสอบอินเทอร์เน็ต)'}</div>
+            ${driveStatusHtml}
+            ${sbRes && sbRes.missingTable ? '<div class="text-[11px] text-amber-700 pt-1">ℹ️ หมายเหตุ: หากต้องการเก็บรายงานพ่นเคมีขึ้นตารางกลาง Supabase ด้วย กรุณารันไฟล์ <code>create_disease_control_reports.sql</code></div>' : ''}
+          </div>
+        `,
+        confirmButtonColor: '#4F46E5'
+      });
+    }
+
+    // ตรวจสอบเคสที่ได้รับแจ้งเกิน 1 วัน (24 ชม.) แล้วยังไม่มีการบันทึกพ่นสารเคมีกำจัดยุงตัวแก่ (มาตรการ 3-3-1)
+    async function checkUnsprayedCases1Day() {
+      if (!patientsData || patientsData.length === 0) return;
+      const now = Date.now();
+      const cfg = typeof getSupabasePersonConfig === 'function' ? getSupabasePersonConfig() : null;
+
+      for (const p of patientsData) {
+        const is2569 = (p.year === '2569' || p.year === 2569 || (p.illnessDate && p.illnessDate.startsWith('2026')));
+        if (!is2569) continue;
+        if (!isLocalConfirmedForControl(p)) continue;
+        if (hasSprayControlReport(p)) continue;
+        if (p.sprayAlert1dSentAt) continue;
+
+        const baseRaw = p.notifiedDatetime || p.createdAt;
+        if (!baseRaw) {
+          p.sprayAlert1dSentAt = 'OLD_CASE_SKIPPED';
+          continue;
+        }
+        const baseMs = new Date(baseRaw).getTime();
+        if (isNaN(baseMs)) {
+          p.sprayAlert1dSentAt = 'OLD_CASE_SKIPPED';
+          continue;
+        }
+        const elapsedHours = (now - baseMs) / 3600000;
+        if (elapsedHours > 72) {
+          p.sprayAlert1dSentAt = 'OLD_CASE_SKIPPED';
+          continue;
+        }
+
+        if (elapsedHours >= 24 && elapsedHours <= 72) {
+          const notifyTimeText = formatControlDateTimeBE(baseRaw);
+          const subClean = stripSubdistrictPrefix(p.subdistrict);
+          const msg = `🚨 [แจ้งเตือน 1 วันหลังได้รับแจ้ง: ยังไม่มีการบันทึกพ่นสารเคมีกำจัดยุงตัวแก่ (มาตรการ 3-3-1)]
+🏥 เรียน เจ้าหน้าที่: ${p.healthCenter || 'รพ.สต./PCU'} (${p.hcode || getHCodeByName(p.healthCenter) || '-'})
+
+ผู้ป่วยได้รับแจ้งครบ 1 วัน (24 ชั่วโมง) แล้ว แต่ยังไม่ได้บันทึกรายงานพ่นสารเคมีกำจัดยุงตัวแก่:
+• ผู้ป่วย : ${p.fullName || '-'} (${p.diagnosis || 'DF'})
+• ที่อยู่ : ${p.addressNo || '-'} หมู่ที่ ${p.villageNo || '-'} ตำบล${subClean}
+• ได้รับแจ้งเมื่อ : ${notifyTimeText} (เกิน 1 วันแล้ว)
+
+👉 กรุณาเร่งดำเนินการพ่นสารเคมีรัศมี 100 เมตร สำรวจ HI/CI และบันทึกภาพถ่ายทีมพ่นในระบบ TDDS ทันที:
+https://dengue-thepha.github.io/tdds/`;
+
+          try {
+            const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chat_id: TELEGRAM_CONFIG.chatId, text: msg })
+            });
+            const data = await res.json();
+            if (data && data.ok) {
+              p.sprayAlert1dSentAt = new Date().toISOString();
+              savePatients();
+              addAuditLog('AUTO_SPRAY_ALERT_1D', `ส่งแจ้งเตือน 1 วัน (ยังไม่บันทึกพ่นเคมี): ${p.fullName} (${p.healthCenter})`);
+              if (cfg && cfg.url && cfg.key && p.supabaseId) {
+                fetch(`${cfg.url}/rest/v1/current_dengue_cases?id=eq.${encodeURIComponent(p.supabaseId)}`, {
+                  method: 'PATCH',
+                  headers: buildSupabaseHeaders(cfg.key, { 'Content-Type': 'application/json' }),
+                  body: JSON.stringify({ spray_alert_1d_sent_at: p.sprayAlert1dSentAt })
+                }).catch(() => {});
+              }
+            }
+          } catch (err) {
+            console.warn('[TDDS Alert] Failed to send 1d spray alert:', err);
           }
         }
       }
@@ -12812,6 +13770,9 @@ ${topHcText}${noteBlock}
         controlCompletedAt: row.control_completed_at || (existingLocal?.controlCompletedAt ?? null),
         controlAlert3hSentAt: row.control_alert_3h_sent_at || (existingLocal?.controlAlert3hSentAt ?? null),
         diseaseControlReport: existingLocal?.diseaseControlReport || (row.disease_control_summary || null),
+        sprayCompletedAt: row.spray_completed_at || (existingLocal?.sprayCompletedAt ?? null),
+        sprayAlert1dSentAt: row.spray_alert_1d_sent_at || (existingLocal?.sprayAlert1dSentAt ?? null),
+        sprayControlReport: existingLocal?.sprayControlReport || (row.spray_control_summary || null),
         lat: row.latitude != null ? Number(row.latitude) : (existingLocal?.lat ?? null),
         lng: row.longitude != null ? Number(row.longitude) : (existingLocal?.lng ?? null),
         createdAt: row.created_at || (existingLocal?.createdAt ?? null),
@@ -12890,9 +13851,13 @@ ${topHcText}${noteBlock}
         markOldCasesAlertSkipped(merged);
         patientsData = merged;
         loadDiseaseControlStore();
+        loadSprayControlStore();
         savePatients();
         if (typeof fetchDiseaseControlReportsFromSupabase === 'function') {
           await fetchDiseaseControlReportsFromSupabase();
+        }
+        if (typeof fetchSprayControlReportsFromSupabase === 'function') {
+          await fetchSprayControlReportsFromSupabase();
         }
         applyDashboardFilters();
         renderPatientTable();
