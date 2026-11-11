@@ -954,8 +954,8 @@
                   <option value="11915">11915 - รพ.สต.ทุ่งโดน</option>
                   <option value="15109">15109 - PCU1</option>
                   <option value="15107">15107 - PCU2</option>
-                  <option value="99901">99901 - สสอ.เทพา</option>
-                  <option value="10729">10729 - รพ.เทพา</option>
+                  <option value="00860">00860 - สสอ.เทพา</option>
+                  <option value="11390">11390 - รพ.เทพา</option>
                 </select>
               </div>
 
@@ -1619,8 +1619,8 @@
                 <option value="รพ.สต.ทุ่งโดน">11915 - รพ.สต.ทุ่งโดน</option>
                 <option value="PCU1">15109 - PCU1</option>
                 <option value="PCU2">15107 - PCU2</option>
-                <option value="สสอ.เทพา">99901 - สสอ.เทพา</option>
-                <option value="รพ.เทพา">10729 - รพ.เทพา</option>
+                <option value="สสอ.เทพา">00860 - สสอ.เทพา</option>
+                <option value="รพ.เทพา">11390 - รพ.เทพา</option>
               </select>
             </div>
 
@@ -2060,8 +2060,8 @@
                 <option value="รพ.สต.ทุ่งโดน" data-hcode="11915">11915 - รพ.สต.ทุ่งโดน</option>
                 <option value="PCU1" data-hcode="15109">15109 - PCU1</option>
                 <option value="PCU2" data-hcode="15107">15107 - PCU2</option>
-                <option value="สสอ.เทพา" data-hcode="99901">99901 - สสอ.เทพา</option>
-                <option value="รพ.เทพา" data-hcode="10729">10729 - รพ.เทพา</option>
+                <option value="สสอ.เทพา" data-hcode="00860">00860 - สสอ.เทพา</option>
+                <option value="รพ.เทพา" data-hcode="11390">11390 - รพ.เทพา</option>
               </select>
             </div>
 
@@ -2809,8 +2809,8 @@
       { hcode: '11915', name: 'รพ.สต.ทุ่งโดน', subdistrict: 'ท่าม่วง', zone: 'ทานตะวัน', population: 3456 },
       { hcode: '15109', name: 'PCU1', subdistrict: 'เทพา', zone: 'บานชื่น', population: 7279 },
       { hcode: '15107', name: 'PCU2', subdistrict: 'ปากบาง', zone: 'ทานตะวัน', population: 4222 },
-      { hcode: '99901', name: 'สสอ.เทพา', subdistrict: 'เทพา', zone: 'ศูนย์ประสานงาน', population: 0 },
-      { hcode: '10729', name: 'รพ.เทพา', subdistrict: 'เทพา', zone: 'ศูนย์ประสานงาน', population: 0 }
+      { hcode: '00860', name: 'สสอ.เทพา', subdistrict: 'เทพา', zone: 'ศูนย์ประสานงาน', population: 0 },
+      { hcode: '11390', name: 'รพ.เทพา', subdistrict: 'เทพา', zone: 'ศูนย์ประสานงาน', population: 0 }
     ];
 
     function getHCodeByName(name) {
@@ -3811,7 +3811,7 @@
       });
       // อัปเดตประชากรรายตำบลเฉพาะตำบลที่มีข้อมูลครบทุก รพ.สต. ในตำบลนั้น (หรือตามข้อมูลจริงที่มี)
       const importedHcodeSet = new Set(Object.keys(byHcode));
-      const allPrimary = HEALTH_CENTERS_MASTER.filter(h => !['99901', '10729'].includes(h.hcode));
+      const allPrimary = HEALTH_CENTERS_MASTER.filter(h => !['00860', '11390'].includes(h.hcode));
       const subList = [...new Set(allPrimary.map(h => h.subdistrict))];
       subList.forEach(sub => {
         const unitsInSub = allPrimary.filter(h => h.subdistrict === sub);
@@ -5484,7 +5484,7 @@
       tbody.innerHTML = '';
 
       // 13 รพ.สต./PCU ระดับปฐมภูมิ พร้อมรหัส hcode
-      const targetCentersList = HEALTH_CENTERS_MASTER.filter(h => !['99901', '10729'].includes(h.hcode));
+      const targetCentersList = HEALTH_CENTERS_MASTER.filter(h => !['00860', '11390'].includes(h.hcode));
 
       const selectedSubdistrict = document.getElementById('dashSubdistrictFilter') ? document.getElementById('dashSubdistrictFilter').value : 'all';
 
@@ -6597,17 +6597,23 @@
             </div>
           </div>
           <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
-            ${!isConfirmed ? `
-              <button onclick="confirmPatientCase('${p.id}', 'confirmed_local')" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5">
-                <span>✅</span> ป่วยในพื้นที่จริง
-              </button>
-              <button onclick="confirmPatientCase('${p.id}', 'confirmed_external')" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5">
-                <span>🚗</span> ป่วยนอกพื้นที่
-              </button>
-            ` : `
-              <button onclick="confirmPatientCase('${p.id}')" class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-300 shadow-2xs transition flex items-center gap-1">
-                <span>✏️</span> แก้ไขการยืนยัน
-              </button>
+            ${(!currentUser || canUserConfirmCase(currentUser, p)) ? (
+              !isConfirmed ? `
+                <button onclick="confirmPatientCase('${p.id}', 'confirmed_local')" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5">
+                  <span>✅</span> ป่วยในพื้นที่จริง
+                </button>
+                <button onclick="confirmPatientCase('${p.id}', 'confirmed_external')" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5">
+                  <span>🚗</span> ป่วยนอกพื้นที่
+                </button>
+              ` : `
+                <button onclick="confirmPatientCase('${p.id}')" class="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-300 shadow-2xs transition flex items-center gap-1">
+                  <span>✏️</span> แก้ไขการยืนยัน
+                </button>
+              `
+            ) : `
+              <span class="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-600 font-semibold text-[11px] border border-slate-200 flex items-center gap-1.5" title="เฉพาะเจ้าหน้าที่เจ้าของพื้นที่เท่านั้น แอดมินไม่สามารถยืนยันแทนได้">
+                <span>🔒</span> เฉพาะ ${p.healthCenter || 'เจ้าของพื้นที่'} ยืนยันเท่านั้น
+              </span>
             `}
           </div>
         `;
@@ -7918,34 +7924,36 @@ https://dengue-thepha.github.io/tdds/`;
     // 9.6 AREA CASE CONFIRMATION & 3-HOUR TELEGRAM ALERT SCHEDULER
     // =============================================================
 
-    // ตรวจสอบสิทธิ์การยืนยันเคส (เฉพาะเจ้าหน้าที่ รพ.สต./PCU เจ้าของพื้นที่ หรือ Admin)
+    // ตรวจสอบสิทธิ์การยืนยันเคส (สงวนสิทธิ์เฉพาะเจ้าหน้าที่ รพ.สต./PCU เจ้าของพื้นที่เท่านั้น แม้ Admin ก็ยืนยันแทนไม่ได้)
     function canUserConfirmCase(user, patient) {
       if (!user || !patient) return false;
-      // 1. ผู้ดูแลระบบ (Admin) หรือ สสอ.เทพา / รพ.เทพา มีสิทธิ์ยืนยันได้ทุกเคส
-      if (user.role === 'admin' || user.unit === 'สสอ.เทพา' || user.unit === 'รพ.เทพา') {
-        return true;
-      }
-      // 2. ตรวจสอบตรงกันด้วยรหัสสถานพยาบาล (HCODE)
-      const uHcode = user.hcode || getHCodeByName(user.unit);
-      const pHcode = patient.hcode || getHCodeByName(patient.healthCenter);
-      if (uHcode && pHcode && uHcode === pHcode) {
-        return true;
+
+      // ไม่อนุญาตให้ Admin, สสอ.เทพา หรือ รพ.เทพา กดยืนยันแทนหน่วยบริการเจ้าของพื้นที่
+      const clean = (s) => normalizeThaiStr(s).replace(/\s+/g, '').replace('โรงพยาบาลส่งเสริมสุขภาพตำบล', 'รพ.สต.');
+      const uUnitRaw = normalizeThaiStr(user.unit || '');
+      if (user.role === 'admin' || uUnitRaw === 'สสอ.เทพา' || uUnitRaw === 'รพ.เทพา') {
+        return false;
       }
 
-      // 3. เจ้าหน้าที่ รพ.สต. หรือ PCU เจ้าของพื้นที่ (ชื่อหน่วยบริการ)
-      const clean = (s) => normalizeThaiStr(s).replace(/\s+/g, '').replace('โรงพยาบาลส่งเสริมสุขภาพตำบล', 'รพ.สต.');
-      const uUnit = clean(user.unit);
-      const pHc = clean(patient.healthCenter);
-      if (uUnit && pHc && (uUnit === pHc || uUnit.includes(pHc) || pHc.includes(uUnit))) {
-        return true;
+      // ตรวจสอบตรงกันเฉพาะหน่วยบริการเจ้าของพื้นที่ (HCODE เป็นหลัก หรือชื่อหน่วยบริการกรณีไม่มี HCODE)
+      const uHcode = String(user.hcode || getHCodeByName(user.unit) || '').trim();
+      const pHcode = String(patient.hcode || getHCodeByName(patient.healthCenter) || '').trim();
+      let isSameUnit = false;
+      if (uHcode && pHcode) {
+        isSameUnit = (uHcode === pHcode);
+      } else {
+        const uUnit = clean(user.unit);
+        const pHc = clean(patient.healthCenter);
+        isSameUnit = !!(uUnit && pHc && uUnit === pHc);
       }
-      // 3. ตรวจสอบตามตำบล
-      const uSub = clean(user.subdistrict).replace('ตำบล', '').replace('ต.', '');
-      const pSub = clean(patient.subdistrict).replace('ตำบล', '').replace('ต.', '');
-      if (uSub && pSub && (uSub === pSub || uSub.includes(pSub) || pSub.includes(uSub))) {
-        return true;
+      if (!isSameUnit) return false;
+
+      // หากเป็น อสม. ให้ยืนยันได้เฉพาะหมู่บ้านที่ตนเองรับผิดชอบด้วย
+      const isOsm = user.position === 'อสม.' || user.role === 'OSM' || user.role === 'osm';
+      if (isOsm && user.villageNo) {
+        return String(user.villageNo).trim() === String(patient.villageNo || '').trim();
       }
-      return false;
+      return true;
     }
 
     // ฟังก์ชันดำเนินการยืนยันเคสโดยเจ้าของพื้นที่ (ป่วยในพื้นที่จริง / ป่วยนอกพื้นที่)
@@ -7972,12 +7980,12 @@ https://dengue-thepha.github.io/tdds/`;
         return;
       }
 
-      // ตรวจสอบสิทธิ์เจ้าของพื้นที่ (RBAC)
+      // ตรวจสอบสิทธิ์เจ้าของพื้นที่ (RBAC - แม้แอดมินก็ยืนยันแทนไม่ได้)
       if (!canUserConfirmCase(currentUser, p)) {
         Swal.fire({
           icon: 'error',
           title: 'ไม่มีสิทธิ์ยืนยันเคสนี้',
-          html: `ท่านเข้าสู่ระบบในฐานะ: <b>${currentUser.fullName} (${currentUser.unit})</b><br><br>⚠️ ระบบกำหนดให้ <b>เฉพาะเจ้าหน้าที่ ${p.healthCenter || 'เจ้าของพื้นที่'}</b> เท่านั้นที่มีสิทธิ์กดยืนยันการรับเคสนี้`,
+          html: `ท่านเข้าสู่ระบบในฐานะ: <b>${currentUser.fullName} (${currentUser.unit})</b><br><br>⚠️ ระบบกำหนดให้ <b>เฉพาะเจ้าหน้าที่เจ้าของพื้นที่ (${p.healthCenter || '-'})</b> เท่านั้นที่มีสิทธิ์กดยืนยันการรับเคสนี้<br><span class="text-[11px] text-slate-500">(ผู้ดูแลระบบ/แอดมิน และหน่วยบริการอื่นไม่สามารถยืนยันแทนได้)</span>`,
           confirmButtonText: 'รับทราบ',
           confirmButtonColor: '#EF5350'
         });
