@@ -205,8 +205,12 @@
         <!-- Right: Actions & User Menu -->
         <div class="flex items-center gap-2 sm:gap-3">
           
-          <!-- Not Logged In: Login Button -->
+          <!-- Not Logged In: Public Event Report + Login Button -->
           <div id="unauthHeaderActions" class="flex items-center gap-2">
+            <button onclick="openPublicEventModal()" class="flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white text-xs sm:text-sm font-bold px-3.5 py-2 rounded-xl shadow-md shadow-rose-500/20 transition active:scale-95">
+              <span>🚨</span>
+              <span>แจ้งเหตุผิดปกติ/แจ้งโรค</span>
+            </button>
             <button onclick="openLoginModal()" class="flex items-center gap-2 bg-[#26A69A] hover:bg-[#00897B] text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl shadow-md shadow-teal-500/20 transition active:scale-95">
               <span>🔑</span>
               <span>เข้าสู่ระบบ (Login)</span>
@@ -287,6 +291,12 @@
             <span>แผนที่พิกัดบ้านผู้ป่วย</span>
           </button>
 
+          <!-- Menu: Public Event & Disease Report (Visible for Everyone / Public) -->
+          <button onclick="openPublicEventModal()" id="menu-event-report" class="sidebar-menu-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-rose-700 bg-rose-50/60 hover:bg-rose-100/80 border border-rose-200/70 transition">
+            <span class="w-5 text-center text-base">🚨</span>
+            <span>แจ้งเหตุผิดปกติ / แจ้งโรค</span>
+          </button>
+
           <!-- Menu: Patient Registry (Visible for Logged In) -->
           <button onclick="navigateTo('patients')" id="menu-patients" class="sidebar-menu-item auth-only hidden w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-700 hover:text-teal-700 hover:bg-teal-50/70 transition">
             <span class="w-5 text-center text-base">🗂️</span>
@@ -318,6 +328,15 @@
             <span>👑</span>
             <span>ผู้ดูแลระบบ (Admin)</span>
           </p>
+
+          <!-- Event Reports Registry (ADMIN ONLY) -->
+          <button onclick="navigateTo('event-registry')" id="menu-event-registry" class="sidebar-menu-item w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-cyan-800 hover:text-cyan-900 hover:bg-cyan-50 border border-cyan-100 transition">
+            <span class="flex items-center gap-3 min-w-0">
+              <span class="w-5 text-center text-base">📢</span>
+              <span class="truncate">ทะเบียนรายงานเหตุการณ์</span>
+            </span>
+            <span id="adminEventPendingBadge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-500 text-white">0</span>
+          </button>
 
           <!-- User Management -->
           <button onclick="navigateTo('users')" id="menu-users" class="sidebar-menu-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-700 hover:text-purple-700 hover:bg-purple-50 transition">
@@ -411,6 +430,11 @@
               <option value="วังใหญ่" class="text-slate-800">ต.วังใหญ่</option>
               <option value="สะกอม" class="text-slate-800">ต.สะกอม</option>
             </select>
+
+            <button onclick="openPublicEventModal()" class="text-xs bg-gradient-to-r from-amber-400 to-rose-500 hover:from-amber-500 hover:to-rose-600 text-white font-bold px-3.5 py-2 rounded-xl shadow-md transition active:scale-95 flex items-center gap-1.5 border border-white/25">
+              <span>🚨</span>
+              <span>แจ้งเหตุผิดปกติ/แจ้งโรค</span>
+            </button>
 
             <button onclick="refreshData()" class="text-xs bg-white text-teal-800 hover:bg-teal-50 font-bold px-3.5 py-2 rounded-xl shadow-sm transition active:scale-95 flex items-center gap-1.5">
               <span>🔄</span>
@@ -532,6 +556,39 @@
             <div class="absolute bottom-0 left-0 right-0 h-1.5 bg-[#AED581]"></div>
           </div>
 
+        </div>
+
+        <!-- PUBLIC EVENT / ABNORMAL DISEASE REPORTING BANNER CARD (สำหรับประชาชนทั่วไป ไม่ต้อง Login) -->
+        <div id="publicEventReportBannerCard" class="bg-gradient-to-r from-cyan-50 via-teal-50 to-sky-50 border border-cyan-200/90 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div class="flex items-start gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500 to-amber-500 text-white flex items-center justify-center text-2xl shadow-md shrink-0">
+              <span>📢</span>
+            </div>
+            <div>
+              <div class="flex flex-wrap items-center gap-2">
+                <h3 class="text-sm sm:text-base font-extrabold text-slate-900">รายงานแจ้งเหตุการณ์ผิดปกติ / แจ้งโรคในหมู่บ้าน (สำหรับประชาชนทั่วไป)</h3>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">🌐 ไม่ต้องเข้าสู่ระบบ</span>
+              </div>
+              <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                พบผู้ป่วยสงสัยไข้เลือดออก อาการป่วยเป็นกลุ่มก้อน โรคระบาดในหมู่บ้าน หรือเหตุการณ์ที่อาจเป็นอันตรายต่อสุขภาพ ประชาชน/ผู้นำชุมชน/อสม. สามารถแจ้งข้อมูลเข้าสู่ระบบทะเบียนรับแจ้งเพื่อให้เจ้าหน้าที่และพื้นที่เข้าตรวจสอบได้ทันที
+              </p>
+              <div class="flex flex-wrap items-center gap-3 mt-2 text-[11px] font-semibold text-slate-600">
+                <span>📋 รับแจ้งสะสม: <b id="publicEventTotalCount" class="text-cyan-800">0</b> เรื่อง</span>
+                <span>⏳ รอตรวจสอบ: <b id="publicEventPendingCount" class="text-amber-700">0</b> เรื่อง</span>
+                <span>✅ ตรวจสอบ/นำเรียนพื้นที่แล้ว: <b id="publicEventResolvedCount" class="text-emerald-700">0</b> เรื่อง</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 shrink-0 w-full lg:w-auto justify-end">
+            <button type="button" onclick="openPublicEventModal()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-500 hover:from-rose-700 hover:to-amber-600 text-white text-xs sm:text-sm font-bold shadow-md shadow-rose-500/20 transition active:scale-95 flex items-center gap-2">
+              <span>🚨</span>
+              <span>เปิดแบบฟอร์มรายงานแจ้งเหตุ</span>
+            </button>
+            <button type="button" onclick="navigateTo('event-registry')" class="admin-only hidden px-3.5 py-2.5 rounded-xl bg-cyan-700 hover:bg-cyan-800 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+              <span>🛡️</span>
+              <span>ทะเบียนเหตุการณ์ (Admin)</span>
+            </button>
+          </div>
         </div>
 
         <!-- EPIDEMIOLOGICAL CURVE SECTION: จำนวนผู้ป่วยจำแนกรายเดือน เทียบกับ Median 5 ปีย้อนหลัง และปี 2568 -->
@@ -1290,6 +1347,105 @@
               </thead>
               <tbody id="diseaseControlTbody" class="divide-y divide-slate-100">
                 <tr><td colspan="8" class="px-4 py-8 text-center text-slate-400">กำลังโหลดข้อมูล...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- VIEW 5B: ADMIN EVENT & DISEASE REPORTS REGISTRY          -->
+      <!-- ======================================================== -->
+      <section id="view-event-registry" class="view-panel hidden space-y-4">
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div>
+              <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                <span class="text-lg">📢</span>
+                <span>ทะเบียนรายงานเหตุการณ์ผิดปกติ / แจ้งโรคในหมู่บ้าน (เฉพาะแอดมิน)</span>
+              </h2>
+              <p class="text-xs text-slate-500 mt-0.5">
+                ตรวจสอบข่าวสารที่ประชาชนและพื้นที่แจ้งเข้ามาตามแบบ "ทะเบียนรับแจ้ง" ยืนยันการเกิด นำเรียนพื้นที่ รพ.สต./PCU และวิเคราะห์สรุปเหตุการณ์
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" onclick="openEventAnalysisModal()" class="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition active:scale-95 flex items-center gap-1.5">
+                <span>📊</span>
+                <span>วิเคราะห์สรุปเหตุการณ์</span>
+              </button>
+              <button type="button" onclick="openAdminEventModal()" class="px-3.5 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl text-xs font-bold shadow-sm transition active:scale-95 flex items-center gap-1.5">
+                <span>➕</span>
+                <span>บันทึกทะเบียนรับแจ้งใหม่</span>
+              </button>
+              <button type="button" onclick="fetchEventReportsFromSupabase(false)" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1">
+                <span>🔄</span>
+                <span>ซิงค์ข้อมูล</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+            <div class="p-3 rounded-xl bg-cyan-50 border border-cyan-200">
+              <div class="text-cyan-800 font-semibold">📋 เหตุการณ์รับแจ้งทั้งหมด</div>
+              <div class="text-xl font-extrabold text-cyan-900 mt-1" id="evtStatTotal">0</div>
+            </div>
+            <div class="p-3 rounded-xl bg-amber-50 border border-amber-200">
+              <div class="text-amber-700 font-semibold">⏳ รอแอดมินตรวจสอบ</div>
+              <div class="text-xl font-extrabold text-amber-800 mt-1" id="evtStatPending">0</div>
+            </div>
+            <div class="p-3 rounded-xl bg-rose-50 border border-rose-200">
+              <div class="text-rose-700 font-semibold">🚨 ยืนยันเหตุการณ์จริง</div>
+              <div class="text-xl font-extrabold text-rose-700 mt-1" id="evtStatConfirmed">0</div>
+            </div>
+            <div class="p-3 rounded-xl bg-indigo-50 border border-indigo-200">
+              <div class="text-indigo-700 font-semibold">📣 นำเรียนพื้นที่แล้ว</div>
+              <div class="text-xl font-extrabold text-indigo-800 mt-1" id="evtStatEscalated">0</div>
+            </div>
+            <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 col-span-2 lg:col-span-1">
+              <div class="text-emerald-700 font-semibold">👥 ป่วย / ตาย / สงสัย (ตรวจสอบแล้ว)</div>
+              <div class="text-base font-extrabold text-emerald-800 mt-1" id="evtStatVerifiedCounts">0 / 0 / 0</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
+            <input type="text" id="evtSearchInput" oninput="renderEventRegistryView()" placeholder="🔍 ค้นหา ID, ชื่อผู้แจ้ง, ผู้ป่วย, โรค/อาการ, ตำบล..." class="sm:col-span-2 text-xs bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-700 outline-none focus:border-cyan-500">
+            <select id="evtStatusFilter" onchange="renderEventRegistryView()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-cyan-500 font-medium">
+              <option value="all">📋 สถานะทั้งหมด</option>
+              <option value="pending">⏳ รอตรวจสอบ</option>
+              <option value="verified">🔍 ตรวจสอบแล้ว</option>
+              <option value="escalated">📣 นำเรียนพื้นที่แล้ว</option>
+              <option value="confirmed">🚨 ยืนยันการเกิดเหตุการณ์จริง</option>
+              <option value="closed">✅ ปิดเหตุการณ์ / ไม่พบเหตุ</option>
+            </select>
+            <select id="evtSubdistrictFilter" onchange="renderEventRegistryView()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-cyan-500 font-medium">
+              <option value="all">📍 ทุกตำบล (อ.เทพา)</option>
+              <option value="เทพา">ต.เทพา</option>
+              <option value="ปากบาง">ต.ปากบาง</option>
+              <option value="เกาะสะบ้า">ต.เกาะสะบ้า</option>
+              <option value="ลำไพล">ต.ลำไพล</option>
+              <option value="ท่าม่วง">ต.ท่าม่วง</option>
+              <option value="วังใหญ่">ต.วังใหญ่</option>
+              <option value="สะกอม">ต.สะกอม</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-cyan-50/80 text-slate-700 uppercase font-semibold border-b border-cyan-200/80">
+                <tr>
+                  <th class="px-4 py-3">ID / วันที่แจ้ง</th>
+                  <th class="px-4 py-3">ประเภทข่าว / ผู้แจ้ง</th>
+                  <th class="px-4 py-3">เนื้อหาข่าวสาร / อาการสำคัญ / โรค</th>
+                  <th class="px-4 py-3">พื้นที่ / หน่วยบริการรับผิดชอบ</th>
+                  <th class="px-4 py-3">ผลการตรวจสอบ &amp; ยืนยันการเกิด</th>
+                  <th class="px-4 py-3">สถานะนำเรียนพื้นที่</th>
+                  <th class="px-4 py-3 text-center">ดำเนินการ</th>
+                </tr>
+              </thead>
+              <tbody id="eventRegistryTbody" class="divide-y divide-slate-100">
+                <tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">กำลังโหลดข้อมูล...</td></tr>
               </tbody>
             </table>
           </div>
@@ -2272,6 +2428,489 @@
     </div>
   </div>
 
+  <!-- MODAL: รายงานแจ้งเหตุการณ์ผิดปกติ / แจ้งโรคในหมู่บ้าน (สำหรับประชาชนทั่วไป Public) -->
+  <div id="publicEventModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop hidden transition-opacity overflow-y-auto">
+    <div class="bg-white w-full max-w-4xl my-6 rounded-3xl shadow-2xl border border-cyan-200 overflow-hidden flex flex-col max-h-[92vh]">
+      <div class="bg-gradient-to-r from-cyan-700 via-teal-700 to-rose-600 p-4 sm:p-5 text-white flex items-center justify-between shrink-0">
+        <div>
+          <h3 class="text-base sm:text-lg font-bold flex items-center gap-2">
+            <span>🚨</span>
+            <span>รายงานแจ้งเหตุการณ์ผิดปกติ / แจ้งโรคในหมู่บ้าน (ทะเบียนรับแจ้งออนไลน์)</span>
+          </h3>
+          <p class="text-xs text-cyan-50 mt-0.5">สำหรับประชาชนทั่วไป อสม. ผู้นำชุมชน (ไม่ต้องเข้าสู่ระบบ) — ข้อมูลจะส่งเข้าทะเบียนรับแจ้งและแจ้งเตือนทีมเฝ้าระวังทันที</p>
+        </div>
+        <button type="button" onclick="closePublicEventModal()" class="text-white/80 hover:text-white text-xl p-1 rounded-lg hover:bg-white/10 transition">✕</button>
+      </div>
+
+      <form id="publicEventForm" onsubmit="handlePublicEventSubmit(event)" class="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 text-xs bg-[#e0f7fa]/40">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white p-3.5 rounded-2xl border border-cyan-200 shadow-2xs">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ID (รหัสรับแจ้งอัตโนมัติ) :</label>
+            <input type="text" id="pe_event_code" readonly class="w-full p-2 bg-slate-100 border border-slate-200 rounded-xl font-mono font-bold text-cyan-800">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">วันที่แจ้ง * :</label>
+            <input type="date" id="pe_report_date" required class="w-full p-2 bg-white border border-cyan-200 rounded-xl outline-none focus:border-cyan-600">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ประเภทข่าว * :</label>
+            <select id="pe_news_type" required class="w-full p-2 bg-white border border-cyan-200 rounded-xl outline-none focus:border-cyan-600">
+              <option value="ประชาชนแจ้งเหตุในหมู่บ้าน">ประชาชนแจ้งเหตุในหมู่บ้าน</option>
+              <option value="อสม./ผู้นำชุมชนแจ้ง">อสม./ผู้นำชุมชนแจ้ง</option>
+              <option value="ข่าวลือ/บอกเล่าในชุมชน">ข่าวลือ/บอกเล่าในชุมชน</option>
+              <option value="โรงเรียน/ศูนย์เด็กเล็ก/สถานประกอบการ">โรงเรียน/ศูนย์เด็กเล็ก/สถานประกอบการ</option>
+              <option value="สื่อสังคมออนไลน์/ข่าวสาร">สื่อสังคมออนไลน์/ข่าวสาร</option>
+              <option value="อื่นๆ">อื่นๆ</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- ซ้าย: ผู้แจ้ง & เนื้อหาข่าวสารที่ได้รับแจ้ง -->
+          <div class="space-y-3 bg-[#b2ebf2]/35 p-4 rounded-2xl border border-cyan-300/80">
+            <div>
+              <label class="block font-bold text-rose-700 mb-1">ชื่อผู้แจ้ง – แหล่งข่าว/ที่อยู่/โทร * :</label>
+              <textarea id="pe_reporter_info" rows="2" required placeholder="ระบุชื่อผู้แจ้ง แหล่งข่าว บ้านเลขที่ หมู่บ้าน หรือเบอร์โทรศัพท์ติดต่อกลับ..." class="w-full p-2.5 bg-white border border-cyan-200 rounded-xl outline-none focus:border-cyan-600"></textarea>
+            </div>
+
+            <div class="border-t border-cyan-300/70 pt-2.5 space-y-2.5">
+              <div class="font-bold text-rose-700 text-xs">เนื้อหาข่าวสารที่ได้รับแจ้ง :</div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div class="sm:col-span-2">
+                  <label class="block font-semibold text-slate-700 mb-1">ชื่อผู้ป่วย / กลุ่มผู้ได้รับผลกระทบ :</label>
+                  <input type="text" id="pe_patient_name" placeholder="ระบุชื่อผู้ป่วย หรือ 'หลายคน/กลุ่มนักเรียน'" class="w-full p-2 bg-white border border-cyan-200 rounded-xl outline-none focus:border-cyan-600">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">อายุ (ปี) :</label>
+                  <input type="number" min="0" max="120" id="pe_patient_age" placeholder="เช่น 12" class="w-full p-2 bg-white border border-cyan-200 rounded-xl outline-none focus:border-cyan-600">
+                </div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">อาชีพ :</label>
+                  <input type="text" id="pe_patient_occupation" placeholder="เช่น นักเรียน / เกษตรกร / รับจ้าง" class="w-full p-2 bg-white border border-cyan-200 rounded-xl outline-none focus:border-cyan-600">
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">โทรศัพท์ติดต่อ :</label>
+                  <input type="text" id="pe_patient_phone" placeholder="เบอร์โทรผู้ป่วยหรือญาติ (ถ้ามี)" class="w-full p-2 bg-white border border-cyan-200 rounded-xl outline-none focus:border-cyan-600">
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">ตำบล (อ.เทพา) * :</label>
+                  <select id="pe_subdistrict" required onchange="syncPublicEventHealthCenter()" class="w-full p-2 bg-white border border-cyan-200 rounded-xl outline-none focus:border-cyan-600">
+                    <option value="">-- เลือกตำบล --</option>
+                    <option value="เทพา">ต.เทพา</option>
+                    <option value="ปากบาง">ต.ปากบาง</option>
+                    <option value="เกาะสะบ้า">ต.เกาะสะบ้า</option>
+                    <option value="ลำไพล">ต.ลำไพล</option>
+                    <option value="ท่าม่วง">ต.ท่าม่วง</option>
+                    <option value="วังใหญ่">ต.วังใหญ่</option>
+                    <option value="สะกอม">ต.สะกอม</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-1">หมู่ที่ * :</label>
+                  <input type="text" id="pe_village_no" required oninput="syncPublicEventHealthCenter()" placeholder="เช่น 1, 6, 8" class="w-full p-2 bg-white border border-cyan-200 rounded-xl outline-none focus:border-cyan-600">
+                </div>
+              </div>
+              <div id="pe_resolved_hc_badge" class="text-[11px] bg-white/80 text-teal-800 px-2.5 py-1.5 rounded-lg border border-teal-200 font-semibold hidden"></div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">ที่อยู่ / จุดสังเกตสถานที่เกิดเหตุ * :</label>
+                <textarea id="pe_patient_address" rows="2" required placeholder="บ้านเลขที่ ชื่อหมู่บ้าน หรือสถานที่เกิดเหตุในหมู่บ้าน..." class="w-full p-2 bg-white border border-cyan-200 rounded-xl outline-none focus:border-cyan-600"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- ขวา: โรค/อาการสำคัญ/เหตุการณ์สำคัญ -->
+          <div class="space-y-3 bg-[#b2ebf2]/35 p-4 rounded-2xl border border-cyan-300/80">
+            <div>
+              <label class="block font-bold text-rose-700 mb-1">โรค/อาการสำคัญ/เหตุการณ์สำคัญ * :</label>
+              <textarea id="pe_symptoms_event" rows="3" required placeholder="บรรยายอาการสำคัญหรือเหตุการณ์ผิดปกติที่พบในหมู่บ้าน เช่น มีไข้สูงหลายคน ปวดเมื่อย มีผื่น ท้องเสียเป็นกลุ่มก้อน พบยุงลายชุกชุม..." class="w-full p-2.5 bg-white border border-cyan-200 rounded-xl outline-none focus:border-cyan-600"></textarea>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">วันเริ่มป่วย / วันเกิดเหตุ :</label>
+                <input type="date" id="pe_illness_date" class="w-full p-2 bg-white border border-cyan-200 rounded-xl outline-none focus:border-cyan-600">
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">วันพบผู้ป่วย :</label>
+                <input type="date" id="pe_found_date" class="w-full p-2 bg-white border border-cyan-200 rounded-xl outline-none focus:border-cyan-600">
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">โรค / กลุ่มอาการสงสัยเบื้องต้น :</label>
+                <input type="text" id="pe_disease_name" list="eventDiseaseDatalist" placeholder="เช่น ไข้เลือดออก / อาหารเป็นพิษ" class="w-full p-2 bg-white border border-cyan-200 rounded-xl outline-none focus:border-cyan-600">
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">การรักษาปัจจุบัน :</label>
+                <input type="text" id="pe_treatment" placeholder="เช่น รพ.เทพา / รพ.สต. / คลินิก / รักษาเอง" class="w-full p-2 bg-white border border-cyan-200 rounded-xl outline-none focus:border-cyan-600">
+              </div>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">เหตุการณ์อื่นๆเพิ่มเติม :</label>
+              <textarea id="pe_extra_events" rows="3" placeholder="รายละเอียดเพิ่มเติม เช่น มีผู้ป่วยใกล้เคียงกี่ราย มีสัตว์ป่วย/ตาย หรือแหล่งน้ำผิดปกติ..." class="w-full p-2.5 bg-white border border-cyan-200 rounded-xl outline-none focus:border-cyan-600"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <datalist id="eventDiseaseDatalist">
+          <option value="ไข้เลือดออก (Dengue)"></option>
+          <option value="ไข้ปวดข้อยุงลาย (Chikungunya)"></option>
+          <option value="โรคมือ เท้า ปาก"></option>
+          <option value="ไข้หวัดใหญ่ / ทางเดินหายใจเป็นกลุ่มก้อน"></option>
+          <option value="อาหารเป็นพิษ / อุจจาระร่วงเฉียบพลัน"></option>
+          <option value="โรคฉี่หนู (Leptospirosis)"></option>
+          <option value="โรคหัด / ไข้ออกผื่น"></option>
+          <option value="โรคพิษสุนัขบ้า / สัตว์ป่วยตายผิดปกติ"></option>
+          <option value="เหตุการณ์ผิดปกติทางสิ่งแวดล้อม/สุขภาพ"></option>
+        </datalist>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-cyan-200">
+          <span class="text-[11px] text-slate-600">📌 ข้อมูลที่แจ้งจะส่งเข้า <b>ทะเบียนรายงานเหตุการณ์ (Admin)</b> และแจ้งเตือนทีมระบาด อ.เทพา ทันที</span>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="closePublicEventModal()" class="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-white rounded-xl transition">ยกเลิก</button>
+            <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold rounded-xl shadow-md transition active:scale-95 flex items-center gap-1.5">
+              <span>✅</span>
+              <span>ส่งรายงานแจ้งเหตุ</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ทะเบียนรับแจ้งเหตุ (แบบเต็ม 4 คอลัมน์ตามแบบฟอร์ม สำหรับ Admin ตรวจสอบ & นำเรียนพื้นที่) -->
+  <div id="adminEventModal" class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 modal-backdrop hidden transition-opacity overflow-y-auto">
+    <div class="bg-[#b2ebf2] w-full max-w-[96vw] xl:max-w-7xl my-4 rounded-3xl shadow-2xl border-2 border-cyan-500/50 overflow-hidden flex flex-col max-h-[94vh]">
+      <div class="bg-gradient-to-r from-cyan-800 to-teal-700 p-3.5 sm:p-4 text-white flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2.5">
+          <span class="text-xl">📋</span>
+          <div>
+            <h3 class="text-sm sm:text-base font-bold" id="aeModalTitle">ทะเบียนรับแจ้ง — ตรวจสอบเหตุการณ์และนำเรียนพื้นที่</h3>
+            <p class="text-[11px] text-cyan-100">บันทึกผลการตรวจสอบข่าว ยืนยันการเกิดเหตุการณ์ สรุปความเห็น กิจกรรมระงับเหตุ และแจ้งประสานพื้นที่ รพ.สต./PCU</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeAdminEventModal()" class="text-white/80 hover:text-white text-xl p-1 rounded-lg hover:bg-white/10 transition">✕</button>
+      </div>
+
+      <form id="adminEventForm" onsubmit="handleAdminEventSubmit(event)" class="p-3 sm:p-5 overflow-y-auto flex-1 text-xs space-y-3">
+        <input type="hidden" id="ae_internal_id">
+
+        <!-- 4 Columns Grid matching ทะเบียนรับแจ้ง screenshot -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5">
+          <!-- COLUMN 1: ข้อมูลรับแจ้ง & เนื้อหาข่าวสารที่ได้รับแจ้ง -->
+          <div class="bg-[#e0f7fa]/85 p-3 rounded-2xl border border-cyan-400/50 space-y-2.5">
+            <div class="grid grid-cols-12 items-center gap-2">
+              <label class="col-span-3 font-bold text-slate-800 text-right">ID :</label>
+              <input type="text" id="ae_event_code" readonly class="col-span-9 p-1.5 bg-slate-200 border border-slate-300 rounded font-mono font-bold text-cyan-900">
+            </div>
+            <div class="grid grid-cols-12 items-center gap-2">
+              <label class="col-span-3 font-bold text-slate-800 text-right">วันที่ :</label>
+              <input type="date" id="ae_report_date" required class="col-span-9 p-1.5 bg-white border border-cyan-300 rounded outline-none focus:border-cyan-600">
+            </div>
+            <div>
+              <label class="block font-bold text-rose-700 mb-1">ชื่อผู้แจ้ง – แหล่งข่าว/ที่อยู่/โทร * :</label>
+              <textarea id="ae_reporter_info" rows="3" required class="w-full p-2 bg-white border border-cyan-300 rounded outline-none focus:border-cyan-600"></textarea>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-800 mb-1">ประเภทข่าว :</label>
+              <select id="ae_news_type" class="w-full p-1.5 bg-white border border-cyan-300 rounded outline-none focus:border-cyan-600">
+                <option value="ประชาชนแจ้งเหตุในหมู่บ้าน">ประชาชนแจ้งเหตุในหมู่บ้าน</option>
+                <option value="อสม./ผู้นำชุมชนแจ้ง">อสม./ผู้นำชุมชนแจ้ง</option>
+                <option value="ข่าวลือ/บอกเล่าในชุมชน">ข่าวลือ/บอกเล่าในชุมชน</option>
+                <option value="โรงเรียน/ศูนย์เด็กเล็ก/สถานประกอบการ">โรงเรียน/ศูนย์เด็กเล็ก/สถานประกอบการ</option>
+                <option value="สื่อสังคมออนไลน์/ข่าวสาร">สื่อสังคมออนไลน์/ข่าวสาร</option>
+                <option value="สถานบริการสาธารณสุข/รพ.สต.">สถานบริการสาธารณสุข/รพ.สต.</option>
+                <option value="อื่นๆ">อื่นๆ</option>
+              </select>
+            </div>
+            <div class="pt-1 border-t border-cyan-300/70 space-y-2">
+              <div class="font-bold text-rose-700">เนื้อหาข่าวสารที่ได้รับแจ้ง :</div>
+              <div class="grid grid-cols-12 items-center gap-1.5">
+                <label class="col-span-4 text-right font-semibold text-slate-800">ชื่อผู้ป่วย :</label>
+                <input type="text" id="ae_patient_name" class="col-span-8 p-1.5 bg-white border border-cyan-300 rounded outline-none">
+              </div>
+              <div class="grid grid-cols-12 items-center gap-1.5">
+                <label class="col-span-4 text-right font-semibold text-slate-800">อายุ :</label>
+                <input type="number" min="0" max="120" id="ae_patient_age" class="col-span-5 p-1.5 bg-white border border-cyan-300 rounded outline-none">
+                <span class="col-span-3 font-semibold text-slate-700">ปี</span>
+              </div>
+              <div class="grid grid-cols-12 items-center gap-1.5">
+                <label class="col-span-4 text-right font-semibold text-slate-800">อาชีพ :</label>
+                <input type="text" id="ae_patient_occupation" class="col-span-8 p-1.5 bg-white border border-cyan-300 rounded outline-none">
+              </div>
+              <div class="grid grid-cols-12 items-center gap-1.5">
+                <label class="col-span-4 text-right font-semibold text-slate-800">ตำบล/หมู่ :</label>
+                <select id="ae_subdistrict" onchange="syncAdminEventHealthCenter()" class="col-span-5 p-1.5 bg-white border border-cyan-300 rounded outline-none">
+                  <option value="">ตำบล</option>
+                  <option value="เทพา">เทพา</option>
+                  <option value="ปากบาง">ปากบาง</option>
+                  <option value="เกาะสะบ้า">เกาะสะบ้า</option>
+                  <option value="ลำไพล">ลำไพล</option>
+                  <option value="ท่าม่วง">ท่าม่วง</option>
+                  <option value="วังใหญ่">วังใหญ่</option>
+                  <option value="สะกอม">สะกอม</option>
+                </select>
+                <input type="text" id="ae_village_no" oninput="syncAdminEventHealthCenter()" placeholder="ม." class="col-span-3 p-1.5 bg-white border border-cyan-300 rounded outline-none">
+              </div>
+              <div class="grid grid-cols-12 items-center gap-1.5">
+                <label class="col-span-4 text-right font-semibold text-slate-800">พื้นที่รับผิดชอบ:</label>
+                <input type="text" id="ae_health_center" placeholder="รพ.สต./PCU" class="col-span-8 p-1.5 bg-white border border-cyan-300 rounded outline-none text-teal-800 font-semibold">
+              </div>
+              <div class="grid grid-cols-12 items-start gap-1.5">
+                <label class="col-span-4 text-right font-semibold text-slate-800 pt-1">ที่อยู่ :</label>
+                <textarea id="ae_patient_address" rows="2" class="col-span-8 p-1.5 bg-white border border-cyan-300 rounded outline-none"></textarea>
+              </div>
+              <div class="grid grid-cols-12 items-center gap-1.5">
+                <label class="col-span-4 text-right font-semibold text-slate-800">โทรศัพท์ :</label>
+                <input type="text" id="ae_patient_phone" class="col-span-8 p-1.5 bg-white border border-cyan-300 rounded outline-none">
+              </div>
+            </div>
+          </div>
+
+          <!-- COLUMN 2: โรค/อาการสำคัญ & ผู้รับแจ้ง & ยืนยันการเกิด -->
+          <div class="bg-[#e0f7fa]/85 p-3 rounded-2xl border border-cyan-400/50 space-y-2.5">
+            <div>
+              <label class="block font-bold text-slate-800 mb-1">โรค/อาการสำคัญ/เหตุการณ์สำคัญ * :</label>
+              <textarea id="ae_symptoms_event" rows="4" required class="w-full p-2 bg-white border border-cyan-300 rounded outline-none focus:border-cyan-600"></textarea>
+            </div>
+            <div class="grid grid-cols-12 items-center gap-1.5">
+              <label class="col-span-5 text-right font-semibold text-slate-800">วันเริ่มป่วย :</label>
+              <input type="date" id="ae_illness_date" class="col-span-7 p-1.5 bg-white border border-cyan-300 rounded outline-none">
+            </div>
+            <div class="grid grid-cols-12 items-center gap-1.5">
+              <label class="col-span-5 text-right font-semibold text-slate-800">วันพบผู้ป่วย :</label>
+              <input type="date" id="ae_found_date" class="col-span-7 p-1.5 bg-white border border-cyan-300 rounded outline-none">
+            </div>
+            <div class="grid grid-cols-12 items-center gap-1.5">
+              <label class="col-span-5 text-right font-semibold text-slate-800">การรักษา :</label>
+              <input type="text" id="ae_treatment" class="col-span-7 p-1.5 bg-white border border-cyan-300 rounded outline-none">
+            </div>
+            <div>
+              <label class="block font-bold text-slate-800 mb-1">เหตุการณ์อื่นๆเพิ่มเติม :</label>
+              <textarea id="ae_extra_events" rows="4" class="w-full p-2 bg-white border border-cyan-300 rounded outline-none"></textarea>
+            </div>
+            <div class="grid grid-cols-12 items-center gap-1.5">
+              <label class="col-span-5 text-right font-semibold text-slate-800">ชื่อผู้รับแจ้ง :</label>
+              <input type="text" id="ae_receiver_name" class="col-span-7 p-1.5 bg-white border border-cyan-300 rounded outline-none">
+            </div>
+            <div class="grid grid-cols-12 items-center gap-1.5">
+              <label class="col-span-5 text-right font-semibold text-slate-800">เวลา :</label>
+              <input type="time" step="1" id="ae_receive_time" class="col-span-7 p-1.5 bg-white border border-cyan-300 rounded outline-none">
+            </div>
+            <div class="grid grid-cols-12 items-center gap-1.5">
+              <label class="col-span-5 text-right font-bold text-slate-800">ยืนยันการเกิด :</label>
+              <select id="ae_confirm_occurrence" class="col-span-7 p-1.5 bg-white border border-cyan-300 rounded outline-none font-semibold">
+                <option value="รอตรวจสอบ">รอตรวจสอบ</option>
+                <option value="ยืนยันการเกิดเหตุการณ์จริง">ยืนยันการเกิดเหตุการณ์จริง</option>
+                <option value="เฝ้าระวังต่อเนื่อง">เฝ้าระวังต่อเนื่อง</option>
+                <option value="ไม่พบเหตุการณ์/ข่าวลือ">ไม่พบเหตุการณ์/ข่าวลือ</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-12 items-center gap-1.5">
+              <label class="col-span-5 text-right font-semibold text-slate-800">โรค :</label>
+              <input type="text" id="ae_disease_name" list="eventDiseaseDatalist" class="col-span-7 p-1.5 bg-white border border-cyan-300 rounded outline-none">
+            </div>
+          </div>
+
+          <!-- COLUMN 3: ผลการตรวจสอบ & วิธีตรวจสอบข่าว & สรุปความเห็น -->
+          <div class="bg-[#e0f7fa]/85 p-3 rounded-2xl border border-cyan-400/50 space-y-2.5">
+            <div class="text-center font-bold text-rose-700 text-sm">ผลการตรวจสอบ :</div>
+            <div class="grid grid-cols-12 items-center gap-1.5">
+              <label class="col-span-6 text-right font-semibold text-slate-800">พบผู้ป่วย :</label>
+              <input type="number" min="0" id="ae_verified_cases" value="0" class="col-span-4 p-1.5 bg-white border border-cyan-300 rounded text-center font-bold">
+              <span class="col-span-2 text-slate-700 font-semibold">คน</span>
+            </div>
+            <div class="grid grid-cols-12 items-center gap-1.5">
+              <label class="col-span-6 text-right font-semibold text-slate-800">พบผู้เสียชีวิต :</label>
+              <input type="number" min="0" id="ae_verified_deaths" value="0" class="col-span-4 p-1.5 bg-white border border-cyan-300 rounded text-center font-bold text-rose-700">
+              <span class="col-span-2 text-slate-700 font-semibold">คน</span>
+            </div>
+            <div class="grid grid-cols-12 items-center gap-1.5">
+              <label class="col-span-6 text-right font-semibold text-slate-800">ผู้ที่มีอาการสงสัย :</label>
+              <input type="number" min="0" id="ae_verified_suspects" value="0" class="col-span-4 p-1.5 bg-white border border-cyan-300 rounded text-center font-bold text-amber-700">
+              <span class="col-span-2 text-slate-700 font-semibold">คน</span>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-800 mb-1">พบเหตุการณ์ที่อาจเป็นอันตรายต่อสุขภาพนี้ :</label>
+              <textarea id="ae_health_hazard_detail" rows="3" placeholder="รายละเอียดผลตรวจสอบความเสี่ยงในพื้นที่..." class="w-full p-2 bg-white border border-cyan-300 rounded outline-none"></textarea>
+            </div>
+            <div>
+              <label class="block font-bold text-rose-700 mb-1">วิธีตรวจสอบข่าว :</label>
+              <select id="ae_verify_method" class="w-full p-1.5 bg-white border border-cyan-300 rounded outline-none">
+                <option value="">-- เลือกวิธีตรวจสอบข่าว --</option>
+                <option value="โทรศัพท์สอบถามผู้แจ้ง/พื้นที่">โทรศัพท์สอบถามผู้แจ้ง/พื้นที่</option>
+                <option value="ลงพื้นที่ตรวจสอบและสอบสวนโรค (SRRT)">ลงพื้นที่ตรวจสอบและสอบสวนโรค (SRRT)</option>
+                <option value="ประสาน รพ.สต./อสม. ตรวจสอบในหมู่บ้าน">ประสาน รพ.สต./อสม. ตรวจสอบในหมู่บ้าน</option>
+                <option value="ตรวจสอบข้อมูล รง.506 และผลตรวจทางห้องปฏิบัติการ">ตรวจสอบข้อมูล รง.506 และผลตรวจทางห้องปฏิบัติการ</option>
+                <option value="อื่นๆ">อื่นๆ</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-800 mb-1">สอบถาม :</label>
+              <textarea id="ae_inquiry_detail" rows="3" placeholder="บันทึกการสอบถามผู้แจ้ง / ญาติ / อสม. / รพ.สต..." class="w-full p-2 bg-white border border-cyan-300 rounded outline-none"></textarea>
+            </div>
+            <div class="space-y-1.5">
+              <label class="block font-bold text-rose-700">สรุปความเห็นและการปฏิบัติ :</label>
+              <select id="ae_conclusion_1" class="w-full p-1.5 bg-white border border-cyan-300 rounded outline-none">
+                <option value="">-- ความเห็นที่ 1 --</option>
+                <option value="เข้าเกณฑ์สอบสวนโรค/ควบคุมโรคทันที">เข้าเกณฑ์สอบสวนโรค/ควบคุมโรคทันที</option>
+                <option value="ส่งต่อพื้นที่ รพ.สต./PCU ตรวจสอบยืนยัน">ส่งต่อพื้นที่ รพ.สต./PCU ตรวจสอบยืนยัน</option>
+                <option value="เฝ้าระวังเหตุการณ์ต่อเนื่องในชุมชน">เฝ้าระวังเหตุการณ์ต่อเนื่องในชุมชน</option>
+                <option value="ไม่เข้าเกณฑ์เหตุการณ์ผิดปกติ / ยุติการติดตาม">ไม่เข้าเกณฑ์เหตุการณ์ผิดปกติ / ยุติการติดตาม</option>
+              </select>
+              <select id="ae_conclusion_2" class="w-full p-1.5 bg-white border border-cyan-300 rounded outline-none">
+                <option value="">-- ความเห็นที่ 2 --</option>
+                <option value="แจ้งทีม SRRT อำเภอและพื้นที่ร่วมดำเนินการ">แจ้งทีม SRRT อำเภอและพื้นที่ร่วมดำเนินการ</option>
+                <option value="ประสาน อสม. ค้นหาผู้ป่วยเชิงรุกในหมู่บ้าน">ประสาน อสม. ค้นหาผู้ป่วยเชิงรุกในหมู่บ้าน</option>
+                <option value="บันทึกลงระบบเฝ้าระวังไข้เลือดออก TDDS">บันทึกลงระบบเฝ้าระวังไข้เลือดออก TDDS</option>
+                <option value="ให้คำแนะนำสุขศึกษาและปิดเรื่อง">ให้คำแนะนำสุขศึกษาและปิดเรื่อง</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- COLUMN 4: สรุปความเห็น(ต่อ) & กิจกรรม & บันทึก/พิมพ์ -->
+          <div class="bg-[#e0f7fa]/85 p-3 rounded-2xl border border-cyan-400/50 space-y-2.5 flex flex-col justify-between">
+            <div class="space-y-2">
+              <div class="space-y-1.5">
+                <label class="block font-bold text-rose-700">สรุปความเห็นและการปฏิบัติ(ต่อ) :</label>
+                <select id="ae_conclusion_3" class="w-full p-1.5 bg-white border border-cyan-300 rounded outline-none">
+                  <option value="">-- การปฏิบัติเพิ่มเติม 1 --</option>
+                  <option value="นำเรียนผู้บริหาร/สสอ.เทพา">นำเรียนผู้บริหาร/สสอ.เทพา</option>
+                  <option value="นำเรียนพื้นที่ รพ.สต./PCU รับผิดชอบ">นำเรียนพื้นที่ รพ.สต./PCU รับผิดชอบ</option>
+                  <option value="ประสาน อปท./อบต. สนับสนุนควบคุมโรค">ประสาน อปท./อบต. สนับสนุนควบคุมโรค</option>
+                  <option value="ดำเนินการแล้วเสร็จ">ดำเนินการแล้วเสร็จ</option>
+                </select>
+                <select id="ae_conclusion_4" class="w-full p-1.5 bg-white border border-cyan-300 rounded outline-none">
+                  <option value="">-- การปฏิบัติเพิ่มเติม 2 --</option>
+                  <option value="ติดตามสถานการณ์ครบ 14 วัน">ติดตามสถานการณ์ครบ 14 วัน</option>
+                  <option value="ติดตามสถานการณ์ครบ 28 วัน">ติดตามสถานการณ์ครบ 28 วัน</option>
+                  <option value="ดำเนินการตามมาตรการ 3-3-1">ดำเนินการตามมาตรการ 3-3-1</option>
+                  <option value="ปิดการเฝ้าระวัง">ปิดการเฝ้าระวัง</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-800 mb-1">อื่นๆระบุ :</label>
+                <textarea id="ae_conclusion_other" rows="2" class="w-full p-1.5 bg-white border border-cyan-300 rounded outline-none"></textarea>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-800 mb-1">ผู้ปฏิบัติ :</label>
+                <input type="text" id="ae_operator_name" class="w-full p-1.5 bg-white border border-cyan-300 rounded outline-none">
+              </div>
+              <div class="space-y-1.5">
+                <label class="block font-bold text-rose-700">กิจกรรมที่ดำเนินการ :</label>
+                <select id="ae_activity_1" class="w-full p-1.5 bg-white border border-cyan-300 rounded outline-none">
+                  <option value="">-- กิจกรรมที่ 1 --</option>
+                  <option value="สอบสวนโรคและค้นหาผู้ป่วยเพิ่มเติม">สอบสวนโรคและค้นหาผู้ป่วยเพิ่มเติม</option>
+                  <option value="สำรวจ/ทำลายแหล่งเพาะพันธุ์ลูกน้ำยุงลาย (CI/HI)">สำรวจ/ทำลายแหล่งเพาะพันธุ์ลูกน้ำยุงลาย (CI/HI)</option>
+                  <option value="พ่นสารเคมีกำจัดยุงตัวแก่รัศมี 100 ม.">พ่นสารเคมีกำจัดยุงตัวแก่รัศมี 100 ม.</option>
+                  <option value="รณรงค์สุขศึกษาและประชาสัมพันธ์ชุมชน">รณรงค์สุขศึกษาและประชาสัมพันธ์ชุมชน</option>
+                  <option value="เก็บตัวอย่างสิ่งส่งตรวจทางห้องปฏิบัติการ">เก็บตัวอย่างสิ่งส่งตรวจทางห้องปฏิบัติการ</option>
+                </select>
+                <select id="ae_activity_2" class="w-full p-1.5 bg-white border border-cyan-300 rounded outline-none">
+                  <option value="">-- กิจกรรมที่ 2 --</option>
+                  <option value="แจกทรายทีมีฟอส/ยาทากันยุง">แจกทรายทีมีฟอส/ยาทากันยุง</option>
+                  <option value="แจ้งเตือนกลุ่มเสี่ยง/โรงเรียน/ศูนย์เด็กเล็ก">แจ้งเตือนกลุ่มเสี่ยง/โรงเรียน/ศูนย์เด็กเล็ก</option>
+                  <option value="เฝ้าระวังผู้ป่วยรายใหม่ต่อเนื่อง">เฝ้าระวังผู้ป่วยรายใหม่ต่อเนื่อง</option>
+                  <option value="อื่นๆ">อื่นๆ</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-800 mb-1">ระงับเหตุอันตรายโดย :</label>
+                <input type="text" id="ae_hazard_mitigated_by" placeholder="เช่น ทีม SRRT อำเภอเทพา ร่วมกับ รพ.สต. และ อสม." class="w-full p-1.5 bg-white border border-cyan-300 rounded outline-none">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block font-bold text-slate-800 mb-1">วันที่ดำเนินการ :</label>
+                  <input type="date" id="ae_action_date" class="w-full p-1.5 bg-white border border-cyan-300 rounded outline-none">
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-800 mb-1">เวลา :</label>
+                  <input type="time" step="1" id="ae_action_time" class="w-full p-1.5 bg-white border border-cyan-300 rounded outline-none">
+                </div>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-800 mb-1">อื่นๆ :</label>
+                <textarea id="ae_action_other" rows="2" class="w-full p-1.5 bg-white border border-cyan-300 rounded outline-none"></textarea>
+              </div>
+            </div>
+
+            <div class="pt-2 space-y-2 border-t border-cyan-300">
+              <div class="grid grid-cols-2 gap-2">
+                <button type="submit" class="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-1.5 transition active:scale-95">
+                  <span>✅</span>
+                  <span>บันทึก</span>
+                </button>
+                <button type="button" onclick="printEventReportFromModal()" class="w-full py-2.5 px-3 bg-white hover:bg-slate-100 text-slate-800 font-bold rounded-xl border border-cyan-400 shadow-xs flex items-center justify-center gap-1.5 transition">
+                  <span>🖨️</span>
+                  <span>พิมพ์</span>
+                </button>
+              </div>
+              <button type="button" onclick="escalateEventFromModal()" class="w-full py-2 px-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-bold rounded-xl shadow-sm flex items-center justify-center gap-1.5 transition">
+                <span>📣</span>
+                <span>นำเรียนพื้นที่ (ส่งแจ้งเตือน รพ.สต./PCU ทาง Telegram)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: วิเคราะห์สรุปเหตุการณ์ (สำหรับ Admin) -->
+  <div id="eventAnalysisModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop hidden transition-opacity overflow-y-auto">
+    <div class="bg-white w-full max-w-5xl my-6 rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh]">
+      <div class="bg-gradient-to-r from-purple-700 via-indigo-700 to-cyan-700 p-4 sm:p-5 text-white flex items-center justify-between shrink-0">
+        <div>
+          <h3 class="text-base sm:text-lg font-bold flex items-center gap-2">
+            <span>📊</span>
+            <span>วิเคราะห์สรุปเหตุการณ์ผิดปกติและโรคในพื้นที่ อำเภอเทพา</span>
+          </h3>
+          <p class="text-xs text-purple-100 mt-0.5">สรุปภาพรวมการรับแจ้งเหตุ ผลการตรวจสอบ การยืนยันการเกิดโรค พื้นที่เสี่ยง และแนวทางนำเรียนสั่งการ</p>
+        </div>
+        <button type="button" onclick="closeEventAnalysisModal()" class="text-white/80 hover:text-white text-xl p-1 rounded-lg hover:bg-white/10 transition">✕</button>
+      </div>
+
+      <div class="p-4 sm:p-6 overflow-y-auto space-y-5 flex-1 text-xs">
+        <div id="eventAnalysisKpis" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+            <h4 class="font-bold text-slate-800 mb-3 flex items-center gap-1.5"><span>🦠</span> จำแนกตามโรค / อาการสำคัญที่ได้รับแจ้ง</h4>
+            <div class="h-64 relative">
+              <canvas id="eventAnalysisDiseaseChart"></canvas>
+            </div>
+          </div>
+          <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+            <h4 class="font-bold text-slate-800 mb-3 flex items-center gap-1.5"><span>🗺️</span> จำแนกตามตำบล / พื้นที่เกิดเหตุ</h4>
+            <div class="h-64 relative">
+              <canvas id="eventAnalysisAreaChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-indigo-50/70 border border-indigo-200 rounded-2xl p-4 space-y-2">
+          <h4 class="font-bold text-indigo-900 text-sm flex items-center gap-1.5"><span>📝</span> บทวิเคราะห์และข้อเสนอแนะเชิงระบาดวิทยาอัตโนมัติ</h4>
+          <div id="eventAnalysisNarrative" class="text-slate-700 leading-relaxed space-y-1.5"></div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" onclick="sendEventAnalysisToTelegram()" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-xs transition flex items-center gap-1.5">
+            <span>📲</span>
+            <span>ส่งผลวิเคราะห์เข้า Telegram (Admin)</span>
+          </button>
+          <button type="button" onclick="printEventAnalysisReport()" class="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-xs transition flex items-center gap-1.5">
+            <span>🖨️</span>
+            <span>พิมพ์ / บันทึก .PDF รายงานวิเคราะห์</span>
+          </button>
+          <button type="button" onclick="closeEventAnalysisModal()" class="px-4 py-2.5 text-slate-600 hover:bg-slate-100 font-semibold rounded-xl transition">ปิด</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
   <div id="patientModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop hidden transition-opacity overflow-y-auto">
     <div class="bg-white w-full max-w-4xl my-8 rounded-3xl shadow-2xl border border-slate-100 overflow-hidden transform transition-all flex flex-col max-h-[92vh]">
@@ -3185,8 +3824,12 @@
     const DISEASE_CONTROL_PHOTOS_DRIVE_FOLDER_ID = '1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm';
     const DISEASE_CONTROL_PHOTOS_DRIVE_URL = 'https://drive.google.com/drive/folders/1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm?usp=sharing';
     const STORAGE_SPRAY_CONTROL_KEY = 'tdds_spray_control_reports_v1';
+    const STORAGE_EVENT_REPORTS_KEY = 'tdds_event_reports_v1';
     let diseaseControlReportsMap = {};
     let sprayControlReportsMap = {};
+    let eventReportsData = [];
+    let eventDiseaseChartInstance = null;
+    let eventAreaChartInstance = null;
 
     // Unicode Normalization (NFC) & String Sanitization Helper for Thai Text
     function normalizeThaiStr(str) {
@@ -3619,6 +4262,7 @@
       // ปิดการแจ้งเตือน 3 ชม. และ 1 วัน สำหรับเคสเก่า
       loadDiseaseControlStore();
       loadSprayControlStore();
+      if (typeof loadEventReportsStore === 'function') loadEventReportsStore();
       if (markOldCasesAlertSkipped(patientsData)) {
         savePatients();
       }
@@ -3719,6 +4363,10 @@
     }
 
     function navigateTo(viewId) {
+      if (viewId === 'event-registry' && (!currentUser || currentUser.role !== 'admin')) {
+        Swal.fire({ icon: 'error', title: 'ไม่มีสิทธิ์เข้าถึง', text: 'หน้ารายงานทะเบียนรายงานเหตุการณ์สงวนสิทธิ์เฉพาะผู้ดูแลระบบ (Admin) เท่านั้น' });
+        return;
+      }
       showLoading('กำลังเปลี่ยนหน้า...');
       setTimeout(() => {
         // Hide all view panels
@@ -3749,6 +4397,8 @@
           renderPatientTable();
         } else if (viewId === 'disease-control') {
           if (typeof renderDiseaseControlView === 'function') renderDiseaseControlView();
+        } else if (viewId === 'event-registry') {
+          if (typeof renderEventRegistryView === 'function') renderEventRegistryView();
         } else if (viewId === 'person-import' || viewId === 'radius-search') {
           initPersonView(viewId === 'radius-search');
         }
@@ -3840,6 +4490,8 @@
       applyDashboardFilters();
       renderPatientTable();
       if (typeof renderDiseaseControlView === 'function') renderDiseaseControlView();
+      if (typeof updatePublicEventCounters === 'function') updatePublicEventCounters();
+      if (typeof renderEventRegistryView === 'function' && currentUser && currentUser.role === 'admin') renderEventRegistryView();
       renderUserTable();
       if (typeof updatePersonTotalBadge === 'function') updatePersonTotalBadge();
       if (typeof renderPersonScopeBanner === 'function') renderPersonScopeBanner();
@@ -4440,6 +5092,9 @@
           : { ok: true };
         if (typeof fetchUsersFromSupabase === 'function') {
           await fetchUsersFromSupabase();
+        }
+        if (typeof fetchEventReportsFromSupabase === 'function') {
+          await fetchEventReportsFromSupabase(true);
         }
         applyDashboardFilters();
         renderPatientTable();
@@ -10672,6 +11327,1061 @@ https://dengue-thepha.github.io/tdds/`;
       }
     }
 
+    // =============================================================
+    // 9.9 ระบบรายงานแจ้งเหตุผิดปกติ/แจ้งโรค (Public) & ทะเบียนรายงานเหตุการณ์ (Admin)
+    // =============================================================
+    function updatePublicEventCounters() {
+      const list = Array.isArray(eventReportsData) ? eventReportsData : [];
+      const total = list.length;
+      const pending = list.filter(e => !e.status || e.status === 'pending').length;
+      const resolved = total - pending;
+
+      const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v; };
+      setTxt('publicEventTotalCount', total);
+      setTxt('publicEventPendingCount', pending);
+      setTxt('publicEventResolvedCount', resolved);
+
+      const badge = document.getElementById('adminEventPendingBadge');
+      if (badge) {
+        badge.innerText = pending;
+        if (pending > 0) badge.classList.remove('hidden');
+        else badge.classList.add('hidden');
+      }
+    }
+
+    function loadEventReportsStore() {
+      try {
+        const raw = localStorage.getItem(STORAGE_EVENT_REPORTS_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        eventReportsData = Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        eventReportsData = [];
+      }
+      updatePublicEventCounters();
+    }
+
+    function saveEventReportsStore() {
+      try {
+        localStorage.setItem(STORAGE_EVENT_REPORTS_KEY, JSON.stringify(eventReportsData));
+      } catch (e) {
+        console.warn('[TDDS] saveEventReportsStore error:', e);
+      }
+      updatePublicEventCounters();
+    }
+
+    function generateNextEventCode() {
+      const yrBe = new Date().getFullYear() + 543;
+      const prefix = `EVT${yrBe}-`;
+      let maxNum = 0;
+      (eventReportsData || []).forEach(e => {
+        const m = String(e.eventCode || '').match(/^EVT\d{4}-(\d+)$/);
+        if (m) {
+          const n = parseInt(m[1], 10);
+          if (n > maxNum) maxNum = n;
+        }
+      });
+      return `${prefix}${String(maxNum + 1).padStart(3, '0')}`;
+    }
+
+    function resolveEventAreaHealthCenters(subdistrict, villageNo) {
+      const sub = normalizeThaiStr(subdistrict || '').replace(/^(ตำบล|ต\.)\s*/g, '').trim();
+      const vNum = parseInt(String(villageNo || '').replace(/\D/g, ''), 10);
+      if (!sub) return { healthCenter: '', hcode: '' };
+
+      let matches = [];
+      if (!isNaN(vNum)) {
+        matches = locationMasterData.filter(loc => normalizeThaiStr(loc.subdistrict) === sub && Number(loc.villageNo) === vNum);
+      }
+      if (matches.length === 0) {
+        matches = locationMasterData.filter(loc => normalizeThaiStr(loc.subdistrict) === sub);
+      }
+      const uniqueUnits = [...new Set(matches.map(m => m.healthCenter).filter(Boolean))];
+      const healthCenter = uniqueUnits.join(', ');
+      const hcode = uniqueUnits[0] ? getHCodeByName(uniqueUnits[0]) : '';
+      return { healthCenter, hcode };
+    }
+
+    function syncPublicEventHealthCenter() {
+      const sub = document.getElementById('pe_subdistrict')?.value || '';
+      const v = document.getElementById('pe_village_no')?.value || '';
+      const badge = document.getElementById('pe_resolved_hc_badge');
+      if (!badge) return;
+      const resolved = resolveEventAreaHealthCenters(sub, v);
+      if (resolved.healthCenter) {
+        badge.innerHTML = `🏥 หน่วยบริการรับผิดชอบพื้นที่: <b>${resolved.healthCenter}</b> ${resolved.hcode ? `(${resolved.hcode})` : ''}`;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function syncAdminEventHealthCenter() {
+      const sub = document.getElementById('ae_subdistrict')?.value || '';
+      const v = document.getElementById('ae_village_no')?.value || '';
+      const resolved = resolveEventAreaHealthCenters(sub, v);
+      const hcInput = document.getElementById('ae_health_center');
+      if (hcInput && resolved.healthCenter) {
+        hcInput.value = resolved.healthCenter;
+      }
+    }
+
+    function getLocalTodayDateStr() {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    }
+
+    function getLocalNowTimeStr() {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    }
+
+    function openPublicEventModal() {
+      document.getElementById('publicEventForm')?.reset();
+      const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ''; };
+      setVal('pe_event_code', generateNextEventCode());
+      setVal('pe_report_date', getLocalTodayDateStr());
+      setVal('pe_news_type', 'ประชาชนแจ้งเหตุในหมู่บ้าน');
+      document.getElementById('pe_resolved_hc_badge')?.classList.add('hidden');
+      document.getElementById('publicEventModal')?.classList.remove('hidden');
+    }
+
+    function closePublicEventModal() {
+      document.getElementById('publicEventModal')?.classList.add('hidden');
+    }
+
+    function mapSupabaseRowToEventReport(r) {
+      return {
+        id: r.id || `evt_${r.event_code || Date.now()}`,
+        supabaseId: r.id || null,
+        eventCode: r.event_code || '',
+        reportDate: r.report_date || '',
+        reporterInfo: r.reporter_info || '',
+        newsType: r.news_type || 'ประชาชนแจ้งเหตุในหมู่บ้าน',
+        patientName: r.patient_name || '',
+        patientAge: r.patient_age ?? '',
+        patientOccupation: r.patient_occupation || '',
+        patientAddress: r.patient_address || '',
+        patientPhone: r.patient_phone || '',
+        subdistrict: r.subdistrict || '',
+        villageNo: r.village_no || '',
+        healthCenter: r.health_center || '',
+        hcode: r.hcode || '',
+        symptomsEvent: r.symptoms_event || '',
+        illnessDate: r.illness_date || '',
+        foundDate: r.found_date || '',
+        treatment: r.treatment || '',
+        extraEvents: r.extra_events || '',
+        receiverName: r.receiver_name || '',
+        receiveTime: r.receive_time || '',
+        confirmOccurrence: r.confirm_occurrence || 'รอตรวจสอบ',
+        diseaseName: r.disease_name || '',
+        verifiedCases: r.verified_cases ?? 0,
+        verifiedDeaths: r.verified_deaths ?? 0,
+        verifiedSuspects: r.verified_suspects ?? 0,
+        healthHazardDetail: r.health_hazard_detail || '',
+        verifyMethod: r.verify_method || '',
+        inquiryDetail: r.inquiry_detail || '',
+        conclusion1: r.conclusion_1 || '',
+        conclusion2: r.conclusion_2 || '',
+        conclusion3: r.conclusion_3 || '',
+        conclusion4: r.conclusion_4 || '',
+        conclusionOther: r.conclusion_other || '',
+        operatorName: r.operator_name || '',
+        activity1: r.activity_1 || '',
+        activity2: r.activity_2 || '',
+        hazardMitigatedBy: r.hazard_mitigated_by || '',
+        actionDate: r.action_date || '',
+        actionTime: r.action_time || '',
+        actionOther: r.action_other || '',
+        status: r.status || 'pending',
+        escalatedToUnit: r.escalated_to_unit || '',
+        escalatedNote: r.escalated_note || '',
+        escalatedBy: r.escalated_by || '',
+        escalatedAt: r.escalated_at || null,
+        sourceRole: r.source_role || 'public',
+        createdAt: r.created_at || null,
+        updatedAt: r.updated_at || null
+      };
+    }
+
+    async function saveEventReportToSupabase(evt) {
+      const cfg = typeof getSupabasePersonConfig === 'function' ? getSupabasePersonConfig() : null;
+      if (!cfg || !cfg.url || !cfg.key) return { ok: false, error: 'Missing Supabase config' };
+
+      const payload = {
+        event_code: evt.eventCode,
+        report_date: evt.reportDate || null,
+        reporter_info: evt.reporterInfo || '-',
+        news_type: evt.newsType || 'ประชาชนแจ้งเหตุในหมู่บ้าน',
+        patient_name: evt.patientName || null,
+        patient_age: evt.patientAge !== '' && evt.patientAge != null ? Number(evt.patientAge) : null,
+        patient_occupation: evt.patientOccupation || null,
+        patient_address: evt.patientAddress || null,
+        patient_phone: evt.patientPhone || null,
+        subdistrict: evt.subdistrict || null,
+        village_no: evt.villageNo || null,
+        health_center: evt.healthCenter || null,
+        hcode: evt.hcode || null,
+        symptoms_event: evt.symptomsEvent || '-',
+        illness_date: evt.illnessDate || null,
+        found_date: evt.foundDate || null,
+        treatment: evt.treatment || null,
+        extra_events: evt.extraEvents || null,
+        receiver_name: evt.receiverName || null,
+        receive_time: evt.receiveTime || null,
+        confirm_occurrence: evt.confirmOccurrence || 'รอตรวจสอบ',
+        disease_name: evt.diseaseName || null,
+        verified_cases: Number(evt.verifiedCases || 0),
+        verified_deaths: Number(evt.verifiedDeaths || 0),
+        verified_suspects: Number(evt.verifiedSuspects || 0),
+        health_hazard_detail: evt.healthHazardDetail || null,
+        verify_method: evt.verifyMethod || null,
+        inquiry_detail: evt.inquiryDetail || null,
+        conclusion_1: evt.conclusion1 || null,
+        conclusion_2: evt.conclusion2 || null,
+        conclusion_3: evt.conclusion3 || null,
+        conclusion_4: evt.conclusion4 || null,
+        conclusion_other: evt.conclusionOther || null,
+        operator_name: evt.operatorName || null,
+        activity_1: evt.activity1 || null,
+        activity_2: evt.activity2 || null,
+        hazard_mitigated_by: evt.hazardMitigatedBy || null,
+        action_date: evt.actionDate || null,
+        action_time: evt.actionTime || null,
+        action_other: evt.actionOther || null,
+        status: evt.status || 'pending',
+        escalated_to_unit: evt.escalatedToUnit || null,
+        escalated_note: evt.escalatedNote || null,
+        escalated_by: evt.escalatedBy || null,
+        escalated_at: evt.escalatedAt || null,
+        source_role: evt.sourceRole || 'public'
+      };
+
+      try {
+        const res = await fetch(`${cfg.url}/rest/v1/event_reports?on_conflict=event_code`, {
+          method: 'POST',
+          headers: buildSupabaseHeaders(cfg.key, { 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          const txt = await res.text().catch(() => '');
+          return { ok: false, missingTable: res.status === 404, error: `HTTP ${res.status}: ${txt}` };
+        }
+        const rows = await res.json().catch(() => []);
+        if (Array.isArray(rows) && rows[0]?.id) {
+          evt.supabaseId = rows[0].id;
+        }
+        return { ok: true };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    }
+
+    async function fetchEventReportsFromSupabase(silent = true) {
+      const cfg = typeof getSupabasePersonConfig === 'function' ? getSupabasePersonConfig() : null;
+      if (!cfg || !cfg.url || !cfg.key) return { ok: false };
+      try {
+        const res = await fetch(`${cfg.url}/rest/v1/event_reports?select=*&order=created_at.desc&limit=1000`, {
+          headers: buildSupabaseHeaders(cfg.key)
+        });
+        if (!res.ok) {
+          if (!silent && res.status === 404) {
+            Swal.fire({ icon: 'info', title: 'ยังไม่ได้สร้างตาราง event_reports บน Supabase', text: 'ระบบเก็บข้อมูลในเครื่องแล้ว กรุณารันไฟล์ create_event_reports.sql ใน Supabase SQL Editor เพื่อซิงค์ระหว่างเครื่อง' });
+          }
+          return { ok: false, missingTable: res.status === 404 };
+        }
+        const rows = await res.json();
+        if (Array.isArray(rows)) {
+          const byCode = new Map();
+          eventReportsData.forEach(e => { if (e.eventCode) byCode.set(e.eventCode, e); });
+          rows.forEach(r => {
+            const mapped = mapSupabaseRowToEventReport(r);
+            if (mapped.eventCode) byCode.set(mapped.eventCode, mapped);
+          });
+          eventReportsData = Array.from(byCode.values()).sort((a, b) => {
+            const ta = new Date(a.createdAt || a.reportDate || 0).getTime() || 0;
+            const tb = new Date(b.createdAt || b.reportDate || 0).getTime() || 0;
+            return tb - ta;
+          });
+          saveEventReportsStore();
+          if (currentUser && currentUser.role === 'admin') renderEventRegistryView();
+          if (!silent) {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `ซิงค์ข้อมูลทะเบียนรับแจ้งแล้ว (${eventReportsData.length} เรื่อง)`, timer: 2000, showConfirmButton: false });
+          }
+        }
+        return { ok: true };
+      } catch (err) {
+        return { ok: false, error: err.message };
+      }
+    }
+
+    async function handlePublicEventSubmit(e) {
+      e.preventDefault();
+      const val = (id) => document.getElementById(id)?.value?.trim() || '';
+      const sub = val('pe_subdistrict');
+      const vNo = val('pe_village_no');
+      const resolved = resolveEventAreaHealthCenters(sub, vNo);
+      const code = generateNextEventCode();
+
+      const evt = {
+        id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        eventCode: code,
+        reportDate: val('pe_report_date') || getLocalTodayDateStr(),
+        reporterInfo: val('pe_reporter_info'),
+        newsType: val('pe_news_type') || 'ประชาชนแจ้งเหตุในหมู่บ้าน',
+        patientName: val('pe_patient_name'),
+        patientAge: val('pe_patient_age'),
+        patientOccupation: val('pe_patient_occupation'),
+        patientAddress: val('pe_patient_address'),
+        patientPhone: val('pe_patient_phone'),
+        subdistrict: sub,
+        villageNo: vNo,
+        healthCenter: resolved.healthCenter,
+        hcode: resolved.hcode,
+        symptomsEvent: val('pe_symptoms_event'),
+        illnessDate: val('pe_illness_date'),
+        foundDate: val('pe_found_date'),
+        treatment: val('pe_treatment'),
+        extraEvents: val('pe_extra_events'),
+        receiverName: 'ระบบรับแจ้งออนไลน์ (ประชาชน)',
+        receiveTime: getLocalNowTimeStr(),
+        confirmOccurrence: 'รอตรวจสอบ',
+        diseaseName: val('pe_disease_name'),
+        verifiedCases: 0,
+        verifiedDeaths: 0,
+        verifiedSuspects: 0,
+        healthHazardDetail: '',
+        verifyMethod: '',
+        inquiryDetail: '',
+        conclusion1: '',
+        conclusion2: '',
+        conclusion3: '',
+        conclusion4: '',
+        conclusionOther: '',
+        operatorName: '',
+        activity1: '',
+        activity2: '',
+        hazardMitigatedBy: '',
+        actionDate: '',
+        actionTime: '',
+        actionOther: '',
+        status: 'pending',
+        escalatedToUnit: '',
+        escalatedNote: '',
+        escalatedBy: '',
+        escalatedAt: null,
+        sourceRole: 'public',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      showLoading('กำลังส่งรายงานแจ้งเหตุและแจ้งเตือนทีมเฝ้าระวัง...');
+      eventReportsData.unshift(evt);
+      saveEventReportsStore();
+
+      await saveEventReportToSupabase(evt);
+
+      let tgOk = false;
+      const msg = `🚨 [แจ้งเหตุการณ์ผิดปกติ / แจ้งโรคจากประชาชน (Public Dashboard)]
+🆔 รหัสรับแจ้ง : ${evt.eventCode}
+📅 วันที่แจ้ง : ${formatBEDateOnlySlash(evt.reportDate)} เวลา ${evt.receiveTime} น.
+📰 ประเภทข่าว : ${evt.newsType}
+👤 ผู้แจ้ง/แหล่งข่าว : ${evt.reporterInfo}
+📍 พื้นที่ : ${evt.patientAddress || '-'} หมู่ที่ ${evt.villageNo || '-'} ต.${evt.subdistrict || '-'}
+🏥 หน่วยบริการพื้นที่ : ${evt.healthCenter || 'รอแอดมินตรวจสอบ'}
+🤒 ผู้ป่วย/อาการสำคัญ : ${evt.patientName ? evt.patientName + ' — ' : ''}${evt.symptomsEvent}${evt.diseaseName ? ' (สงสัย: ' + evt.diseaseName + ')' : ''}
+
+👉 แอดมินสามารถเข้าตรวจสอบ วิเคราะห์ และนำเรียนพื้นที่ได้ที่เมนู "ทะเบียนรายงานเหตุการณ์ (Admin)"`;
+
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: TELEGRAM_CONFIG.chatId, text: msg })
+        });
+        const data = await res.json();
+        if (data && data.ok) tgOk = true;
+      } catch (err) {}
+
+      addAuditLog('PUBLIC_EVENT_REPORT', `ประชาชนแจ้งเหตุ (${evt.eventCode}): ต.${evt.subdistrict} ม.${evt.villageNo} - ${evt.diseaseName || evt.symptomsEvent.slice(0, 40)}`);
+      hideLoading();
+      closePublicEventModal();
+      if (currentUser && currentUser.role === 'admin') renderEventRegistryView();
+
+      Swal.fire({
+        icon: 'success',
+        title: `ส่งรายงานแจ้งเหตุสำเร็จ! (${evt.eventCode})`,
+        html: `
+          <div class="text-left text-xs space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <div>✅ บันทึกข้อมูลเข้าสู่ระบบทะเบียนรับแจ้งเรียบร้อยแล้ว</div>
+            <div>🏥 หน่วยบริการรับผิดชอบพื้นที่: <b>${evt.healthCenter || 'ทีมระบาด สสอ.เทพา'}</b></div>
+            <div>${tgOk ? '📲 แจ้งเตือนทีมเฝ้าระวังทาง Telegram เรียบร้อยแล้ว' : 'ℹ️ ข้อมูลถูกบันทึกเข้าระบบแล้ว เจ้าหน้าที่จะตรวจสอบโดยเร็วที่สุด'}</div>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'ตกลง',
+        cancelButtonText: '🖨️ พิมพ์ใบรับแจ้งเหตุ',
+        confirmButtonColor: '#0D9488'
+      }).then((result) => {
+        if (result.dismiss === Swal.DismissReason.cancel) {
+          printEventReportById(evt.id);
+        }
+      });
+    }
+
+    function renderEventRegistryView() {
+      const tbody = document.getElementById('eventRegistryTbody');
+      if (!tbody) return;
+
+      const list = Array.isArray(eventReportsData) ? eventReportsData : [];
+      let pending = 0, confirmed = 0, escalated = 0;
+      let sumCases = 0, sumDeaths = 0, sumSuspects = 0;
+
+      list.forEach(ev => {
+        if (!ev.status || ev.status === 'pending') pending++;
+        if (ev.confirmOccurrence === 'ยืนยันการเกิดเหตุการณ์จริง') confirmed++;
+        if (ev.escalatedAt || ev.status === 'escalated') escalated++;
+        sumCases += Number(ev.verifiedCases || 0);
+        sumDeaths += Number(ev.verifiedDeaths || 0);
+        sumSuspects += Number(ev.verifiedSuspects || 0);
+      });
+
+      const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.innerText = v; };
+      setTxt('evtStatTotal', list.length);
+      setTxt('evtStatPending', pending);
+      setTxt('evtStatConfirmed', confirmed);
+      setTxt('evtStatEscalated', escalated);
+      setTxt('evtStatVerifiedCounts', `${sumCases} / ${sumDeaths} / ${sumSuspects}`);
+      updatePublicEventCounters();
+
+      const q = normalizeThaiStr(document.getElementById('evtSearchInput')?.value || '').toLowerCase();
+      const statusFilter = document.getElementById('evtStatusFilter')?.value || 'all';
+      const subFilter = document.getElementById('evtSubdistrictFilter')?.value || 'all';
+
+      const filtered = list.filter(ev => {
+        if (statusFilter === 'pending' && ev.status && ev.status !== 'pending') return false;
+        if (statusFilter === 'verified' && ev.status !== 'verified') return false;
+        if (statusFilter === 'escalated' && !ev.escalatedAt && ev.status !== 'escalated') return false;
+        if (statusFilter === 'confirmed' && ev.confirmOccurrence !== 'ยืนยันการเกิดเหตุการณ์จริง') return false;
+        if (statusFilter === 'closed' && ev.status !== 'closed' && ev.confirmOccurrence !== 'ไม่พบเหตุการณ์/ข่าวลือ') return false;
+        if (subFilter !== 'all' && normalizeThaiStr(ev.subdistrict) !== normalizeThaiStr(subFilter)) return false;
+        if (q) {
+          const hay = `${ev.eventCode || ''} ${ev.reporterInfo || ''} ${ev.patientName || ''} ${ev.symptomsEvent || ''} ${ev.diseaseName || ''} ${ev.subdistrict || ''} ${ev.healthCenter || ''}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+
+      tbody.innerHTML = '';
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400">ยังไม่มีรายงานเหตุการณ์ตามเงื่อนไขที่เลือก</td></tr>';
+        return;
+      }
+
+      filtered.forEach(ev => {
+        const isConfirmed = ev.confirmOccurrence === 'ยืนยันการเกิดเหตุการณ์จริง';
+        const isFalse = ev.confirmOccurrence === 'ไม่พบเหตุการณ์/ข่าวลือ';
+        const confirmBadge = isConfirmed
+          ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">🚨 ยืนยันเหตุการณ์จริง</span>'
+          : (isFalse
+            ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">⚪ ไม่พบเหตุ/ข่าวลือ</span>'
+            : (ev.status === 'verified' || ev.status === 'escalated'
+              ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">🔍 ${ev.confirmOccurrence || 'ตรวจสอบแล้ว'}</span>`
+              : '<span class="animate-pulse px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">⏳ รอตรวจสอบ</span>'));
+
+        const escBadge = ev.escalatedAt
+          ? `<div class="inline-flex flex-col gap-0.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">📣 นำเรียนพื้นที่แล้ว</span><span class="text-[10px] text-indigo-700 font-semibold">${ev.escalatedToUnit || ev.healthCenter || '-'}</span><span class="text-[10px] text-slate-400">${formatControlDateTimeBE(ev.escalatedAt)}</span></div>`
+          : '<span class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200">ยังไม่นำเรียนพื้นที่</span>';
+
+        const srcBadge = ev.sourceRole === 'admin'
+          ? '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-100 text-purple-800">👑 Admin</span>'
+          : '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-cyan-100 text-cyan-800">🌐 ประชาชน</span>';
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-cyan-50/30 transition';
+        tr.innerHTML = `
+          <td class="px-4 py-3">
+            <div class="font-mono font-bold text-cyan-900">${ev.eventCode || '-'}</div>
+            <div class="text-[10px] text-slate-500">${formatBEDateOnlySlash(ev.reportDate)} ${ev.receiveTime || ''}</div>
+            <div class="mt-0.5">${srcBadge}</div>
+          </td>
+          <td class="px-4 py-3 max-w-[200px]">
+            <div class="font-bold text-slate-800 text-[11px]">${ev.newsType || '-'}</div>
+            <div class="text-[11px] text-slate-600 line-clamp-2" title="${ev.reporterInfo || ''}">${ev.reporterInfo || '-'}</div>
+          </td>
+          <td class="px-4 py-3 max-w-[240px]">
+            <div class="font-bold text-slate-900">${ev.patientName || '(ไม่ระบุชื่อผู้ป่วย)'} ${ev.patientAge ? `(${ev.patientAge} ปี)` : ''}</div>
+            <div class="text-[11px] text-rose-700 font-semibold">${ev.diseaseName || 'รอระบุโรค'}</div>
+            <div class="text-[11px] text-slate-600 line-clamp-2" title="${ev.symptomsEvent || ''}">${ev.symptomsEvent || '-'}</div>
+          </td>
+          <td class="px-4 py-3">
+            <div class="font-semibold text-slate-800">${ev.subdistrict ? 'ต.' + stripSubdistrictPrefix(ev.subdistrict) : '-'} ${ev.villageNo ? 'ม.' + ev.villageNo : ''}</div>
+            <div class="text-[10px] text-teal-700 font-bold">${ev.healthCenter || 'รอระบุหน่วยบริการ'}</div>
+          </td>
+          <td class="px-4 py-3">
+            <div>${confirmBadge}</div>
+            <div class="text-[10px] text-slate-600 mt-1">ป่วย <b>${ev.verifiedCases ?? 0}</b> • ตาย <b class="text-rose-700">${ev.verifiedDeaths ?? 0}</b> • สงสัย <b class="text-amber-700">${ev.verifiedSuspects ?? 0}</b></div>
+          </td>
+          <td class="px-4 py-3">${escBadge}</td>
+          <td class="px-4 py-3 text-center">
+            <div class="flex flex-wrap items-center justify-center gap-1">
+              <button onclick="openAdminEventModal('${ev.id}')" class="px-2 py-1.5 rounded-lg text-[10px] font-bold bg-cyan-600 hover:bg-cyan-700 text-white transition" title="เปิดแบบฟอร์มทะเบียนรับแจ้ง (4 คอลัมน์) เพื่อตรวจสอบ/แก้ไข">🔍 ตรวจสอบ</button>
+              <button onclick="escalateEventToArea('${ev.id}')" class="px-2 py-1.5 rounded-lg text-[10px] font-bold ${ev.escalatedAt ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-indigo-600 hover:bg-indigo-700 text-white'} transition" title="นำเรียนพื้นที่ รพ.สต./PCU ทาง Telegram">📣 นำเรียน</button>
+              <button onclick="printEventReportById('${ev.id}')" class="px-2 py-1.5 rounded-lg text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition" title="พิมพ์รายงานทะเบียนรับแจ้ง">🖨️</button>
+              <button onclick="deleteEventReport('${ev.id}')" class="px-2 py-1.5 rounded-lg text-[10px] font-bold text-rose-600 hover:bg-rose-50 transition" title="ลบรายงาน">🗑️</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openAdminEventModal(eventId = null) {
+      if (!currentUser || currentUser.role !== 'admin') {
+        Swal.fire({ icon: 'error', title: 'ไม่มีสิทธิ์เข้าถึง', text: 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้น' });
+        return;
+      }
+      document.getElementById('adminEventForm')?.reset();
+      const ev = eventId ? eventReportsData.find(x => x.id === eventId || x.eventCode === eventId) : null;
+      const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ''; };
+
+      setVal('ae_internal_id', ev?.id || '');
+      setVal('ae_event_code', ev?.eventCode || generateNextEventCode());
+      setVal('ae_report_date', ev?.reportDate || getLocalTodayDateStr());
+      setVal('ae_reporter_info', ev?.reporterInfo || '');
+      setVal('ae_news_type', ev?.newsType || 'ประชาชนแจ้งเหตุในหมู่บ้าน');
+      setVal('ae_patient_name', ev?.patientName || '');
+      setVal('ae_patient_age', ev?.patientAge ?? '');
+      setVal('ae_patient_occupation', ev?.patientOccupation || '');
+      setVal('ae_subdistrict', ev?.subdistrict || '');
+      setVal('ae_village_no', ev?.villageNo || '');
+      setVal('ae_health_center', ev?.healthCenter || '');
+      setVal('ae_patient_address', ev?.patientAddress || '');
+      setVal('ae_patient_phone', ev?.patientPhone || '');
+
+      setVal('ae_symptoms_event', ev?.symptomsEvent || '');
+      setVal('ae_illness_date', ev?.illnessDate || '');
+      setVal('ae_found_date', ev?.foundDate || '');
+      setVal('ae_treatment', ev?.treatment || '');
+      setVal('ae_extra_events', ev?.extraEvents || '');
+      setVal('ae_receiver_name', ev?.receiverName || currentUser.fullName || 'Admin');
+      setVal('ae_receive_time', ev?.receiveTime || getLocalNowTimeStr());
+      setVal('ae_confirm_occurrence', ev?.confirmOccurrence || 'รอตรวจสอบ');
+      setVal('ae_disease_name', ev?.diseaseName || '');
+
+      setVal('ae_verified_cases', ev?.verifiedCases ?? 0);
+      setVal('ae_verified_deaths', ev?.verifiedDeaths ?? 0);
+      setVal('ae_verified_suspects', ev?.verifiedSuspects ?? 0);
+      setVal('ae_health_hazard_detail', ev?.healthHazardDetail || '');
+      setVal('ae_verify_method', ev?.verifyMethod || '');
+      setVal('ae_inquiry_detail', ev?.inquiryDetail || '');
+      setVal('ae_conclusion_1', ev?.conclusion1 || '');
+      setVal('ae_conclusion_2', ev?.conclusion2 || '');
+
+      setVal('ae_conclusion_3', ev?.conclusion3 || '');
+      setVal('ae_conclusion_4', ev?.conclusion4 || '');
+      setVal('ae_conclusion_other', ev?.conclusionOther || '');
+      setVal('ae_operator_name', ev?.operatorName || currentUser.fullName || '');
+      setVal('ae_activity_1', ev?.activity1 || '');
+      setVal('ae_activity_2', ev?.activity2 || '');
+      setVal('ae_hazard_mitigated_by', ev?.hazardMitigatedBy || '');
+      setVal('ae_action_date', ev?.actionDate || getLocalTodayDateStr());
+      setVal('ae_action_time', ev?.actionTime || getLocalNowTimeStr());
+      setVal('ae_action_other', ev?.actionOther || '');
+
+      document.getElementById('aeModalTitle').innerText = ev
+        ? `ทะเบียนรับแจ้ง [${ev.eventCode}] — ตรวจสอบและนำเรียนพื้นที่`
+        : 'บันทึกทะเบียนรับแจ้งเหตุการณ์ใหม่ (Admin)';
+      document.getElementById('adminEventModal')?.classList.remove('hidden');
+    }
+
+    function closeAdminEventModal() {
+      document.getElementById('adminEventModal')?.classList.add('hidden');
+    }
+
+    function collectAdminEventFormValues(existing = null) {
+      const val = (id) => document.getElementById(id)?.value?.trim() || '';
+      const num = (id) => Math.max(0, parseInt(document.getElementById(id)?.value || '0', 10) || 0);
+      const sub = val('ae_subdistrict');
+      const vNo = val('ae_village_no');
+      const hc = val('ae_health_center') || resolveEventAreaHealthCenters(sub, vNo).healthCenter;
+      const confirmOcc = val('ae_confirm_occurrence') || 'รอตรวจสอบ';
+
+      let nextStatus = existing?.status || 'pending';
+      if (existing?.escalatedAt) {
+        nextStatus = 'escalated';
+      } else if (confirmOcc === 'ไม่พบเหตุการณ์/ข่าวลือ') {
+        nextStatus = 'closed';
+      } else if (confirmOcc !== 'รอตรวจสอบ' || val('ae_verify_method') || val('ae_conclusion_1')) {
+        nextStatus = 'verified';
+      }
+
+      return {
+        ...(existing || {}),
+        id: existing?.id || `evt_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        eventCode: val('ae_event_code') || generateNextEventCode(),
+        reportDate: val('ae_report_date') || getLocalTodayDateStr(),
+        reporterInfo: val('ae_reporter_info'),
+        newsType: val('ae_news_type'),
+        patientName: val('ae_patient_name'),
+        patientAge: val('ae_patient_age'),
+        patientOccupation: val('ae_patient_occupation'),
+        subdistrict: sub,
+        villageNo: vNo,
+        healthCenter: hc,
+        hcode: hc ? getHCodeByName(hc.split(',')[0].trim()) : '',
+        patientAddress: val('ae_patient_address'),
+        patientPhone: val('ae_patient_phone'),
+        symptomsEvent: val('ae_symptoms_event'),
+        illnessDate: val('ae_illness_date'),
+        foundDate: val('ae_found_date'),
+        treatment: val('ae_treatment'),
+        extraEvents: val('ae_extra_events'),
+        receiverName: val('ae_receiver_name') || (currentUser?.fullName || 'Admin'),
+        receiveTime: val('ae_receive_time') || getLocalNowTimeStr(),
+        confirmOccurrence: confirmOcc,
+        diseaseName: val('ae_disease_name'),
+        verifiedCases: num('ae_verified_cases'),
+        verifiedDeaths: num('ae_verified_deaths'),
+        verifiedSuspects: num('ae_verified_suspects'),
+        healthHazardDetail: val('ae_health_hazard_detail'),
+        verifyMethod: val('ae_verify_method'),
+        inquiryDetail: val('ae_inquiry_detail'),
+        conclusion1: val('ae_conclusion_1'),
+        conclusion2: val('ae_conclusion_2'),
+        conclusion3: val('ae_conclusion_3'),
+        conclusion4: val('ae_conclusion_4'),
+        conclusionOther: val('ae_conclusion_other'),
+        operatorName: val('ae_operator_name'),
+        activity1: val('ae_activity_1'),
+        activity2: val('ae_activity_2'),
+        hazardMitigatedBy: val('ae_hazard_mitigated_by'),
+        actionDate: val('ae_action_date'),
+        actionTime: val('ae_action_time'),
+        actionOther: val('ae_action_other'),
+        status: nextStatus,
+        sourceRole: existing?.sourceRole || 'admin',
+        createdAt: existing?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+    }
+
+    async function handleAdminEventSubmit(e) {
+      e.preventDefault();
+      const internalId = document.getElementById('ae_internal_id')?.value;
+      const idx = internalId ? eventReportsData.findIndex(x => x.id === internalId) : -1;
+      const existing = idx >= 0 ? eventReportsData[idx] : null;
+      const updated = collectAdminEventFormValues(existing);
+
+      showLoading('กำลังบันทึกผลการตรวจสอบทะเบียนรับแจ้ง...');
+      if (idx >= 0) eventReportsData[idx] = updated;
+      else eventReportsData.unshift(updated);
+
+      saveEventReportsStore();
+      await saveEventReportToSupabase(updated);
+      addAuditLog('ADMIN_EVENT_VERIFY', `ตรวจสอบ/บันทึกทะเบียนรับแจ้ง ${updated.eventCode} (${updated.confirmOccurrence})`);
+
+      hideLoading();
+      closeAdminEventModal();
+      renderEventRegistryView();
+      Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `บันทึกข้อมูล ${updated.eventCode} เรียบร้อย`, timer: 2000, showConfirmButton: false });
+    }
+
+    async function escalateEventToArea(eventId) {
+      if (!currentUser || currentUser.role !== 'admin') return;
+      const idx = eventReportsData.findIndex(x => x.id === eventId || x.eventCode === eventId);
+      if (idx < 0) return;
+      const ev = eventReportsData[idx];
+
+      const hcOptions = HEALTH_CENTERS_MASTER.map(h => `<option value="${h.name}" ${(ev.escalatedToUnit || ev.healthCenter || '').includes(h.name) ? 'selected' : ''}>${h.name} (${h.hcode})</option>`).join('');
+      const { value: formRes } = await Swal.fire({
+        title: `📣 นำเรียนพื้นที่ตรวจสอบเหตุการณ์ (${ev.eventCode})`,
+        html: `
+          <div class="text-left text-xs space-y-3">
+            <div class="bg-cyan-50 p-2.5 rounded-xl border border-cyan-200">
+              <div><b>เหตุการณ์/โรค:</b> ${ev.symptomsEvent || '-'} (${ev.diseaseName || 'รอระบุโรค'})</div>
+              <div><b>พื้นที่:</b> ${ev.patientAddress || '-'} ม.${ev.villageNo || '-'} ต.${stripSubdistrictPrefix(ev.subdistrict)}</div>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">หน่วยบริการพื้นที่เป้าหมาย (รพ.สต./PCU) :</label>
+              <select id="swalEscUnit" class="w-full p-2 border border-slate-300 rounded-xl text-xs">
+                ${hcOptions}
+                <option value="${ev.healthCenter || 'ทุกหน่วยบริการพื้นที่'}">${ev.healthCenter ? 'ตามพื้นที่แจ้ง (' + ev.healthCenter + ')' : 'ทุกหน่วยบริการพื้นที่'}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">คำสั่งการ / ข้อความนำเรียนพื้นที่ :</label>
+              <textarea id="swalEscNote" rows="3" class="w-full p-2 border border-slate-300 rounded-xl text-xs" placeholder="เช่น ขอให้พื้นที่ลงสอบสวนโรคและรายงานผลกลับภายใน 24 ชม.">${ev.escalatedNote || 'ขอให้หน่วยบริการเจ้าของพื้นที่ลงตรวจสอบข้อเท็จจริง ค้นหาผู้ป่วยเพิ่มเติม และดำเนินการควบคุมโรคเบื้องต้นพร้อมรายงานกลับ'}</textarea>
+            </div>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '📣 ยืนยันนำเรียนพื้นที่ (ส่ง Telegram)',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#4F46E5',
+        preConfirm: () => ({
+          unit: document.getElementById('swalEscUnit')?.value || ev.healthCenter || 'รพ.สต.ในพื้นที่',
+          note: document.getElementById('swalEscNote')?.value?.trim() || ''
+        })
+      });
+
+      if (!formRes) return;
+
+      showLoading('กำลังส่งเรื่องนำเรียนพื้นที่เข้า Telegram...');
+      ev.escalatedToUnit = formRes.unit;
+      ev.escalatedNote = formRes.note;
+      ev.escalatedBy = currentUser.fullName || 'Admin';
+      ev.escalatedAt = new Date().toISOString();
+      ev.status = 'escalated';
+      if (!ev.conclusion3) ev.conclusion3 = 'นำเรียนพื้นที่ รพ.สต./PCU รับผิดชอบ';
+      ev.updatedAt = new Date().toISOString();
+
+      eventReportsData[idx] = ev;
+      saveEventReportsStore();
+      await saveEventReportToSupabase(ev);
+
+      const tgText = `📣 [นำเรียนพื้นที่ตรวจสอบเหตุการณ์ผิดปกติ / โรคในหมู่บ้าน]
+🏥 เรียน เจ้าหน้าที่: ${ev.escalatedToUnit}
+🆔 รหัสรับแจ้ง : ${ev.eventCode} (${ev.newsType || '-'})
+📅 วันที่รับแจ้ง : ${formatBEDateOnlySlash(ev.reportDate)}
+📍 พื้นที่เกิดเหตุ : ${ev.patientAddress || '-'} หมู่ที่ ${ev.villageNo || '-'} ตำบล${stripSubdistrictPrefix(ev.subdistrict)}
+🤒 อาการสำคัญ/โรค : ${ev.symptomsEvent || '-'} ${ev.diseaseName ? '(' + ev.diseaseName + ')' : ''}
+🔍 ผลตรวจสอบเบื้องต้น : ${ev.confirmOccurrence || 'รอตรวจสอบ'} (ป่วย ${ev.verifiedCases ?? 0} / ตาย ${ev.verifiedDeaths ?? 0} / สงสัย ${ev.verifiedSuspects ?? 0})
+📌 ข้อสั่งการ/นำเรียน : ${ev.escalatedNote || '-'}
+👮 ผู้นำเรียน : ${ev.escalatedBy} (${currentUser.unit || 'สสอ.เทพา'})
+
+👉 กรุณาดำเนินการตรวจสอบพื้นที่และรายงานผลกลับทีมระบาดอำเภอเทพา:
+https://dengue-thepha.github.io/tdds/`;
+
+      let tgOk = false;
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: TELEGRAM_CONFIG.chatId, text: tgText })
+        });
+        const data = await res.json();
+        if (data && data.ok) tgOk = true;
+      } catch (err) {}
+
+      addAuditLog('EVENT_ESCALATE_AREA', `นำเรียนพื้นที่ ${ev.escalatedToUnit} กรณี ${ev.eventCode}`);
+      hideLoading();
+      renderEventRegistryView();
+
+      Swal.fire({
+        icon: tgOk ? 'success' : 'warning',
+        title: tgOk ? 'นำเรียนพื้นที่เรียบร้อยแล้ว!' : 'บันทึกสถานะนำเรียนพื้นที่แล้ว (Telegram ส่งไม่สำเร็จ)',
+        text: `ส่งเรื่องไปยัง ${ev.escalatedToUnit} เรียบร้อย`
+      });
+    }
+
+    async function escalateEventFromModal() {
+      const internalId = document.getElementById('ae_internal_id')?.value;
+      const idx = internalId ? eventReportsData.findIndex(x => x.id === internalId) : -1;
+      const existing = idx >= 0 ? eventReportsData[idx] : null;
+      const saved = collectAdminEventFormValues(existing);
+      if (idx >= 0) eventReportsData[idx] = saved;
+      else eventReportsData.unshift(saved);
+      document.getElementById('ae_internal_id').value = saved.id;
+      saveEventReportsStore();
+      await saveEventReportToSupabase(saved);
+      closeAdminEventModal();
+      await escalateEventToArea(saved.id);
+    }
+
+    async function deleteEventReport(eventId) {
+      if (!currentUser || currentUser.role !== 'admin') return;
+      const ev = eventReportsData.find(x => x.id === eventId);
+      if (!ev) return;
+      const conf = await Swal.fire({
+        icon: 'warning',
+        title: `ลบรายงาน ${ev.eventCode}?`,
+        text: 'ข้อมูลนี้จะถูกลบออกจากทะเบียนรายงานเหตุการณ์',
+        showCancelButton: true,
+        confirmButtonText: 'ลบข้อมูล',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#e11d48'
+      });
+      if (!conf.isConfirmed) return;
+
+      eventReportsData = eventReportsData.filter(x => x.id !== eventId);
+      saveEventReportsStore();
+      const cfg = typeof getSupabasePersonConfig === 'function' ? getSupabasePersonConfig() : null;
+      if (cfg && cfg.url && cfg.key && ev.eventCode) {
+        fetch(`${cfg.url}/rest/v1/event_reports?event_code=eq.${encodeURIComponent(ev.eventCode)}`, {
+          method: 'DELETE',
+          headers: buildSupabaseHeaders(cfg.key)
+        }).catch(() => {});
+      }
+      addAuditLog('EVENT_DELETE', `ลบรายงานเหตุการณ์ ${ev.eventCode}`);
+      renderEventRegistryView();
+    }
+
+    function buildEventReportPrintHtml(ev) {
+      const val = (v) => (v !== undefined && v !== null && String(v).trim() !== '' ? String(v) : '-');
+      return `
+        <div style="font-family:'Sarabun',Tahoma,sans-serif; color:#0f172a; width:754px; padding:14px 18px; background:#fff; line-height:1.45; font-size:13px;">
+          <div style="text-align:center; border-bottom:2px solid #0e7490; padding-bottom:8px; margin-bottom:12px;">
+            <div style="font-size:18px; font-weight:bold; color:#155e75;">แบบทะเบียนรับแจ้งเหตุการณ์ผิดปกติ / การเฝ้าระวังโรคในชุมชน</div>
+            <div style="font-size:12px; color:#475569;">ศูนย์ปฏิบัติการภาวะฉุกเฉินทางสาธารณสุข (TDDS) อำเภอเทพา จังหวัดสงขลา</div>
+          </div>
+
+          <div style="background:#0e7490; color:#fff; font-weight:bold; padding:4px 10px; border-radius:4px; margin-bottom:6px;">1. ข้อมูลรับแจ้ง และเนื้อหาข่าวสารที่ได้รับแจ้ง</div>
+          <div style="border:1px solid #cbd5e1; border-radius:6px; padding:8px 10px; margin-bottom:10px; background:#ecfeff;">
+            <div><b>ID :</b> ${val(ev.eventCode)} &nbsp;|&nbsp; <b>วันที่รับแจ้ง :</b> ${formatBEDateOnlySlash(ev.reportDate)} เวลา ${val(ev.receiveTime)} น. &nbsp;|&nbsp; <b>ประเภทข่าว :</b> ${val(ev.newsType)}</div>
+            <div><b>ชื่อผู้แจ้ง – แหล่งข่าว/ที่อยู่/โทร :</b> ${val(ev.reporterInfo)}</div>
+            <div style="margin-top:4px; border-top:1px dashed #94a3b8; padding-top:4px;">
+              <b>ชื่อผู้ป่วย :</b> ${val(ev.patientName)} &nbsp;|&nbsp; <b>อายุ :</b> ${val(ev.patientAge)} ปี &nbsp;|&nbsp; <b>อาชีพ :</b> ${val(ev.patientOccupation)} &nbsp;|&nbsp; <b>โทร :</b> ${val(ev.patientPhone)}
+            </div>
+            <div><b>ที่อยู่/พื้นที่ :</b> ${val(ev.patientAddress)} หมู่ที่ ${val(ev.villageNo)} ตำบล${stripSubdistrictPrefix(ev.subdistrict)} &nbsp;|&nbsp; <b>หน่วยบริการรับผิดชอบ :</b> ${val(ev.healthCenter)}</div>
+          </div>
+
+          <div style="background:#0f766e; color:#fff; font-weight:bold; padding:4px 10px; border-radius:4px; margin-bottom:6px;">2. โรค / อาการสำคัญ / เหตุการณ์สำคัญ</div>
+          <div style="border:1px solid #cbd5e1; border-radius:6px; padding:8px 10px; margin-bottom:10px;">
+            <div><b>โรค/อาการสำคัญ/เหตุการณ์สำคัญ :</b> ${val(ev.symptomsEvent)}</div>
+            <div><b>วันเริ่มป่วย :</b> ${formatBEDateOnlySlash(ev.illnessDate)} &nbsp;|&nbsp; <b>วันพบผู้ป่วย :</b> ${formatBEDateOnlySlash(ev.foundDate)} &nbsp;|&nbsp; <b>การรักษา :</b> ${val(ev.treatment)}</div>
+            <div><b>เหตุการณ์อื่นๆ เพิ่มเติม :</b> ${val(ev.extraEvents)}</div>
+            <div><b>ชื่อผู้รับแจ้ง :</b> ${val(ev.receiverName)} &nbsp;|&nbsp; <b>ยืนยันการเกิด :</b> <b>${val(ev.confirmOccurrence)}</b> &nbsp;|&nbsp; <b>โรค :</b> ${val(ev.diseaseName)}</div>
+          </div>
+
+          <div style="background:#1e40af; color:#fff; font-weight:bold; padding:4px 10px; border-radius:4px; margin-bottom:6px;">3. ผลการตรวจสอบข่าว และความเสี่ยงต่อสุขภาพ</div>
+          <div style="border:1px solid #cbd5e1; border-radius:6px; padding:8px 10px; margin-bottom:10px;">
+            <div><b>ผลการตรวจสอบ :</b> พบผู้ป่วย <b>${ev.verifiedCases ?? 0}</b> คน &nbsp;|&nbsp; พบผู้เสียชีวิต <b style="color:#be123c;">${ev.verifiedDeaths ?? 0}</b> คน &nbsp;|&nbsp; ผู้ที่มีอาการสงสัย <b>${ev.verifiedSuspects ?? 0}</b> คน</div>
+            <div><b>พบเหตุการณ์ที่อาจเป็นอันตรายต่อสุขภาพ :</b> ${val(ev.healthHazardDetail)}</div>
+            <div><b>วิธีตรวจสอบข่าว :</b> ${val(ev.verifyMethod)}</div>
+            <div><b>ผลการสอบถาม :</b> ${val(ev.inquiryDetail)}</div>
+          </div>
+
+          <div style="background:#4338ca; color:#fff; font-weight:bold; padding:4px 10px; border-radius:4px; margin-bottom:6px;">4. สรุปความเห็น การปฏิบัติ และกิจกรรมระงับเหตุ</div>
+          <div style="border:1px solid #cbd5e1; border-radius:6px; padding:8px 10px; margin-bottom:10px;">
+            <div><b>สรุปความเห็นและการปฏิบัติ :</b> ${[ev.conclusion1, ev.conclusion2, ev.conclusion3, ev.conclusion4].filter(Boolean).join(' / ') || '-'}</div>
+            <div><b>อื่นๆ ระบุ :</b> ${val(ev.conclusionOther)}</div>
+            <div><b>กิจกรรมที่ดำเนินการ :</b> ${[ev.activity1, ev.activity2].filter(Boolean).join(' / ') || '-'}</div>
+            <div><b>ระงับเหตุอันตรายโดย :</b> ${val(ev.hazardMitigatedBy)} &nbsp;|&nbsp; <b>ผู้ปฏิบัติ :</b> ${val(ev.operatorName)} &nbsp;|&nbsp; <b>วันที่/เวลา :</b> ${formatBEDateOnlySlash(ev.actionDate)} ${val(ev.actionTime)}</div>
+            <div><b>การนำเรียนพื้นที่ :</b> ${ev.escalatedAt ? `นำเรียนไปยัง <b>${ev.escalatedToUnit}</b> เมื่อ ${formatControlDateTimeBE(ev.escalatedAt)} (${val(ev.escalatedNote)})` : 'ยังไม่นำเรียนพื้นที่'}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function printEventReportById(eventId) {
+      const ev = eventReportsData.find(x => x.id === eventId || x.eventCode === eventId);
+      if (!ev) return;
+      const html = buildEventReportPrintHtml(ev);
+      const printWindow = window.open('', '_blank', 'width=850,height=950');
+      if (printWindow) {
+        printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>ทะเบียนรับแจ้ง_${ev.eventCode}</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet"><style>@page{size:A4 portrait;margin:8mm;}body{margin:0;padding:10px;background:#fff;font-family:'Sarabun',Tahoma,sans-serif;}@media print{.no-print{display:none!important;}}</style></head><body><div class="no-print" style="margin-bottom:10px;padding:8px;background:#f1f5f9;display:flex;justify-content:space-between;"><span>🖨️ ทะเบียนรับแจ้งเหตุ ${ev.eventCode}</span><button onclick="window.print()" style="background:#0e7490;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;">พิมพ์ / บันทึก PDF</button></div>${html}<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
+        printWindow.document.close();
+      }
+    }
+
+    function printEventReportFromModal() {
+      const internalId = document.getElementById('ae_internal_id')?.value;
+      const existing = internalId ? eventReportsData.find(x => x.id === internalId) : null;
+      const snap = collectAdminEventFormValues(existing);
+      const html = buildEventReportPrintHtml(snap);
+      const printWindow = window.open('', '_blank', 'width=850,height=950');
+      if (printWindow) {
+        printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>ทะเบียนรับแจ้ง_${snap.eventCode}</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet"><style>@page{size:A4 portrait;margin:8mm;}body{margin:0;padding:10px;background:#fff;font-family:'Sarabun',Tahoma,sans-serif;}@media print{.no-print{display:none!important;}}</style></head><body><div class="no-print" style="margin-bottom:10px;padding:8px;background:#f1f5f9;display:flex;justify-content:space-between;"><span>🖨️ ทะเบียนรับแจ้งเหตุ ${snap.eventCode}</span><button onclick="window.print()" style="background:#0e7490;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;">พิมพ์ / บันทึก PDF</button></div>${html}<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
+        printWindow.document.close();
+      }
+    }
+
+    function buildEventAnalysisSummary() {
+      const list = Array.isArray(eventReportsData) ? eventReportsData : [];
+      const total = list.length;
+      const pending = list.filter(e => !e.status || e.status === 'pending').length;
+      const verified = total - pending;
+      const confirmed = list.filter(e => e.confirmOccurrence === 'ยืนยันการเกิดเหตุการณ์จริง').length;
+      const falseNews = list.filter(e => e.confirmOccurrence === 'ไม่พบเหตุการณ์/ข่าวลือ').length;
+      const escalated = list.filter(e => e.escalatedAt || e.status === 'escalated').length;
+      const casesSum = list.reduce((s, e) => s + Number(e.verifiedCases || 0), 0);
+      const deathsSum = list.reduce((s, e) => s + Number(e.verifiedDeaths || 0), 0);
+      const suspectsSum = list.reduce((s, e) => s + Number(e.verifiedSuspects || 0), 0);
+      const verifyRate = total > 0 ? ((verified / total) * 100).toFixed(1) : '0.0';
+
+      const diseaseCounts = {};
+      const areaCounts = {};
+      const newsTypeCounts = {};
+      list.forEach(e => {
+        const dKey = (e.diseaseName || '').trim() || 'ยังไม่ระบุโรค/รอตรวจสอบ';
+        diseaseCounts[dKey] = (diseaseCounts[dKey] || 0) + 1;
+        const aKey = e.subdistrict ? `ต.${stripSubdistrictPrefix(e.subdistrict)}` : 'ไม่ระบุตำบล';
+        areaCounts[aKey] = (areaCounts[aKey] || 0) + 1;
+        const nKey = e.newsType || 'อื่นๆ';
+        newsTypeCounts[nKey] = (newsTypeCounts[nKey] || 0) + 1;
+      });
+
+      const topDiseases = Object.entries(diseaseCounts).sort((a, b) => b[1] - a[1]);
+      const topAreas = Object.entries(areaCounts).sort((a, b) => b[1] - a[1]);
+      const topNews = Object.entries(newsTypeCounts).sort((a, b) => b[1] - a[1]);
+
+      return {
+        total, pending, verified, confirmed, falseNews, escalated,
+        casesSum, deathsSum, suspectsSum, verifyRate,
+        topDiseases, topAreas, topNews
+      };
+    }
+
+    function openEventAnalysisModal() {
+      if (!currentUser || currentUser.role !== 'admin') return;
+      const stats = buildEventAnalysisSummary();
+
+      const kpiBox = document.getElementById('eventAnalysisKpis');
+      if (kpiBox) {
+        kpiBox.innerHTML = `
+          <div class="p-3 rounded-xl bg-cyan-50 border border-cyan-200"><div class="text-cyan-800 font-semibold">เหตุการณ์ทั้งหมด</div><div class="text-xl font-extrabold text-cyan-950 mt-0.5">${stats.total} เรื่อง</div></div>
+          <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200"><div class="text-emerald-700 font-semibold">อัตราการตรวจสอบ</div><div class="text-xl font-extrabold text-emerald-800 mt-0.5">${stats.verifyRate}%</div><div class="text-[10px] text-emerald-600">${stats.verified}/${stats.total} เรื่อง</div></div>
+          <div class="p-3 rounded-xl bg-amber-50 border border-amber-200"><div class="text-amber-700 font-semibold">รอตรวจสอบ</div><div class="text-xl font-extrabold text-amber-800 mt-0.5">${stats.pending} เรื่อง</div></div>
+          <div class="p-3 rounded-xl bg-rose-50 border border-rose-200"><div class="text-rose-700 font-semibold">ยืนยันเหตุจริง</div><div class="text-xl font-extrabold text-rose-700 mt-0.5">${stats.confirmed} เรื่อง</div></div>
+          <div class="p-3 rounded-xl bg-indigo-50 border border-indigo-200"><div class="text-indigo-700 font-semibold">นำเรียนพื้นที่แล้ว</div><div class="text-xl font-extrabold text-indigo-800 mt-0.5">${stats.escalated} เรื่อง</div></div>
+          <div class="p-3 rounded-xl bg-purple-50 border border-purple-200"><div class="text-purple-700 font-semibold">ป่วย/ตาย/สงสัย</div><div class="text-base font-extrabold text-purple-900 mt-1">${stats.casesSum} / ${stats.deathsSum} / ${stats.suspectsSum}</div></div>
+        `;
+      }
+
+      const dCanvas = document.getElementById('eventAnalysisDiseaseChart');
+      if (dCanvas && typeof Chart !== 'undefined') {
+        if (eventDiseaseChartInstance) eventDiseaseChartInstance.destroy();
+        const dLabels = stats.topDiseases.length ? stats.topDiseases.map(x => x[0]) : ['ยังไม่มีข้อมูล'];
+        const dVals = stats.topDiseases.length ? stats.topDiseases.map(x => x[1]) : [0];
+        eventDiseaseChartInstance = new Chart(dCanvas.getContext('2d'), {
+          type: 'doughnut',
+          data: {
+            labels: dLabels,
+            datasets: [{
+              data: dVals,
+              backgroundColor: ['#0e7490', '#e11d48', '#f59e0b', '#4f46e5', '#10b981', '#8b5cf6', '#64748b']
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'right', labels: { font: { family: 'Sarabun', size: 11 } } } }
+          }
+        });
+      }
+
+      const aCanvas = document.getElementById('eventAnalysisAreaChart');
+      if (aCanvas && typeof Chart !== 'undefined') {
+        if (eventAreaChartInstance) eventAreaChartInstance.destroy();
+        const aLabels = stats.topAreas.length ? stats.topAreas.map(x => x[0]) : ['ยังไม่มีข้อมูล'];
+        const aVals = stats.topAreas.length ? stats.topAreas.map(x => x[1]) : [0];
+        eventAreaChartInstance = new Chart(aCanvas.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: aLabels,
+            datasets: [{
+              label: 'จำนวนเหตุการณ์ (เรื่อง)',
+              data: aVals,
+              backgroundColor: '#0284c7',
+              borderRadius: 6
+            }]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+          }
+        });
+      }
+
+      const narrEl = document.getElementById('eventAnalysisNarrative');
+      if (narrEl) {
+        if (stats.total === 0) {
+          narrEl.innerHTML = '<div>ยังไม่มีข้อมูลรายงานแจ้งเหตุการณ์ในระบบ</div>';
+        } else {
+          const topAreaTxt = stats.topAreas[0] ? `${stats.topAreas[0][0]} (${stats.topAreas[0][1]} เรื่อง)` : '-';
+          const topDisTxt = stats.topDiseases[0] ? `${stats.topDiseases[0][0]} (${stats.topDiseases[0][1]} เรื่อง)` : '-';
+          const topNewsTxt = stats.topNews[0] ? `${stats.topNews[0][0]} (${stats.topNews[0][1]} เรื่อง)` : '-';
+          const urgencyNote = stats.deathsSum > 0
+            ? `<div class="text-rose-700 font-bold">⚠️ พบรายงานผู้เสียชีวิตจากการตรวจสอบ ${stats.deathsSum} ราย — แนะนำส่งทีม SRRT อำเภอสอบสวนเชิงลึกและรายงานผู้บริหารทันที</div>`
+            : (stats.pending > 0
+              ? `<div class="text-amber-800 font-bold">⏳ มีรายงานค้างรอตรวจสอบ ${stats.pending} เรื่อง — ควรตรวจสอบและกด "นำเรียนพื้นที่" ให้ครบถ้วนภายใน 24 ชม.</div>`
+              : '<div class="text-emerald-700 font-bold">✅ ทุกรายการได้รับการตรวจสอบข่าวครบถ้วนแล้ว (100%)</div>');
+
+          narrEl.innerHTML = `
+            <div>• จากรายงานรับแจ้งทั้งหมด <b>${stats.total}</b> เรื่อง ผ่านการตรวจสอบแล้ว <b>${stats.verified}</b> เรื่อง (ร้อยละ <b>${stats.verifyRate}%</b>) เป็นเหตุการณ์จริง <b>${stats.confirmed}</b> เรื่อง และข่าวลือ/ไม่พบเหตุ <b>${stats.falseNews}</b> เรื่อง</div>
+            <div>• <b>พื้นที่ที่มีการแจ้งเหตุสูงสุด:</b> ${topAreaTxt} | <b>โรค/กลุ่มอาการที่พบมากที่สุด:</b> ${topDisTxt} | <b>แหล่งข่าวหลัก:</b> ${topNewsTxt}</div>
+            <div>• <b>ยอดผู้ได้รับผลกระทบจากการตรวจสอบสะสม:</b> ผู้ป่วย <b>${stats.casesSum}</b> ราย, เสียชีวิต <b>${stats.deathsSum}</b> ราย, ผู้มีอาการสงสัย <b>${stats.suspectsSum}</b> ราย และนำเรียนพื้นที่ รพ.สต./PCU แล้ว <b>${stats.escalated}</b> เรื่อง</div>
+            ${urgencyNote}
+          `;
+        }
+      }
+
+      document.getElementById('eventAnalysisModal')?.classList.remove('hidden');
+    }
+
+    function closeEventAnalysisModal() {
+      document.getElementById('eventAnalysisModal')?.classList.add('hidden');
+    }
+
+    async function sendEventAnalysisToTelegram() {
+      const s = buildEventAnalysisSummary();
+      const topAreaTxt = s.topAreas.slice(0, 3).map(x => `${x[0]} (${x[1]})`).join(', ') || '-';
+      const topDisTxt = s.topDiseases.slice(0, 3).map(x => `${x[0]} (${x[1]})`).join(', ') || '-';
+      const text = `📊 [วิเคราะห์สรุปเหตุการณ์ผิดปกติ / โรคในชุมชน อ.เทพา]
+📅 ณ วันที่ ${formatBEDateOnlySlash(getLocalTodayDateStr())}
+
+• รับแจ้งสะสม : ${s.total} เรื่อง (ตรวจสอบแล้ว ${s.verified} เรื่อง / ${s.verifyRate}%)
+• รอตรวจสอบ : ${s.pending} เรื่อง | นำเรียนพื้นที่แล้ว : ${s.escalated} เรื่อง
+• ยืนยันเหตุการณ์จริง : ${s.confirmed} เรื่อง | ไม่พบเหตุ/ข่าวลือ : ${s.falseNews} เรื่อง
+• ยอดตรวจสอบพบ : ป่วย ${s.casesSum} คน | เสียชีวิต ${s.deathsSum} คน | สงสัย ${s.suspectsSum} คน
+• พื้นที่พบแจ้งสูงสุด : ${topAreaTxt}
+• โรค/กลุ่มอาการสำคัญ : ${topDisTxt}`;
+
+      showLoading('กำลังส่งผลวิเคราะห์สรุปเหตุการณ์เข้า Telegram...');
+      let ok = false;
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: TELEGRAM_CONFIG.chatId, text })
+        });
+        const data = await res.json();
+        if (data && data.ok) ok = true;
+      } catch (e) {}
+      hideLoading();
+      Swal.fire({
+        icon: ok ? 'success' : 'error',
+        title: ok ? 'ส่งผลวิเคราะห์เข้า Telegram เรียบร้อย' : 'ส่งเข้า Telegram ไม่สำเร็จ'
+      });
+    }
+
+    function printEventAnalysisReport() {
+      const s = buildEventAnalysisSummary();
+      const diseaseRows = s.topDiseases.map(([k, v]) => `<tr><td style="border:1px solid #cbd5e1;padding:6px;">${k}</td><td style="border:1px solid #cbd5e1;padding:6px;text-align:center;font-weight:bold;">${v}</td></tr>`).join('') || '<tr><td colspan="2" style="padding:8px;text-align:center;">ไม่มีข้อมูล</td></tr>';
+      const areaRows = s.topAreas.map(([k, v]) => `<tr><td style="border:1px solid #cbd5e1;padding:6px;">${k}</td><td style="border:1px solid #cbd5e1;padding:6px;text-align:center;font-weight:bold;">${v}</td></tr>`).join('') || '<tr><td colspan="2" style="padding:8px;text-align:center;">ไม่มีข้อมูล</td></tr>';
+      const html = `
+        <div style="font-family:'Sarabun',Tahoma,sans-serif; padding:16px; color:#0f172a; font-size:13px;">
+          <h2 style="text-align:center; color:#4338ca; margin-bottom:4px;">รายงานวิเคราะห์สรุปเหตุการณ์ผิดปกติและโรคในชุมชน อำเภอเทพา</h2>
+          <div style="text-align:center; color:#64748b; margin-bottom:14px;">ข้อมูล ณ วันที่ ${formatBEDateOnlySlash(getLocalTodayDateStr())}</div>
+          <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:10px; margin-bottom:14px;">
+            <b>สรุปตัวชี้วัด:</b> รับแจ้งทั้งหมด <b>${s.total}</b> เรื่อง | ตรวจสอบแล้ว <b>${s.verified}</b> เรื่อง (${s.verifyRate}%) | รอตรวจสอบ <b>${s.pending}</b> เรื่อง | ยืนยันเหตุจริง <b>${s.confirmed}</b> เรื่อง | นำเรียนพื้นที่แล้ว <b>${s.escalated}</b> เรื่อง<br>
+            <b>ผลตรวจสอบสะสม:</b> ผู้ป่วย <b>${s.casesSum}</b> ราย | เสียชีวิต <b>${s.deathsSum}</b> ราย | ผู้มีอาการสงสัย <b>${s.suspectsSum}</b> ราย
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div>
+              <h4 style="margin-bottom:6px; color:#0e7490;">จำแนกตามโรค / กลุ่มอาการ</h4>
+              <table style="width:100%; border-collapse:collapse;"><thead><tr style="background:#ecfeff;"><th style="border:1px solid #cbd5e1;padding:6px;text-align:left;">โรค/อาการ</th><th style="border:1px solid #cbd5e1;padding:6px;">จำนวน (เรื่อง)</th></tr></thead><tbody>${diseaseRows}</tbody></table>
+            </div>
+            <div>
+              <h4 style="margin-bottom:6px; color:#0284c7;">จำแนกตามตำบล</h4>
+              <table style="width:100%; border-collapse:collapse;"><thead><tr style="background:#eff6ff;"><th style="border:1px solid #cbd5e1;padding:6px;text-align:left;">ตำบล</th><th style="border:1px solid #cbd5e1;padding:6px;">จำนวน (เรื่อง)</th></tr></thead><tbody>${areaRows}</tbody></table>
+            </div>
+          </div>
+        </div>
+      `;
+      const printWindow = window.open('', '_blank', 'width=850,height=950');
+      if (printWindow) {
+        printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>วิเคราะห์สรุปเหตุการณ์</title><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet"><style>@page{size:A4 portrait;margin:10mm;}body{font-family:'Sarabun',Tahoma,sans-serif;}@media print{.no-print{display:none!important;}}</style></head><body><div class="no-print" style="margin-bottom:10px;padding:8px;background:#f1f5f9;display:flex;justify-content:space-between;"><span>🖨️ รายงานวิเคราะห์สรุปเหตุการณ์</span><button onclick="window.print()" style="background:#4f46e5;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;">พิมพ์ / บันทึก PDF</button></div>${html}<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
+        printWindow.document.close();
+      }
+    }
+
     // ฟังก์ชันจัดการ Modal ตั้งค่า Cloud & Telegram
     function openCloudSettingsModal() {
       const modal = document.getElementById('cloudSettingsModal');
@@ -13991,11 +15701,13 @@ ${topHcText}${noteBlock}
       if (patientsData.length === 0 || usersData.length === 0) {
         await Promise.allSettled([
           fetchUsersFromSupabase(),
-          fetchPatientsFromSupabase(true)
+          fetchPatientsFromSupabase(true),
+          typeof fetchEventReportsFromSupabase === 'function' ? fetchEventReportsFromSupabase(true) : Promise.resolve()
         ]);
       } else {
         fetchUsersFromSupabase();
         fetchPatientsFromSupabase(true);
+        if (typeof fetchEventReportsFromSupabase === 'function') fetchEventReportsFromSupabase(true);
       }
 
       initDailyAutoReportScheduler();
