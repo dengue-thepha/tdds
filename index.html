@@ -573,6 +573,37 @@
           </div>
         </div>
 
+        <!-- WEEKLY EPIDEMIOLOGICAL CURVE SECTION: จำนวนผู้ป่วยจำแนกรายสัปดาห์ (ตามวันเริ่มป่วย) -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-lg">📅</span>
+                <h3 id="weeklyChartTitle" class="text-sm md:text-base font-bold text-slate-800">
+                  จำนวนผู้ป่วยโรคไข้เลือดออก อ.เทพา จำแนกรายสัปดาห์(ตามวันเริ่มป่วย)
+                </h3>
+              </div>
+              <p id="weeklyChartSubtitle" class="text-xs text-slate-500 mt-1">
+                แสดงจำนวนผู้ป่วยยืนยัน (DF, DHF, DSS ไม่รวมเคส R/O) จำแนกรายสัปดาห์ทางระบาดวิทยา (วันอาทิตย์–เสาร์) ตามวันเริ่มป่วย ปี พ.ศ. 2569
+              </p>
+            </div>
+            <div id="weeklySummaryBadges" class="flex flex-wrap items-center gap-2 text-xs">
+              <span class="inline-flex items-center gap-1.5 bg-teal-50 text-teal-800 border border-teal-200 px-3 py-1.5 rounded-xl font-semibold">
+                <span class="w-2.5 h-2.5 rounded-xs bg-[#26A69A] inline-block"></span>
+                <span>สัปดาห์ปกติ</span>
+              </span>
+              <span class="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 border border-rose-200 px-3 py-1.5 rounded-xl font-semibold">
+                <span class="w-2.5 h-2.5 rounded-xs bg-[#EF5350] inline-block"></span>
+                <span>2 สัปดาห์ล่าสุด (เฝ้าระวังด่วน)</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="h-72 relative w-full">
+            <canvas id="weeklyOnsetChart"></canvas>
+          </div>
+        </div>
+
         <!-- DEMOGRAPHIC CHARTS SECTION: กราฟร้อยละแยกกลุ่มอายุ + กราฟร้อยละแยกอาชีพ -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
@@ -628,11 +659,11 @@
               <div>
                 <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
                   <span class="text-base">📊</span>
-                  <span>จำนวนผู้ป่วยจำแนกรายตำบล (7 ตำบล)</span>
+                  <span>อัตราป่วยต่อแสนประชากรจำแนกรายตำบล (7 ตำบล)</span>
                 </h3>
-                <p class="text-xs text-slate-400">เปรียบเทียบจำนวนผู้ป่วยสะสมในแต่ละพื้นที่</p>
+                <p class="text-xs text-slate-400">เปรียบเทียบอัตราป่วยต่อแสนประชากรในแต่ละพื้นที่ (เกณฑ์เฝ้าระวัง ≥50 / ระบาดสูง ≥150)</p>
               </div>
-              <span class="text-[11px] bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-medium">📅 ปี 2569</span>
+              <span class="text-[11px] bg-sky-50 text-sky-700 border border-sky-200 px-2.5 py-1 rounded-lg font-medium">ต่อแสนประชากร • ปี 2569</span>
             </div>
             <div class="h-64 relative w-full">
               <canvas id="subdistrictChart"></canvas>
@@ -669,6 +700,33 @@
             </div>
           </div>
 
+        </div>
+
+        <!-- VILLAGE BREAKDOWN CHART: จำนวนผู้ป่วยจำแนกรายหมู่บ้าน -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div>
+              <h3 id="villageChartTitle" class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <span class="text-base">🏘️</span>
+                <span>จำนวนผู้ป่วยจำแนกรายหมู่บ้าน</span>
+              </h3>
+              <p id="villageChartSubtitle" class="text-xs text-slate-400 mt-0.5">
+                แสดงจำนวนผู้ป่วยยืนยัน (ไม่รวมเคส R/O) แยกตามหมู่บ้านและตำบลในพื้นที่
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span id="villageSummaryBadge" class="text-[11px] bg-teal-50 text-teal-800 border border-teal-200 px-2.5 py-1 rounded-xl font-semibold">
+                พบผู้ป่วย 0 หมู่บ้าน
+              </span>
+              <select id="villageChartMode" onchange="applyDashboardFilters()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-slate-700 outline-none focus:border-teal-500 font-medium">
+                <option value="active">เฉพาะหมู่บ้านที่พบผู้ป่วย (มาก → น้อย)</option>
+                <option value="all">ทุกหมู่บ้านในขอบเขต (เรียงตามหมู่ที่)</option>
+              </select>
+            </div>
+          </div>
+          <div class="h-72 relative w-full">
+            <canvas id="villageChart"></canvas>
+          </div>
         </div>
 
         <!-- DASHBOARD INLINE MAP -->
@@ -2797,6 +2855,8 @@
     let subdistrictChartInstance = null;
     let diagnosisChartInstance = null;
     let monthlyMedianChartInstance = null;
+    let weeklyOnsetChartInstance = null;
+    let villageChartInstance = null;
     let occupationChartInstance = null;
     let ageGroupChartInstance = null;
 
@@ -4358,6 +4418,205 @@
       }
 
       // -----------------------------------------------------------
+      // 1.5 Weekly Dengue Cases by Illness Onset Date (รายสัปดาห์ตามวันเริ่มป่วย)
+      // -----------------------------------------------------------
+      const getEpiWeekStartUtc = (yr) => {
+        const jan1 = new Date(Date.UTC(yr, 0, 1));
+        const dow = jan1.getUTCDay();
+        return dow <= 3
+          ? Date.UTC(yr, 0, 1 - dow)
+          : Date.UTC(yr, 0, 1 + (7 - dow));
+      };
+      const parseUtcDayMs = (dStr) => {
+        if (!dStr) return NaN;
+        const clean = String(dStr).split('T')[0].trim();
+        const m = clean.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        if (m) return Date.UTC(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+        const d = new Date(dStr);
+        return isNaN(d.getTime()) ? NaN : Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+      };
+      const targetYearAd = 2026;
+      const week1StartMs = getEpiWeekStartUtc(targetYearAd);
+      const msPerWeek = 7 * 86400000;
+      const nowLocal = new Date();
+      const todayUtcMs = Date.UTC(nowLocal.getFullYear(), nowLocal.getMonth(), nowLocal.getDate());
+      const currentEpiWeek = Math.max(1, Math.min(53, Math.floor((todayUtcMs - week1StartMs) / msPerWeek) + 1));
+
+      const weeklyCounts = {};
+      let maxFoundWeek = currentEpiWeek;
+      list.forEach(p => {
+        const dayMs = parseUtcDayMs(p.illnessDate || p.notifiedDatetime);
+        if (isNaN(dayMs)) return;
+        const dt = new Date(dayMs);
+        if (dt.getUTCFullYear() !== targetYearAd) return;
+        let w = Math.floor((dayMs - week1StartMs) / msPerWeek) + 1;
+        if (w < 1) w = 1;
+        if (w > 53) w = 53;
+        weeklyCounts[w] = (weeklyCounts[w] || 0) + 1;
+        if (w > maxFoundWeek) maxFoundWeek = w;
+      });
+
+      const totalWeeks = Math.max(currentEpiWeek, maxFoundWeek);
+      const weekLabels = [];
+      const weekValues = [];
+      const weekRanges = [];
+      let peakWeek = 1;
+      let peakWeekCount = 0;
+
+      const formatThaiShortUtc = (utcMs) => {
+        const d = new Date(utcMs);
+        return `${d.getUTCDate()} ${monthsTh[d.getUTCMonth()]}`;
+      };
+
+      for (let w = 1; w <= totalWeeks; w++) {
+        const wStart = week1StartMs + (w - 1) * msPerWeek;
+        const wEnd = wStart + 6 * 86400000;
+        const cnt = weeklyCounts[w] || 0;
+        weekLabels.push(`${w}`);
+        weekValues.push(cnt);
+        weekRanges.push(`สัปดาห์ที่ ${w} (${formatThaiShortUtc(wStart)} - ${formatThaiShortUtc(wEnd)} ${targetYearAd + 543})`);
+        if (cnt > peakWeekCount) {
+          peakWeekCount = cnt;
+          peakWeek = w;
+        }
+      }
+
+      const weeklyTitleEl = document.getElementById('weeklyChartTitle');
+      if (weeklyTitleEl) {
+        if (hcHistCtx) {
+          weeklyTitleEl.innerText = `จำนวนผู้ป่วยโรคไข้เลือดออก ${hcHistCtx.name} (${hcHistCtx.hcode}) จำแนกรายสัปดาห์(ตามวันเริ่มป่วย)`;
+        } else if (subKey !== 'all') {
+          weeklyTitleEl.innerText = `จำนวนผู้ป่วยโรคไข้เลือดออก ต.${subKey} จำแนกรายสัปดาห์(ตามวันเริ่มป่วย)`;
+        } else {
+          weeklyTitleEl.innerText = 'จำนวนผู้ป่วยโรคไข้เลือดออก อ.เทพา จำแนกรายสัปดาห์(ตามวันเริ่มป่วย)';
+        }
+      }
+
+      const weeklyBadgesEl = document.getElementById('weeklySummaryBadges');
+      if (weeklyBadgesEl) {
+        const curWeekCnt = weeklyCounts[currentEpiWeek] || 0;
+        weeklyBadgesEl.innerHTML = `
+          <span class="inline-flex items-center gap-1.5 bg-teal-50 text-teal-800 border border-teal-200 px-2.5 py-1 rounded-xl font-medium">
+            <span class="w-2.5 h-2.5 rounded-xs bg-[#26A69A] inline-block"></span>
+            <span>สัปดาห์ปกติ</span>
+          </span>
+          <span class="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-xl font-medium">
+            <span class="w-2.5 h-2.5 rounded-xs bg-[#EF5350] inline-block"></span>
+            <span>2 สัปดาห์ล่าสุด (W${Math.max(1, currentEpiWeek - 1)}–W${currentEpiWeek}: ${(weeklyCounts[Math.max(1, currentEpiWeek - 1)] || 0) + curWeekCnt} ราย)</span>
+          </span>
+          <span class="inline-flex items-center gap-1 bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-1 rounded-xl font-semibold">
+            📈 สูงสุด W${peakWeek} (${peakWeekCount} ราย)
+          </span>
+        `;
+      }
+
+      const ctxWeekly = document.getElementById('weeklyOnsetChart');
+      if (ctxWeekly) {
+        if (weeklyOnsetChartInstance) {
+          weeklyOnsetChartInstance.destroy();
+        }
+        const barColors = weekLabels.map((_, idx) => {
+          const wNum = idx + 1;
+          return (wNum >= currentEpiWeek - 1 && wNum <= currentEpiWeek) ? '#EF5350' : '#26A69A';
+        });
+
+        const weeklyBarLabelsPlugin = {
+          id: 'weeklyBarLabels',
+          afterDatasetsDraw(chart) {
+            const ctx = chart.ctx;
+            const meta = chart.getDatasetMeta(0);
+            meta.data.forEach((bar, index) => {
+              const val = chart.data.datasets[0].data[index];
+              if (val > 0) {
+                ctx.save();
+                ctx.font = 'bold 10px Kanit, sans-serif';
+                ctx.fillStyle = (index + 1 >= currentEpiWeek - 1) ? '#B91C1C' : '#0F766E';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(val, bar.x, bar.y - 3);
+                ctx.restore();
+              }
+            });
+          }
+        };
+
+        weeklyOnsetChartInstance = new Chart(ctxWeekly.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: weekLabels,
+            datasets: [{
+              label: 'จำนวนผู้ป่วย (ราย)',
+              data: weekValues,
+              backgroundColor: barColors,
+              borderRadius: 4,
+              borderSkipped: false,
+              maxBarThickness: 18
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+              padding: { top: 18, right: 8, left: 4, bottom: 2 }
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                titleFont: { family: 'Kanit', size: 12 },
+                bodyFont: { family: 'Kanit', size: 12 },
+                padding: 10,
+                cornerRadius: 8,
+                callbacks: {
+                  title: function(items) {
+                    const idx = items && items[0] ? items[0].dataIndex : 0;
+                    return weekRanges[idx] || '';
+                  },
+                  label: function(context) {
+                    return ` ผู้ป่วย (ตามวันเริ่มป่วย): ${context.raw} ราย`;
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                suggestedMax: Math.max(5, peakWeekCount + 2),
+                ticks: {
+                  precision: 0,
+                  font: { family: 'Kanit', size: 11 },
+                  color: '#64748b'
+                },
+                title: {
+                  display: true,
+                  text: 'จำนวนผู้ป่วย (ราย)',
+                  font: { family: 'Kanit', size: 11 },
+                  color: '#64748b'
+                },
+                grid: { color: '#f1f5f9' }
+              },
+              x: {
+                ticks: {
+                  font: { family: 'Kanit', size: 10 },
+                  color: '#475569',
+                  autoSkip: false,
+                  maxRotation: 0
+                },
+                title: {
+                  display: true,
+                  text: 'สัปดาห์ที่ทางระบาดวิทยา (ปี พ.ศ. 2569)',
+                  font: { family: 'Kanit', size: 11 },
+                  color: '#64748b'
+                },
+                grid: { display: false }
+              }
+            }
+          },
+          plugins: [weeklyBarLabelsPlugin]
+        });
+      }
+
+      // -----------------------------------------------------------
       // 2. Age Group Morbidity Rate per 100,000 Bar Chart (จากประชากรที่นำเข้า)
       // -----------------------------------------------------------
       const ageGroups = ['0-4 ปี', '5-9 ปี', '10-14 ปี', '15-24 ปี', '25-34 ปี', '35-44 ปี', '45-54 ปี', '55-64 ปี', '65 ปีขึ้นไป'];
@@ -4583,7 +4842,7 @@
       }
 
       // -----------------------------------------------------------
-      // 4. Subdistrict Bar Chart (7 ตำบล)
+      // 4. Subdistrict Morbidity Rate per 100,000 Bar Chart (7 ตำบล)
       // -----------------------------------------------------------
       const subdistricts = ['เทพา', 'ปากบาง', 'เกาะสะบ้า', 'ลำไพล', 'ท่าม่วง', 'วังใหญ่', 'สะกอม'];
       const subCountMap = {};
@@ -4595,7 +4854,12 @@
         }
       });
 
-      const barData = subdistricts.map(s => subCountMap[s]);
+      const subPopData = subdistricts.map(s => thephaPopulationData.subdistricts[s] || 0);
+      const subRawCounts = subdistricts.map(s => subCountMap[s]);
+      const barData = subdistricts.map((s, idx) => {
+        const pop = subPopData[idx];
+        return pop > 0 ? parseFloat((((subCountMap[s] || 0) / pop) * 100000).toFixed(2)) : 0;
+      });
 
       const ctxBar = document.getElementById('subdistrictChart');
       if (ctxBar) {
@@ -4607,7 +4871,7 @@
           data: {
             labels: subdistricts.map(s => `ต.${s}`),
             datasets: [{
-              label: 'จำนวนผู้ป่วย (ราย)',
+              label: 'อัตราป่วยต่อแสนประชากร',
               data: barData,
               backgroundColor: [
                 '#26A69A', '#AED581', '#FFCA28', '#FF8A65', '#EF5350', '#4A2C6D', '#0288D1'
@@ -4620,12 +4884,41 @@
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-              legend: { display: false }
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                titleFont: { family: 'Kanit', size: 13 },
+                bodyFont: { family: 'Kanit', size: 12 },
+                padding: 10,
+                cornerRadius: 8,
+                callbacks: {
+                  label: function(context) {
+                    const idx = context.dataIndex;
+                    const rate = context.raw;
+                    const count = subRawCounts[idx];
+                    const pop = subPopData[idx];
+                    return [
+                      ` อัตราป่วย: ${Number(rate).toLocaleString()} ต่อแสนประชากร`,
+                      ` ผู้ป่วย: ${count} ราย / ประชากร: ${pop.toLocaleString()} คน`
+                    ];
+                  }
+                }
+              }
             },
             scales: {
               y: {
                 beginAtZero: true,
-                ticks: { precision: 0, font: { family: 'Kanit' } },
+                ticks: {
+                  callback: function(v) { return Number(v).toLocaleString(); },
+                  font: { family: 'Kanit' },
+                  color: '#64748b'
+                },
+                title: {
+                  display: true,
+                  text: 'ต่อแสนประชากร',
+                  font: { family: 'Kanit', size: 11 },
+                  color: '#64748b'
+                },
                 grid: { color: '#f1f5f9' }
               },
               x: {
@@ -4676,6 +4969,198 @@
               legend: { display: false }
             }
           }
+        });
+      }
+
+      // -----------------------------------------------------------
+      // 6. Village Breakdown Bar Chart (จำแนกรายหมู่บ้าน)
+      // -----------------------------------------------------------
+      const villageMode = document.getElementById('villageChartMode')?.value || 'active';
+      const villageMap = new Map();
+      const registerVillageEntry = (sub, vNo, hcName = '') => {
+        const cleanSub = normalizeThaiStr(sub || 'ไม่ระบุ');
+        const cleanV = String(vNo ?? '').trim() || '-';
+        const key = `${cleanSub}::${cleanV}`;
+        if (!villageMap.has(key)) {
+          villageMap.set(key, {
+            key,
+            subdistrict: cleanSub,
+            villageNo: cleanV,
+            healthCenters: new Set(),
+            count: 0
+          });
+        }
+        const item = villageMap.get(key);
+        if (hcName) item.healthCenters.add(normalizeThaiStr(hcName));
+        return item;
+      };
+
+      // หากเลือกโหมด "ทุกหมู่บ้านในขอบเขต" ให้เติมหมู่บ้านทั้งหมดจาก locationMasterData ที่ตรงกับสิทธิ์และตำบล
+      if (villageMode === 'all' && Array.isArray(locationMasterData)) {
+        const isOsmUser = currentUser && (currentUser.position === 'อสม.' || currentUser.role === 'OSM' || currentUser.role === 'osm');
+        const uUnit = currentUser ? normalizeThaiStr(currentUser.unit) : '';
+        const uHcode = currentUser ? (currentUser.hcode || getHCodeByName(currentUser.unit)) : '';
+        const limitToUnit = currentUser && currentUser.role !== 'admin' && uUnit && uUnit !== 'สสอ.เทพา' && uUnit !== 'รพ.เทพา';
+
+        locationMasterData.forEach(loc => {
+          if (subKey !== 'all' && normalizeThaiStr(loc.subdistrict) !== normalizeThaiStr(subKey)) return;
+          if (limitToUnit) {
+            const locHcode = loc.hcode || getHCodeByName(loc.healthCenter);
+            const matchU = (uHcode && locHcode && uHcode === locHcode) || normalizeThaiStr(loc.healthCenter) === uUnit;
+            if (!matchU) return;
+          }
+          if (isOsmUser && currentUser.villageNo && String(loc.villageNo).trim() !== String(currentUser.villageNo).trim()) return;
+          registerVillageEntry(loc.subdistrict, loc.villageNo, loc.healthCenter);
+        });
+      }
+
+      list.forEach(p => {
+        const entry = registerVillageEntry(p.subdistrict, p.villageNo, p.healthCenter);
+        entry.count++;
+      });
+
+      const subOrder = ['เทพา', 'ปากบาง', 'เกาะสะบ้า', 'ลำไพล', 'ท่าม่วง', 'วังใหญ่', 'สะกอม'];
+      let villageEntries = Array.from(villageMap.values());
+      if (villageMode === 'active') {
+        villageEntries = villageEntries.filter(v => v.count > 0);
+        villageEntries.sort((a, b) => {
+          if (b.count !== a.count) return b.count - a.count;
+          const sDiff = subOrder.indexOf(a.subdistrict) - subOrder.indexOf(b.subdistrict);
+          if (sDiff !== 0) return sDiff;
+          return (parseInt(a.villageNo, 10) || 999) - (parseInt(b.villageNo, 10) || 999);
+        });
+      } else {
+        villageEntries.sort((a, b) => {
+          const sa = subOrder.indexOf(a.subdistrict);
+          const sb = subOrder.indexOf(b.subdistrict);
+          const sDiff = (sa === -1 ? 99 : sa) - (sb === -1 ? 99 : sb);
+          if (sDiff !== 0) return sDiff;
+          return (parseInt(a.villageNo, 10) || 999) - (parseInt(b.villageNo, 10) || 999);
+        });
+      }
+
+      const villageTitleEl = document.getElementById('villageChartTitle');
+      if (villageTitleEl) {
+        const scopeLabel = hcHistCtx
+          ? ` (${hcHistCtx.name})`
+          : (subKey !== 'all' ? ` (ต.${subKey})` : ' (อ.เทพา)');
+        villageTitleEl.innerHTML = `<span class="text-base">🏘️</span><span>จำนวนผู้ป่วยจำแนกรายหมู่บ้าน${scopeLabel}</span>`;
+      }
+
+      const affectedVillages = villageEntries.filter(v => v.count > 0);
+      const topVillage = affectedVillages.reduce((best, cur) => (!best || cur.count > best.count ? cur : best), null);
+      const villageBadgeEl = document.getElementById('villageSummaryBadge');
+      if (villageBadgeEl) {
+        villageBadgeEl.innerText = topVillage
+          ? `พบผู้ป่วย ${affectedVillages.length} หมู่บ้าน • สูงสุด ม.${topVillage.villageNo} ต.${topVillage.subdistrict} (${topVillage.count} ราย)`
+          : 'ไม่พบผู้ป่วยในขอบเขตที่เลือก';
+      }
+
+      const showSubOnLabel = (subKey === 'all');
+      const vLabels = villageEntries.map(v => showSubOnLabel ? `ม.${v.villageNo} ${v.subdistrict}` : `หมู่ ${v.villageNo}`);
+      const vValues = villageEntries.map(v => v.count);
+      const vColors = vValues.map(c => c >= 5 ? '#EF5350' : (c >= 3 ? '#FF8A65' : (c >= 1 ? '#26A69A' : '#CBD5E1')));
+
+      const ctxVillage = document.getElementById('villageChart');
+      if (ctxVillage) {
+        if (villageChartInstance) {
+          villageChartInstance.destroy();
+        }
+        const villageLabelsPlugin = {
+          id: 'villageBarLabels',
+          afterDatasetsDraw(chart) {
+            const ctx = chart.ctx;
+            const meta = chart.getDatasetMeta(0);
+            meta.data.forEach((bar, index) => {
+              const val = chart.data.datasets[0].data[index];
+              if (val > 0) {
+                ctx.save();
+                ctx.font = 'bold 10px Kanit, sans-serif';
+                ctx.fillStyle = val >= 5 ? '#B91C1C' : (val >= 3 ? '#C2410C' : '#0F766E');
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(val, bar.x, bar.y - 3);
+                ctx.restore();
+              }
+            });
+          }
+        };
+
+        villageChartInstance = new Chart(ctxVillage.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: vLabels,
+            datasets: [{
+              label: 'จำนวนผู้ป่วย (ราย)',
+              data: vValues,
+              backgroundColor: vColors,
+              borderRadius: 5,
+              borderSkipped: false,
+              maxBarThickness: 28
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: { top: 20, right: 8, left: 4, bottom: 2 } },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                titleFont: { family: 'Kanit', size: 12 },
+                bodyFont: { family: 'Kanit', size: 12 },
+                padding: 10,
+                cornerRadius: 8,
+                callbacks: {
+                  title: function(items) {
+                    const idx = items && items[0] ? items[0].dataIndex : 0;
+                    const entry = villageEntries[idx];
+                    return entry ? `หมู่ที่ ${entry.villageNo} ต.${entry.subdistrict}` : '';
+                  },
+                  label: function(context) {
+                    const idx = context.dataIndex;
+                    const entry = villageEntries[idx];
+                    const count = context.raw || 0;
+                    const pct = list.length > 0 ? ((count / list.length) * 100).toFixed(1) : '0.0';
+                    const hcList = entry && entry.healthCenters.size > 0 ? Array.from(entry.healthCenters).join(', ') : '-';
+                    return [
+                      ` จำนวนผู้ป่วย: ${count} ราย (${pct}%)`,
+                      ` หน่วยบริการ: ${hcList}`
+                    ];
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                suggestedMax: Math.max(4, (topVillage ? topVillage.count : 0) + 2),
+                ticks: {
+                  precision: 0,
+                  font: { family: 'Kanit', size: 11 },
+                  color: '#64748b'
+                },
+                title: {
+                  display: true,
+                  text: 'จำนวนผู้ป่วย (ราย)',
+                  font: { family: 'Kanit', size: 11 },
+                  color: '#64748b'
+                },
+                grid: { color: '#f1f5f9' }
+              },
+              x: {
+                ticks: {
+                  font: { family: 'Kanit', size: 10 },
+                  color: '#475569',
+                  autoSkip: false,
+                  maxRotation: 45,
+                  minRotation: 0
+                },
+                grid: { display: false }
+              }
+            }
+          },
+          plugins: [villageLabelsPlugin]
         });
       }
     }
@@ -4898,7 +5383,7 @@
       tbody.innerHTML = '';
       const subdistricts = ['เทพา', 'ปากบาง', 'เกาะสะบ้า', 'ลำไพล', 'ท่าม่วง', 'วังใหญ่', 'สะกอม'];
       const now = new Date();
-      const todayStr = now.toISOString().split('T')[0];
+      const todayStr = getLocalDateStr(now);
 
       let grandPop = 0;
       let grandTotal = 0;
@@ -4919,7 +5404,7 @@
           const notifDate = p.notifiedDatetime ? new Date(p.notifiedDatetime) : new Date(p.illnessDate);
           const daysDiff = (now.getTime() - notifDate.getTime()) / (1000 * 3600 * 24);
 
-          if (p.notifiedDatetime && p.notifiedDatetime.startsWith(todayStr)) {
+          if (p.notifiedDatetime && getLocalDateStr(p.notifiedDatetime) === todayStr) {
             todayCount++;
           }
           if (daysDiff >= 0 && daysDiff <= 14) {
