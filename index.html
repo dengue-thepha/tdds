@@ -8524,26 +8524,35 @@
       const maxTreatRows = Math.max(2, treatmentList.length);
       for (let r = 1; r <= maxTreatRows; r++) {
         const t = treatmentList[r - 1];
+        const rowBg = r % 2 === 0 ? '#f8fafc' : '#ffffff';
         if (t) {
           const tDate = formatBEDateOnly(t.date);
           const tHosp = (t.hospital || '') + (t.hospitalOther ? ' ' + t.hospitalOther : '');
+          const diagText = t.diagnosis || '-';
+          const diagStyle = diagText.includes('DSS')
+            ? 'background:#ffe4e6;color:#be123c;border:1px solid #fecdd3;'
+            : (diagText.includes('DHF')
+              ? 'background:#f3e8ff;color:#6b21a8;border:1px solid #e9d5ff;'
+              : 'background:#ccfbf1;color:#0f766e;border:1px solid #99f6e4;');
           treatmentRowsHtml += `
-            <tr>
-              <td style="border:1px solid #000; padding:3px; text-align:center;">${r}</td>
-              <td style="border:1px solid #000; padding:3px; text-align:center;">${tDate || '-'}</td>
-              <td style="border:1px solid #000; padding:3px; text-align:center;">${tHosp || '-'}</td>
-              <td style="border:1px solid #000; padding:3px; text-align:center;">${t.patientType || '-'}</td>
-              <td style="border:1px solid #000; padding:3px; text-align:center; font-weight:bold;">${t.diagnosis || '-'}</td>
+            <tr style="background:${rowBg};">
+              <td style="border-top:1px solid #e2e8f0; padding:5px 6px; text-align:center; font-weight:700; color:#475569;">${r}</td>
+              <td style="border-top:1px solid #e2e8f0; border-left:1px solid #e2e8f0; padding:5px 6px; text-align:center;">${tDate || '-'}</td>
+              <td style="border-top:1px solid #e2e8f0; border-left:1px solid #e2e8f0; padding:5px 8px; text-align:left;">${tHosp || '-'}</td>
+              <td style="border-top:1px solid #e2e8f0; border-left:1px solid #e2e8f0; padding:5px 6px; text-align:center;">${t.patientType || '-'}</td>
+              <td style="border-top:1px solid #e2e8f0; border-left:1px solid #e2e8f0; padding:5px 6px; text-align:center;">
+                <span style="display:inline-block; padding:1px 8px; border-radius:999px; font-weight:700; font-size:10.5px; ${diagStyle}">${diagText}</span>
+              </td>
             </tr>
           `;
         } else {
           treatmentRowsHtml += `
-            <tr>
-              <td style="border:1px solid #000; padding:3px; text-align:center;">${r}</td>
-              <td style="border:1px solid #000; padding:3px;">&nbsp;</td>
-              <td style="border:1px solid #000; padding:3px;">&nbsp;</td>
-              <td style="border:1px solid #000; padding:3px;">&nbsp;</td>
-              <td style="border:1px solid #000; padding:3px;">&nbsp;</td>
+            <tr style="background:${rowBg};">
+              <td style="border-top:1px solid #e2e8f0; padding:5px 6px; text-align:center; color:#94a3b8;">${r}</td>
+              <td style="border-top:1px solid #e2e8f0; border-left:1px solid #e2e8f0; padding:5px 6px; color:#cbd5e1; text-align:center;">-</td>
+              <td style="border-top:1px solid #e2e8f0; border-left:1px solid #e2e8f0; padding:5px 8px; color:#cbd5e1;">-</td>
+              <td style="border-top:1px solid #e2e8f0; border-left:1px solid #e2e8f0; padding:5px 6px; color:#cbd5e1; text-align:center;">-</td>
+              <td style="border-top:1px solid #e2e8f0; border-left:1px solid #e2e8f0; padding:5px 6px; color:#cbd5e1; text-align:center;">-</td>
             </tr>
           `;
         }
@@ -8563,6 +8572,17 @@
       const shockVal = sym.shock === true ? 'มี' : (sym.shock === false ? 'ไม่มี' : (sym.shock || 'ไม่มี'));
       const otherVal = p.symptomsOther || '';
 
+      const renderSymBadge = (val) => {
+        const s = String(val || '').trim();
+        if (s === 'มี' || s.toLowerCase().includes('pos') || s === 'บวก') {
+          return `<span style="display:inline-block; background:#fee2e2; color:#b91c1c; border:1px solid #fecaca; padding:1px 7px; border-radius:999px; font-weight:700; font-size:10.5px;">${s}</span>`;
+        }
+        if (s === 'ไม่มี' || s.toLowerCase().includes('neg') || s === 'ลบ') {
+          return `<span style="display:inline-block; background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; padding:1px 7px; border-radius:999px; font-size:10.5px;">${s}</span>`;
+        }
+        return `<span style="color:#64748b; font-size:10.5px;">${s || '-'}</span>`;
+      };
+
       // ผล LAB 5 รอบ
       const labMap = {};
       (p.labResults || []).forEach(l => {
@@ -8574,14 +8594,21 @@
         if (l) {
           const d = formatBEDateOnly(l.date);
           const t = l.time ? l.time : '';
-          const hctVal = (l.hct != null && l.hct !== '') ? `${parseFloat(l.hct).toFixed(2)}%` : '';
-          const wbcVal = (l.wbc != null && l.wbc !== '') ? l.wbc : '';
-          const pltVal = (l.plt ?? l.platelet) != null && (l.plt ?? l.platelet) !== '' ? (l.plt ?? l.platelet) : '';
-          const lymVal = (l.lym ?? l.lymphocyte) != null && (l.lym ?? l.lymphocyte) !== '' ? `${parseFloat(l.lym ?? l.lymphocyte).toFixed(2)}%` : '';
-          const atypVal = (l.atyp ?? l.atypicalLymphocyte) != null && (l.atyp ?? l.atypicalLymphocyte) !== '' ? `${parseFloat(l.atyp ?? l.atypicalLymphocyte).toFixed(2)}%` : '';
+          const hctVal = (l.hct != null && l.hct !== '') ? `${parseFloat(l.hct).toFixed(2)}%` : '-';
+          const wbcRaw = (l.wbc != null && l.wbc !== '') ? l.wbc : '';
+          const wbcVal = wbcRaw !== '' && !isNaN(Number(wbcRaw)) ? Number(wbcRaw).toLocaleString() : (wbcRaw || '-');
+          const pltRaw = (l.plt ?? l.platelet) != null && (l.plt ?? l.platelet) !== '' ? (l.plt ?? l.platelet) : '';
+          const pltNum = pltRaw !== '' && !isNaN(Number(pltRaw)) ? Number(pltRaw) : null;
+          const pltVal = pltNum !== null
+            ? (pltNum < 100000
+              ? `<span style="color:#be123c; font-weight:700; background:#ffe4e6; padding:1px 5px; border-radius:4px;">${pltNum.toLocaleString()}</span>`
+              : pltNum.toLocaleString())
+            : (pltRaw || '-');
+          const lymVal = (l.lym ?? l.lymphocyte) != null && (l.lym ?? l.lymphocyte) !== '' ? `${parseFloat(l.lym ?? l.lymphocyte).toFixed(2)}%` : '-';
+          const atypVal = (l.atyp ?? l.atypicalLymphocyte) != null && (l.atyp ?? l.atypicalLymphocyte) !== '' ? `${parseFloat(l.atyp ?? l.atypicalLymphocyte).toFixed(2)}%` : '-';
           return {
-            date: d ? `วันที่ ${d}` : 'วันที่',
-            time: t ? `เวลา ${t}` : 'เวลา',
+            date: d || '-',
+            time: t ? `เวลา ${t}` : '',
             hct: hctVal,
             wbc: wbcVal,
             plt: pltVal,
@@ -8589,15 +8616,7 @@
             atyp: atypVal
           };
         } else {
-          return {
-            date: 'วันที่',
-            time: 'เวลา',
-            hct: '',
-            wbc: '',
-            plt: '',
-            lym: '',
-            atyp: ''
-          };
+          return { date: '-', time: '', hct: '-', wbc: '-', plt: '-', lym: '-', atyp: '-' };
         }
       });
 
@@ -8615,11 +8634,37 @@
         if (l.igg && !iggVal) iggVal = l.igg;
       });
 
-      // ที่อยู่อื่น
+      const formatRapidValBadge = (v) => {
+        const s = String(v || 'ไม่ได้ตรวจ').trim();
+        if (s.toLowerCase().includes('pos')) return `<span style="background:#fee2e2;color:#b91c1c;border:1px solid #fecaca;padding:1px 7px;border-radius:999px;font-weight:700;font-size:10.5px;">${s}</span>`;
+        if (s.toLowerCase().includes('neg')) return `<span style="background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;padding:1px 7px;border-radius:999px;font-weight:700;font-size:10.5px;">${s}</span>`;
+        return `<span style="color:#64748b;">${s}</span>`;
+      };
+
+      // ที่อยู่อื่น & สถานะยืนยันเคส
       let stayOtherStr = '';
       if (p.stayDomicile === false && p.stayAddress) {
         stayOtherStr = p.stayAddress;
       }
+
+      const confState = typeof getPatientConfirmationState === 'function'
+        ? getPatientConfirmationState(p)
+        : { isConfirmedLocal: p.confirmedStatus === 'confirmed_local', isConfirmedExternal: p.confirmedStatus === 'confirmed_external' };
+      const confBadgeHtml = confState.isConfirmedLocal
+        ? '<span style="background:#dcfce7;color:#15803d;border:1px solid #86efac;padding:1px 8px;border-radius:999px;font-weight:700;font-size:10.5px;">ยืนยัน: ป่วยในพื้นที่จริง</span>'
+        : (confState.isConfirmedExternal
+          ? '<span style="background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd;padding:1px 8px;border-radius:999px;font-weight:700;font-size:10.5px;">ยืนยัน: ป่วยนอกพื้นที่</span>'
+          : '<span style="background:#fef3c7;color:#b45309;border:1px solid #fcd34d;padding:1px 8px;border-radius:999px;font-weight:700;font-size:10.5px;">รอหน่วยบริการยืนยันเคส</span>');
+
+      const diagUpper = String(p.diagnosis || 'DF').toUpperCase();
+      const headerDiagBg = diagUpper.includes('DSS')
+        ? '#e11d48'
+        : (diagUpper.includes('DHF') ? '#7c3aed' : '#0284c7');
+
+      const hcodeStr = p.hcode || (typeof getHCodeByName === 'function' ? getHCodeByName(p.healthCenter) : '') || '';
+      const coordStr = (p.lat != null && p.lng != null && !isNaN(parseFloat(p.lat)) && !isNaN(parseFloat(p.lng)))
+        ? `${Number(p.lat).toFixed(5)}, ${Number(p.lng).toFixed(5)}`
+        : '-';
 
       // ผู้สอบสวน
       const notifAreaDt = formatBEDateTime(p.notifiedAreaDatetime || p.notifiedDatetime);
@@ -8627,186 +8672,205 @@
       const invPos = p.investigatorPosition || 'นักวิชาการสาธารณสุขชำนาญการ';
 
       return `
-        <div style="font-family:'Sarabun', 'Kanit', Tahoma, Arial, sans-serif; color:#000000; padding:18px 26px; line-height:1.4; background:#ffffff; font-size:12px; width:794px; margin:0 auto; box-sizing:border-box;">
+        <div style="font-family:'Sarabun','Kanit',Tahoma,Arial,sans-serif; color:#0f172a; padding:14px 20px; line-height:1.4; background:#ffffff; font-size:11.5px; width:794px; margin:0 auto; box-sizing:border-box;">
 
-          <!-- Header Title -->
-          <div style="text-align:center; font-size:17px; font-weight:bold; margin-bottom:12px; color:#000000;">
-            แบบสอบสวนโรคไข้เลือดออก อ.เทพา จ.สงขลา (DF,DHF,DSS)
+          <!-- Modern Gradient Header Card -->
+          <div style="background-color:#0f766e; background:linear-gradient(135deg,#0f766e 0%,#0d9488 60%,#0284c7 100%); color:#ffffff; border-radius:10px; padding:11px 16px; margin-bottom:9px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:9.5px; letter-spacing:0.6px; text-transform:uppercase; color:#ccfbf1; font-weight:700;">TDDS Thepha • Epidemiology Investigation Report</div>
+              <div style="font-size:16.5px; font-weight:700; margin-top:1px; color:#ffffff;">แบบสอบสวนโรคไข้เลือดออก (DF / DHF / DSS)</div>
+              <div style="font-size:11px; color:#e2e8f0; margin-top:1px;">ศูนย์ปฏิบัติการเฝ้าระวังและควบคุมโรค สำนักงานสาธารณสุขอำเภอเทพา จังหวัดสงขลา</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="display:inline-block; background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.35); padding:3px 10px; border-radius:8px; font-size:11px; font-weight:700; margin-bottom:4px;">
+                รหัสเคส: ${p.patientCode || p.id || '-'}
+              </div><br>
+              <span style="display:inline-block; background:${headerDiagBg}; color:#ffffff; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:700; border:1px solid rgba(255,255,255,0.4);">
+                ${p.diagnosis || 'DF'} • ${p.patientType || 'IPD'}
+              </span>
+            </div>
           </div>
 
-          <!-- 1. ข้อมูลการได้รับแจ้ง -->
-          <div style="font-size:13px; font-weight:bold; margin-bottom:4px;">1.ข้อมูลการได้รับแจ้ง</div>
-          <table style="width:100%; border-collapse:collapse; margin-bottom:8px; font-size:12px;">
-            <tr>
-              <td style="width:60%;">วันที่ได้รับแจ้ง: ${notifDt.date} ${notifDt.time}</td>
-              <td style="width:40%;">รับแจ้งจาก: ${p.notifiedFrom || '-'}${p.notifiedOther ? ' (' + p.notifiedOther + ')' : ''}</td>
-            </tr>
-          </table>
+          <!-- 1. ข้อมูลการได้รับแจ้ง & สถานะพื้นที่ -->
+          <div style="background:#f0fdfa; border:1px solid #99f6e4; border-radius:8px; padding:7px 12px; margin-bottom:9px;">
+            <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+              <tr>
+                <td style="width:27%; vertical-align:middle;"><span style="color:#0f766e; font-weight:700;">1. วันที่ได้รับแจ้ง:</span><br><b>${notifDt.date} ${notifDt.time} น.</b></td>
+                <td style="width:21%; vertical-align:middle;"><span style="color:#0f766e; font-weight:700;">รับแจ้งจาก:</span><br><b>${p.notifiedFrom || '-'}${p.notifiedOther ? ' (' + p.notifiedOther + ')' : ''}</b></td>
+                <td style="width:30%; vertical-align:middle;"><span style="color:#0f766e; font-weight:700;">เขตพื้นที่รับผิดชอบ:</span><br><b>${p.healthCenter || '-'}</b> ${hcodeStr ? `<span style="color:#475569; font-size:10.5px;">(${hcodeStr})</span>` : ''}</td>
+                <td style="width:22%; vertical-align:middle; text-align:right;">${confBadgeHtml}</td>
+              </tr>
+            </table>
+          </div>
 
           <!-- 2. ข้อมูลทั่วไปผู้ป่วย -->
-          <div style="font-size:13px; font-weight:bold; margin-bottom:4px;">2.ข้อมูลทั่วไปผู้ป่วย</div>
-          <div style="font-size:12px; line-height:1.55; margin-bottom:8px;">
-            <div>
-              ชื่อ-สกุล ผู้ป่วย: <b>${p.fullName || '-'}</b> &nbsp;&nbsp;&nbsp;&nbsp; เพศ: ${p.gender || '-'} &nbsp;&nbsp;&nbsp;&nbsp; สถานภาพ: ${p.maritalStatus || 'โสด'} &nbsp;&nbsp;&nbsp;&nbsp; สัญชาติ: ${p.nationality || 'ไทย'} &nbsp;&nbsp;&nbsp;&nbsp; อายุ ${p.ageYear || 0} ปี &nbsp;&nbsp;&nbsp;&nbsp; อายุ(เดือน): ${p.ageMonth || 0} เดือน
-            </div>
-            <div>
-              บ้านเลขที่: ${p.addressNo || '-'} &nbsp;&nbsp;&nbsp;&nbsp; หมู่ที่: ${p.villageNo || '-'} &nbsp;&nbsp;&nbsp;&nbsp; ตำบล: ${p.subdistrict || '-'} &nbsp;&nbsp;&nbsp;&nbsp; เขตพื้นที่ รพ.สต./PCU: ${p.healthCenter || '-'} &nbsp;&nbsp;&nbsp;&nbsp; โทรศัพท์: ${p.phone || '-'}
-            </div>
-            <div>
-              อาชีพ: ${p.occupation || '-'} &nbsp;&nbsp;&nbsp;&nbsp; ลักษณะงาน: ${p.workDesc || '-'} &nbsp;&nbsp;&nbsp;&nbsp; สถานที่ทำงาน/โรงเรียน: ${p.workplace || '-'} &nbsp;&nbsp;&nbsp;&nbsp; ชั้น/แผนก/คณะ: ${p.department || '-'}
-            </div>
-            <div>
-              ขณะป่วยอาศัยอยู่ที่อยู่ตามภูมิลำเนา: ${p.stayDomicile !== false ? 'ใช่' : 'ไม่ใช่'}
-            </div>
-            <div>
-              (กรณีอยู่ที่อื่น) บ้านเลขที่: ${p.stayDomicile === false ? stayOtherStr : ''} &nbsp;&nbsp;&nbsp;&nbsp; หมู่ที่: &nbsp;&nbsp;&nbsp;&nbsp; ตำบล: &nbsp;&nbsp;&nbsp;&nbsp; อำเภอ: &nbsp;&nbsp;&nbsp;&nbsp; จังหวัด:
-            </div>
+          <div style="border-left:4px solid #0d9488; background:#f8fafc; padding:4px 10px; font-weight:700; color:#0f766e; font-size:12px; border-radius:4px; margin-bottom:5px;">
+            2. ข้อมูลทั่วไปผู้ป่วย
           </div>
-
-          <!-- 3. ข้อมูลการเจ็บป่วย -->
-          <table style="width:100%; border-collapse:collapse; margin-bottom:4px; font-size:12px;">
-            <tr>
-              <td style="width:38%; font-size:13px; font-weight:bold;">3.ข้อมูลการเจ็บป่วย</td>
-              <td style="width:62%;">ประวัติการเดินทาง 14 วันก่อนป่วย : ${p.travelHistory || 'ไม่ได้ไปไหน'}</td>
-            </tr>
-            <tr>
-              <td colspan="2" style="padding-top:2px;">วันเริ่มป่วย: ${illnessDate}</td>
-            </tr>
-          </table>
-
-          <!-- การไปรับการรักษา -->
-          <div style="font-size:12px; font-weight:bold; margin:6px 0 3px 0;">การไปรับการรักษา</div>
-          <table style="width:100%; border-collapse:collapse; font-size:11.5px; margin-bottom:8px; text-align:center;">
-            <thead>
+          <div style="border:1px solid #cbd5e1; border-radius:8px; overflow:hidden; margin-bottom:9px;">
+            <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+              <tr style="background:#ffffff;">
+                <td colspan="2" style="padding:5px 10px; border-bottom:1px solid #e2e8f0;">
+                  <span style="color:#64748b;">ชื่อ-สกุล ผู้ป่วย:</span>
+                  <span style="font-size:13px; font-weight:700; color:#0f172a; margin-left:4px;">${p.fullName || '-'}</span>
+                </td>
+                <td style="padding:5px 8px; border-bottom:1px solid #e2e8f0; border-left:1px solid #e2e8f0; width:24%;">
+                  <span style="color:#64748b;">เพศ / สถานภาพ:</span> <b>${p.gender || '-'}</b> / ${p.maritalStatus || 'โสด'}
+                </td>
+                <td style="padding:5px 8px; border-bottom:1px solid #e2e8f0; border-left:1px solid #e2e8f0; width:26%;">
+                  <span style="color:#64748b;">อายุ / สัญชาติ:</span> <b>${p.ageYear || 0} ปี ${p.ageMonth || 0} ด.</b> (${p.nationality || 'ไทย'})
+                </td>
+              </tr>
               <tr style="background:#f8fafc;">
-                <th style="border:1px solid #000; padding:4px; width:45px;">ครั้งที่</th>
-                <th style="border:1px solid #000; padding:4px; width:130px;">วันที่รับการรักษา</th>
-                <th style="border:1px solid #000; padding:4px;">สถานที่รักษา</th>
-                <th style="border:1px solid #000; padding:4px; width:120px;">ผู้ป่วยใน/นอก</th>
-                <th style="border:1px solid #000; padding:4px; width:120px;">การวินิจฉัย</th>
+                <td colspan="2" style="padding:5px 10px; border-bottom:1px solid #e2e8f0;">
+                  <span style="color:#64748b;">ที่อยู่ปัจจุบัน:</span>
+                  <b>บ้านเลขที่ ${p.addressNo || '-'} หมู่ที่ ${p.villageNo || '-'} ต.${p.subdistrict || '-'} อ.เทพา จ.สงขลา</b>
+                </td>
+                <td style="padding:5px 8px; border-bottom:1px solid #e2e8f0; border-left:1px solid #e2e8f0;">
+                  <span style="color:#64748b;">โทรศัพท์:</span> <b>${p.phone || '-'}</b>
+                </td>
+                <td style="padding:5px 8px; border-bottom:1px solid #e2e8f0; border-left:1px solid #e2e8f0;">
+                  <span style="color:#64748b;">พิกัดบ้าน:</span> <span style="font-size:10.5px;">${coordStr}</span>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              ${treatmentRowsHtml}
-            </tbody>
-          </table>
-
-          <!-- อาการและอาการแสดง -->
-          <div style="font-size:12px; font-weight:bold; margin:6px 0 3px 0;">อาการและอาการแสดง (ตั้งแต่วันเริ่มป่วย)</div>
-          <table style="width:100%; border-collapse:collapse; font-size:11.5px; margin-bottom:4px;">
-            <tr>
-              <td style="border:1px solid #000; padding:4px 8px; width:33%;">ไข้: ${feverVal}</td>
-              <td style="border:1px solid #000; padding:4px 8px; width:33%;">มีเลือดออก: ${bleedVal}</td>
-              <td style="border:1px solid #000; padding:4px 8px; width:34%;">ปวดศีรษะ: ${headacheVal}</td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #000; padding:4px 8px;">ปวดกระบอกตา: ${eyeVal}</td>
-              <td style="border:1px solid #000; padding:4px 8px;">Tourniquet Test: ${tourniquetVal}</td>
-              <td style="border:1px solid #000; padding:4px 8px;">ปวดกล้ามเนื้อ: ${muscleVal}</td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #000; padding:4px 8px;">ปวดข้อ/กระดูก: ${jointVal}</td>
-              <td style="border:1px solid #000; padding:4px 8px;">ผื่น: ${rashVal}</td>
-              <td style="border:1px solid #000; padding:4px 8px;">ตับโต: ${liverVal}</td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #000; padding:4px 8px;">ช็อก: ${shockVal}</td>
-              <td colspan="2" style="border:1px solid #000; padding:4px 8px;">อาการอื่นๆ: ${otherVal}</td>
-            </tr>
-          </table>
-
-          <div style="font-size:12px; margin-bottom:8px;">
-            ผลการรักษา: ${p.treatmentOutcome || 'ยังรักษาอยู่'}
-          </div>
-
-          <!-- ผลการตรวจทางห้องปฏิบัติการ -->
-          <div style="font-size:12px; font-weight:bold; margin:6px 0 3px 0;">ผลการตรวจทางห้องปฏิบัติการ</div>
-          <table style="width:100%; border-collapse:collapse; font-size:11px; margin-bottom:8px; text-align:center;">
-            <thead>
+              <tr style="background:#ffffff;">
+                <td style="padding:5px 10px; border-bottom:1px solid #e2e8f0; width:25%;">
+                  <span style="color:#64748b;">อาชีพ:</span> <b>${p.occupation || '-'}</b>
+                </td>
+                <td style="padding:5px 8px; border-bottom:1px solid #e2e8f0; border-left:1px solid #e2e8f0; width:25%;">
+                  <span style="color:#64748b;">ลักษณะงาน:</span> ${p.workDesc || '-'}
+                </td>
+                <td style="padding:5px 8px; border-bottom:1px solid #e2e8f0; border-left:1px solid #e2e8f0;">
+                  <span style="color:#64748b;">ที่ทำงาน/โรงเรียน:</span> ${p.workplace || '-'}
+                </td>
+                <td style="padding:5px 8px; border-bottom:1px solid #e2e8f0; border-left:1px solid #e2e8f0;">
+                  <span style="color:#64748b;">ชั้น/แผนก/คณะ:</span> ${p.department || '-'}
+                </td>
+              </tr>
               <tr style="background:#f8fafc;">
-                <th rowspan="3" style="border:1px solid #000; padding:4px; width:140px; vertical-align:middle;">CBC</th>
-                <th style="border:1px solid #000; padding:3px; width:118px;">ครั้งที่ 1</th>
-                <th style="border:1px solid #000; padding:3px; width:118px;">ครั้งที่ 2</th>
-                <th style="border:1px solid #000; padding:3px; width:118px;">ครั้งที่ 3</th>
-                <th style="border:1px solid #000; padding:3px; width:118px;">ครั้งที่ 4</th>
-                <th style="border:1px solid #000; padding:3px; width:118px;">ครั้งที่ 5</th>
-              </tr>
-              <tr>
-                <td style="border:1px solid #000; padding:3px; font-size:10.5px;">${labCols[0].date}</td>
-                <td style="border:1px solid #000; padding:3px; font-size:10.5px;">${labCols[1].date}</td>
-                <td style="border:1px solid #000; padding:3px; font-size:10.5px;">${labCols[2].date}</td>
-                <td style="border:1px solid #000; padding:3px; font-size:10.5px;">${labCols[3].date}</td>
-                <td style="border:1px solid #000; padding:3px; font-size:10.5px;">${labCols[4].date}</td>
-              </tr>
-              <tr>
-                <td style="border:1px solid #000; padding:3px; font-size:10.5px;">${labCols[0].time}</td>
-                <td style="border:1px solid #000; padding:3px; font-size:10.5px;">${labCols[1].time}</td>
-                <td style="border:1px solid #000; padding:3px; font-size:10.5px;">${labCols[2].time}</td>
-                <td style="border:1px solid #000; padding:3px; font-size:10.5px;">${labCols[3].time}</td>
-                <td style="border:1px solid #000; padding:3px; font-size:10.5px;">${labCols[4].time}</td>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style="border:1px solid #000; padding:4px 6px; text-align:left;">Hematocrit %</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[0].hct}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[1].hct}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[2].hct}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[3].hct}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[4].hct}</td>
-              </tr>
-              <tr>
-                <td style="border:1px solid #000; padding:4px 6px; text-align:left;">WBC ต่อ ลบ.ม.ม.</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[0].wbc}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[1].wbc}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[2].wbc}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[3].wbc}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[4].wbc}</td>
-              </tr>
-              <tr>
-                <td style="border:1px solid #000; padding:4px 6px; text-align:left;">Platelet ต่อ ลบ.ม.ม.</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[0].plt}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[1].plt}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[2].plt}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[3].plt}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[4].plt}</td>
-              </tr>
-              <tr>
-                <td style="border:1px solid #000; padding:4px 6px; text-align:left;">Lymphocyte %</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[0].lym}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[1].lym}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[2].lym}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[3].lym}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[4].lym}</td>
-              </tr>
-              <tr>
-                <td style="border:1px solid #000; padding:4px 6px; text-align:left;">Atypical Lymphocyte %</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[0].atyp}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[1].atyp}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[2].atyp}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[3].atyp}</td>
-                <td style="border:1px solid #000; padding:4px;">${labCols[4].atyp}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <!-- Footer: Rapid Test & ผู้สอบสวน -->
-          <div style="font-size:12px; line-height:1.6; margin-top:10px;">
-            <table style="width:100%; border-collapse:collapse;">
-              <tr>
-                <td style="width:30%;">การตรวจ Dengue Rapid Test: ${rapidStatus}</td>
-                <td style="width:25%;">Ns1Ag: ${ns1Val}</td>
-                <td style="width:22%;">IgM: ${igmVal}</td>
-                <td style="width:23%;">IgG: ${iggVal}</td>
+                <td style="padding:5px 10px;">
+                  <span style="color:#64748b;">อาศัยตามภูมิลำเนา:</span> <b>${p.stayDomicile !== false ? 'ใช่' : 'ไม่ใช่'}</b>
+                </td>
+                <td colspan="3" style="padding:5px 8px; border-left:1px solid #e2e8f0;">
+                  <span style="color:#64748b;">กรณีอยู่ที่อื่น:</span> ${p.stayDomicile === false ? (stayOtherStr || '-') : 'อาศัยอยู่บ้านตามภูมิลำเนา'}
+                </td>
               </tr>
             </table>
-            <table style="width:100%; border-collapse:collapse; margin-top:8px;">
-              <tr>
-                <td style="width:38%;">วันที่แจ้ง: ${notifAreaDt.date} ${notifAreaDt.time}</td>
-                <td style="width:32%;">ผู้สอบสวน: ${invName}</td>
-                <td style="width:30%;">ตำแหน่ง: ${invPos}</td>
+          </div>
+
+          <!-- 3. ข้อมูลการเจ็บป่วยและประวัติการรักษา -->
+          <div style="border-left:4px solid #0284c7; background:#f8fafc; padding:4px 10px; font-weight:700; color:#0369a1; font-size:12px; border-radius:4px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
+            <span>3. ข้อมูลการเจ็บป่วยและประวัติการไปรับการรักษา</span>
+            <span style="font-size:11px; font-weight:600; color:#334155;">ผลการรักษา: <b style="color:#0f766e;">${p.treatmentOutcome || 'ยังรักษาอยู่'}</b></span>
+          </div>
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:5px 10px; margin-bottom:6px; display:flex; justify-content:space-between; font-size:11.5px;">
+            <div><span style="color:#64748b;">วันเริ่มป่วย:</span> <b style="color:#be123c;">${illnessDate}</b></div>
+            <div><span style="color:#64748b;">ประวัติการเดินทาง 14 วันก่อนป่วย:</span> <b>${p.travelHistory || 'ไม่ได้ไปไหน'}</b></div>
+          </div>
+
+          <div style="border:1px solid #cbd5e1; border-radius:8px; overflow:hidden; margin-bottom:9px;">
+            <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:center;">
+              <thead>
+                <tr style="background:#f1f5f9; color:#334155;">
+                  <th style="padding:5px 6px; width:50px; border-bottom:1px solid #cbd5e1;">ครั้งที่</th>
+                  <th style="padding:5px 6px; width:120px; border-bottom:1px solid #cbd5e1; border-left:1px solid #e2e8f0;">วันที่รับการรักษา</th>
+                  <th style="padding:5px 8px; text-align:left; border-bottom:1px solid #cbd5e1; border-left:1px solid #e2e8f0;">สถานที่รักษา</th>
+                  <th style="padding:5px 6px; width:110px; border-bottom:1px solid #cbd5e1; border-left:1px solid #e2e8f0;">ผู้ป่วยใน/นอก</th>
+                  <th style="padding:5px 6px; width:110px; border-bottom:1px solid #cbd5e1; border-left:1px solid #e2e8f0;">การวินิจฉัย</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${treatmentRowsHtml}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 4. อาการและอาการแสดง -->
+          <div style="border-left:4px solid #f59e0b; background:#f8fafc; padding:4px 10px; font-weight:700; color:#b45309; font-size:12px; border-radius:4px; margin-bottom:5px;">
+            4. อาการและอาการแสดง (ตั้งแต่วันเริ่มป่วย)
+          </div>
+          <div style="border:1px solid #cbd5e1; border-radius:8px; overflow:hidden; margin-bottom:9px;">
+            <table style="width:100%; border-collapse:collapse; font-size:11px;">
+              <tr style="background:#ffffff;">
+                <td style="padding:4px 8px; width:33%; border-bottom:1px solid #e2e8f0;">ไข้: ${renderSymBadge(feverVal)}</td>
+                <td style="padding:4px 8px; width:33%; border-bottom:1px solid #e2e8f0; border-left:1px solid #e2e8f0;">มีเลือดออก: ${renderSymBadge(bleedVal)}</td>
+                <td style="padding:4px 8px; width:34%; border-bottom:1px solid #e2e8f0; border-left:1px solid #e2e8f0;">ปวดศีรษะ: ${renderSymBadge(headacheVal)}</td>
+              </tr>
+              <tr style="background:#f8fafc;">
+                <td style="padding:4px 8px; border-bottom:1px solid #e2e8f0;">ปวดกระบอกตา: ${renderSymBadge(eyeVal)}</td>
+                <td style="padding:4px 8px; border-bottom:1px solid #e2e8f0; border-left:1px solid #e2e8f0;">Tourniquet Test: ${renderSymBadge(tourniquetVal)}</td>
+                <td style="padding:4px 8px; border-bottom:1px solid #e2e8f0; border-left:1px solid #e2e8f0;">ปวดกล้ามเนื้อ: ${renderSymBadge(muscleVal)}</td>
+              </tr>
+              <tr style="background:#ffffff;">
+                <td style="padding:4px 8px; border-bottom:1px solid #e2e8f0;">ปวดข้อ/กระดูก: ${renderSymBadge(jointVal)}</td>
+                <td style="padding:4px 8px; border-bottom:1px solid #e2e8f0; border-left:1px solid #e2e8f0;">ผื่น: ${renderSymBadge(rashVal)}</td>
+                <td style="padding:4px 8px; border-bottom:1px solid #e2e8f0; border-left:1px solid #e2e8f0;">ตับโต: ${renderSymBadge(liverVal)}</td>
+              </tr>
+              <tr style="background:#f8fafc;">
+                <td style="padding:4px 8px;">ช็อก: ${renderSymBadge(shockVal)}</td>
+                <td colspan="2" style="padding:4px 8px; border-left:1px solid #e2e8f0;"><span style="color:#64748b;">อาการอื่นๆ:</span> <b>${otherVal || '-'}</b></td>
               </tr>
             </table>
+          </div>
+
+          <!-- 5. ผลการตรวจทางห้องปฏิบัติการ -->
+          <div style="border-left:4px solid #7c3aed; background:#f8fafc; padding:4px 10px; font-weight:700; color:#6d28d9; font-size:12px; border-radius:4px; margin-bottom:5px;">
+            5. ผลการตรวจทางห้องปฏิบัติการ (CBC 5 รอบ และ Rapid Test)
+          </div>
+          <div style="border:1px solid #cbd5e1; border-radius:8px; overflow:hidden; margin-bottom:7px;">
+            <table style="width:100%; border-collapse:collapse; font-size:10.5px; text-align:center;">
+              <thead>
+                <tr style="background:#0f766e; color:#ffffff;">
+                  <th style="padding:5px 8px; width:150px; text-align:left;">รายการตรวจ (CBC)</th>
+                  <th style="padding:4px; width:116px; border-left:1px solid rgba(255,255,255,0.2);">ครั้งที่ 1<br><span style="font-weight:400; font-size:9.5px; color:#ccfbf1;">${labCols[0].date} ${labCols[0].time}</span></th>
+                  <th style="padding:4px; width:116px; border-left:1px solid rgba(255,255,255,0.2);">ครั้งที่ 2<br><span style="font-weight:400; font-size:9.5px; color:#ccfbf1;">${labCols[1].date} ${labCols[1].time}</span></th>
+                  <th style="padding:4px; width:116px; border-left:1px solid rgba(255,255,255,0.2);">ครั้งที่ 3<br><span style="font-weight:400; font-size:9.5px; color:#ccfbf1;">${labCols[2].date} ${labCols[2].time}</span></th>
+                  <th style="padding:4px; width:116px; border-left:1px solid rgba(255,255,255,0.2);">ครั้งที่ 4<br><span style="font-weight:400; font-size:9.5px; color:#ccfbf1;">${labCols[3].date} ${labCols[3].time}</span></th>
+                  <th style="padding:4px; width:116px; border-left:1px solid rgba(255,255,255,0.2);">ครั้งที่ 5<br><span style="font-weight:400; font-size:9.5px; color:#ccfbf1;">${labCols[4].date} ${labCols[4].time}</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                ${[
+                  { label: 'Hematocrit (%)', key: 'hct' },
+                  { label: 'WBC (เซลล์/ลบ.มม.)', key: 'wbc' },
+                  { label: 'Platelet (เซลล์/ลบ.มม.)', key: 'plt' },
+                  { label: 'Lymphocyte (%)', key: 'lym' },
+                  { label: 'Atypical Lymphocyte (%)', key: 'atyp' }
+                ].map((metric, idx) => `
+                  <tr style="background:${idx % 2 === 1 ? '#f8fafc' : '#ffffff'};">
+                    <td style="border-top:1px solid #e2e8f0; padding:4px 8px; text-align:left; font-weight:600; color:#334155;">${metric.label}</td>
+                    ${labCols.map(c => `<td style="border-top:1px solid #e2e8f0; border-left:1px solid #e2e8f0; padding:4px;">${c[metric.key]}</td>`).join('')}
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Rapid Test Summary Bar -->
+          <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:6px 12px; margin-bottom:9px;">
+            <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+              <tr>
+                <td style="width:31%;"><span style="color:#64748b;">Dengue Rapid Test:</span> <b>${rapidStatus}</b></td>
+                <td style="width:23%;"><span style="color:#64748b;">NS1Ag:</span> ${formatRapidValBadge(ns1Val)}</td>
+                <td style="width:23%;"><span style="color:#64748b;">IgM:</span> ${formatRapidValBadge(igmVal)}</td>
+                <td style="width:23%;"><span style="color:#64748b;">IgG:</span> ${formatRapidValBadge(iggVal)}</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Sign-off Footer -->
+          <div style="background:#f8fafc; border:1px solid #cbd5e1; border-top:3px solid #0d9488; border-radius:8px; padding:8px 12px;">
+            <table style="width:100%; border-collapse:collapse; font-size:11.5px;">
+              <tr>
+                <td style="width:36%;"><span style="color:#64748b;">วันที่แจ้งพื้นที่:</span> <b>${notifAreaDt.date} ${notifAreaDt.time} น.</b></td>
+                <td style="width:34%;"><span style="color:#64748b;">ผู้สอบสวนโรค:</span> <b>${invName}</b></td>
+                <td style="width:30%;"><span style="color:#64748b;">ตำแหน่ง:</span> <b>${invPos}</b></td>
+              </tr>
+            </table>
+            <div style="margin-top:4px; padding-top:4px; border-top:1px dashed #cbd5e1; display:flex; justify-content:space-between; font-size:9.5px; color:#64748b;">
+              <span>ระบบสารสนเทศงานระบาดอำเภอเทพา จังหวัดสงขลา (TDDS Thepha)</span>
+              <span>เอกสารสอบสวนโรคไข้เลือดออก • ส่งออกอัตโนมัติ</span>
+            </div>
           </div>
 
         </div>
