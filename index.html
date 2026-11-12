@@ -8266,8 +8266,7 @@
       // Area Case Confirmation Card
       const confirmBox = document.getElementById('viewModalConfirmationBox');
       if (confirmBox) {
-        const { isConfirmedLocal, isConfirmedExternal, elapsedHours, isNewCase } = getPatientConfirmationState(p, now);
-        const isOver3Hours = !isConfirmed && isNewCase && elapsedHours >= 3;
+        const { isConfirmedLocal, isConfirmedExternal, isConfirmed, createdTime, isNewCase, isOver3Hours } = getPatientConfirmationState(p, now);
 
         let bgClass = 'bg-amber-50/70 border-amber-200 text-amber-900';
         let statusTitle = `⏳ รอยืนยันการรับเคสจากเจ้าหน้าที่ รพ.สต./PCU: ${p.healthCenter || '-'}`;
