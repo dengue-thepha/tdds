@@ -628,6 +628,45 @@
           </div>
         </div>
 
+        <!-- DAILY EPIDEMIC CURVE SECTION: จำนวนผู้ป่วยจำแนกรายวันตามวันเริ่มป่วย (Epidemic curve) -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+          <div class="flex flex-col xl:flex-row xl:items-start justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-lg">📊</span>
+                <h3 id="dailyEpiChartTitle" class="text-sm md:text-base font-bold text-slate-800">
+                  จำนวนผู้ป่วยโรคไข้เลือดออก อ.เทพา ปี 2569 จำแนกรายวันตามวันเริ่มป่วย (Epidemic curve)
+                </h3>
+              </div>
+              <p id="dailyEpiChartSubtitle" class="text-xs text-slate-500 mt-1">
+                เส้นโค้งการระบาดรายวัน (Epidemic Curve) แสดงจำนวนผู้ป่วยยืนยัน (DF, DHF, DSS ไม่รวมเคส R/O) จำแนกตามวันเริ่มป่วยรายวัน พร้อมเส้นค่าเฉลี่ยเคลื่อนที่ 7 วัน
+              </p>
+            </div>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2 xl:items-end xl:flex-col">
+              <div id="dailyEpiRangeBtns" class="inline-flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
+                <button type="button" data-range="all" onclick="setDailyEpiRange('all')" class="px-2.5 py-1 rounded-lg bg-teal-600 text-white shadow-xs transition">ทั้งหมดในรอบปี</button>
+                <button type="button" data-range="90" onclick="setDailyEpiRange('90')" class="px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition">90 วันล่าสุด</button>
+                <button type="button" data-range="60" onclick="setDailyEpiRange('60')" class="px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition">60 วันล่าสุด</button>
+                <button type="button" data-range="30" onclick="setDailyEpiRange('30')" class="px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition">30 วันล่าสุด</button>
+              </div>
+              <div id="dailyEpiSummaryBadges" class="flex flex-wrap items-center gap-2 text-xs">
+                <span class="inline-flex items-center gap-1.5 bg-teal-50 text-teal-800 border border-teal-200 px-2.5 py-1 rounded-xl font-medium">
+                  <span class="w-2.5 h-2.5 rounded-xs bg-[#26A69A] inline-block"></span>
+                  <span>วันก่อนหน้า</span>
+                </span>
+                <span class="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-xl font-medium">
+                  <span class="w-2.5 h-2.5 rounded-xs bg-[#EF5350] inline-block"></span>
+                  <span>14 วันล่าสุด</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="h-72 relative w-full">
+            <canvas id="dailyEpiCurveChart"></canvas>
+          </div>
+        </div>
+
         <!-- DEMOGRAPHIC CHARTS SECTION: กราฟร้อยละแยกกลุ่มอายุ + กราฟร้อยละแยกอาชีพ -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
@@ -3875,6 +3914,9 @@
     let diagnosisChartInstance = null;
     let monthlyMedianChartInstance = null;
     let weeklyOnsetChartInstance = null;
+    let dailyEpiCurveChartInstance = null;
+    let dailyEpiRangeDays = 'all';
+    let dailyEpiLastContext = null;
     let villageChartInstance = null;
     let occupationChartInstance = null;
     let ageGroupChartInstance = null;
@@ -5331,6 +5373,288 @@
       `;
     }
 
+    const DASHBOARD_MONTHS_TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const DASHBOARD_WEEKDAYS_TH = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+
+    function parseDashboardUtcDayMs(dStr) {
+      if (!dStr) return NaN;
+      const clean = String(dStr).split('T')[0].trim();
+      const m = clean.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (m) return Date.UTC(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+      const d = new Date(dStr);
+      return isNaN(d.getTime()) ? NaN : Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+
+    function formatDashboardThaiShortUtc(utcMs) {
+      const d = new Date(utcMs);
+      return `${d.getUTCDate()} ${DASHBOARD_MONTHS_TH[d.getUTCMonth()]}`;
+    }
+
+    function setDailyEpiRange(range) {
+      dailyEpiRangeDays = range || 'all';
+      const btnWrap = document.getElementById('dailyEpiRangeBtns');
+      if (btnWrap) {
+        btnWrap.querySelectorAll('button[data-range]').forEach(btn => {
+          const active = btn.getAttribute('data-range') === String(dailyEpiRangeDays);
+          btn.className = active
+            ? 'px-2.5 py-1 rounded-lg bg-teal-600 text-white shadow-xs transition'
+            : 'px-2.5 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition';
+        });
+      }
+      if (dailyEpiLastContext) {
+        renderDailyEpiCurveChart(dailyEpiLastContext);
+      }
+    }
+
+    function renderDailyEpiCurveChart(ctxObj) {
+      if (!ctxObj) return;
+      const { list, targetYearAd, hcHistCtx, subKey, todayUtcMs } = ctxObj;
+      const targetYearBe = targetYearAd + 543;
+      const msPerDay = 86400000;
+      const yearStartMs = Date.UTC(targetYearAd, 0, 1);
+      const yearEndMs = Date.UTC(targetYearAd, 11, 31);
+
+      const dailyTitleEl = document.getElementById('dailyEpiChartTitle');
+      if (dailyTitleEl) {
+        if (hcHistCtx) {
+          dailyTitleEl.innerText = `จำนวนผู้ป่วยโรคไข้เลือดออก ${hcHistCtx.name} (${hcHistCtx.hcode}) ปี ${targetYearBe} จำแนกรายวันตามวันเริ่มป่วย (Epidemic curve)`;
+        } else if (subKey !== 'all') {
+          dailyTitleEl.innerText = `จำนวนผู้ป่วยโรคไข้เลือดออก ต.${subKey} ปี ${targetYearBe} จำแนกรายวันตามวันเริ่มป่วย (Epidemic curve)`;
+        } else {
+          dailyTitleEl.innerText = `จำนวนผู้ป่วยโรคไข้เลือดออก อ.เทพา ปี ${targetYearBe} จำแนกรายวันตามวันเริ่มป่วย (Epidemic curve)`;
+        }
+      }
+
+      const dailyMap = {};
+      let minCaseDayMs = null;
+      let maxCaseDayMs = null;
+      let totalYearCases = 0;
+
+      (list || []).forEach(p => {
+        const dayMs = parseDashboardUtcDayMs(p.illnessDate || p.notifiedDatetime);
+        if (isNaN(dayMs)) return;
+        const dt = new Date(dayMs);
+        if (dt.getUTCFullYear() !== targetYearAd) return;
+        dailyMap[dayMs] = (dailyMap[dayMs] || 0) + 1;
+        totalYearCases++;
+        if (minCaseDayMs === null || dayMs < minCaseDayMs) minCaseDayMs = dayMs;
+        if (maxCaseDayMs === null || dayMs > maxCaseDayMs) maxCaseDayMs = dayMs;
+      });
+
+      const clampedTodayMs = Math.min(yearEndMs, Math.max(yearStartMs, todayUtcMs));
+      const endMs = Math.min(yearEndMs, Math.max(clampedTodayMs, maxCaseDayMs || clampedTodayMs));
+      let startMs;
+      if (dailyEpiRangeDays === 'all') {
+        startMs = minCaseDayMs !== null ? minCaseDayMs : Math.max(yearStartMs, endMs - 29 * msPerDay);
+      } else {
+        const spanDays = Math.max(7, parseInt(dailyEpiRangeDays, 10) || 60);
+        startMs = Math.max(yearStartMs, endMs - (spanDays - 1) * msPerDay);
+      }
+      if (startMs > endMs) startMs = endMs;
+
+      const dayTimestamps = [];
+      const dayLabels = [];
+      const dayFullLabels = [];
+      const dayCounts = [];
+      const dayMovingAvg7 = [];
+      const dayCumCounts = [];
+
+      let runningTotal = 0;
+      // Accumulate cases prior to startMs so cumulative count reflects total since start of year
+      Object.keys(dailyMap).forEach(k => {
+        const ms = Number(k);
+        if (ms < startMs) runningTotal += dailyMap[k];
+      });
+
+      let rangeCases = 0;
+      let recent14DaysCases = 0;
+      let peakDayCount = 0;
+      let peakDayLabel = '-';
+      const recent14CutoffMs = endMs - 13 * msPerDay;
+
+      // Rolling 7-day average using full dailyMap (including 6 days before startMs when available)
+      for (let cur = startMs; cur <= endMs; cur += msPerDay) {
+        const cnt = dailyMap[cur] || 0;
+        runningTotal += cnt;
+        rangeCases += cnt;
+        if (cur >= recent14CutoffMs) recent14DaysCases += cnt;
+
+        const dt = new Date(cur);
+        const shortLbl = `${dt.getUTCDate()} ${DASHBOARD_MONTHS_TH[dt.getUTCMonth()]}`;
+        const fullLbl = `${dt.getUTCDate()} ${DASHBOARD_MONTHS_TH[dt.getUTCMonth()]} ${targetYearBe} (วัน${DASHBOARD_WEEKDAYS_TH[dt.getUTCDay()]})`;
+
+        if (cnt > peakDayCount) {
+          peakDayCount = cnt;
+          peakDayLabel = `${dt.getUTCDate()} ${DASHBOARD_MONTHS_TH[dt.getUTCMonth()]}`;
+        }
+
+        let sum7 = 0;
+        for (let k = 0; k < 7; k++) {
+          sum7 += (dailyMap[cur - k * msPerDay] || 0);
+        }
+
+        dayTimestamps.push(cur);
+        dayLabels.push(shortLbl);
+        dayFullLabels.push(fullLbl);
+        dayCounts.push(cnt);
+        dayCumCounts.push(runningTotal);
+        dayMovingAvg7.push(Number((sum7 / 7).toFixed(2)));
+      }
+
+      const dailyBadgesEl = document.getElementById('dailyEpiSummaryBadges');
+      if (dailyBadgesEl) {
+        dailyBadgesEl.innerHTML = `
+          <span class="inline-flex items-center gap-1.5 bg-teal-50 text-teal-800 border border-teal-200 px-2.5 py-1 rounded-xl font-medium">
+            <span class="w-2.5 h-2.5 rounded-xs bg-[#26A69A] inline-block"></span>
+            <span>ช่วงที่แสดง: ${rangeCases} / ${totalYearCases} ราย (${dayTimestamps.length} วัน)</span>
+          </span>
+          <span class="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-xl font-medium">
+            <span class="w-2.5 h-2.5 rounded-xs bg-[#EF5350] inline-block"></span>
+            <span>14 วันล่าสุด: ${recent14DaysCases} ราย</span>
+          </span>
+          <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-xl font-medium">
+            <span class="w-3 h-0.5 bg-[#F59E0B] inline-block"></span>
+            <span>เฉลี่ย 7 วัน</span>
+          </span>
+          <span class="inline-flex items-center gap-1 bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-1 rounded-xl font-semibold">
+            📈 สูงสุด ${peakDayCount > 0 ? `${peakDayLabel} (${peakDayCount} ราย)` : '0 ราย'}
+          </span>
+        `;
+      }
+
+      const ctxDaily = document.getElementById('dailyEpiCurveChart');
+      if (!ctxDaily) return;
+      if (dailyEpiCurveChartInstance) {
+        dailyEpiCurveChartInstance.destroy();
+      }
+
+      const barColors = dayTimestamps.map(ms => ms >= recent14CutoffMs ? '#EF5350' : '#26A69A');
+      const totalBars = dayCounts.length;
+
+      const dailyBarLabelsPlugin = {
+        id: 'dailyBarLabelsPlugin',
+        afterDatasetsDraw(chart) {
+          const ctx = chart.ctx;
+          const meta = chart.getDatasetMeta(0);
+          meta.data.forEach((bar, index) => {
+            const val = chart.data.datasets[0].data[index];
+            if (!val || val <= 0) return;
+            // Avoid text collisions on dense full-year views while still labeling peaks cleanly
+            if (totalBars > 100 && val < peakDayCount && val < 2) return;
+            ctx.save();
+            ctx.font = 'bold 10px Kanit, sans-serif';
+            ctx.fillStyle = dayTimestamps[index] >= recent14CutoffMs ? '#b91c1c' : '#0f766e';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(String(val), bar.x, bar.y - 3);
+            ctx.restore();
+          });
+        }
+      };
+
+      dailyEpiCurveChartInstance = new Chart(ctxDaily.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: dayLabels,
+          datasets: [
+            {
+              type: 'bar',
+              label: 'จำนวนผู้ป่วยรายวัน (ราย)',
+              data: dayCounts,
+              backgroundColor: barColors,
+              borderColor: dayTimestamps.map(ms => ms >= recent14CutoffMs ? '#dc2626' : '#0f766e'),
+              borderWidth: 0.5,
+              borderRadius: 2,
+              barPercentage: 0.96,
+              categoryPercentage: 0.96,
+              order: 2
+            },
+            {
+              type: 'line',
+              label: 'ค่าเฉลี่ยเคลื่อนที่ 7 วัน (ราย/วัน)',
+              data: dayMovingAvg7,
+              borderColor: '#F59E0B',
+              backgroundColor: 'rgba(245, 158, 11, 0.12)',
+              borderWidth: 2,
+              pointRadius: 0,
+              pointHoverRadius: 4,
+              tension: 0.35,
+              fill: false,
+              order: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          layout: { padding: { top: 20, right: 8 } },
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.92)',
+              titleFont: { family: 'Kanit', size: 12, weight: 'bold' },
+              bodyFont: { family: 'Kanit', size: 12 },
+              padding: 10,
+              cornerRadius: 8,
+              callbacks: {
+                title: (items) => {
+                  const idx = items[0]?.dataIndex ?? 0;
+                  return `วันเริ่มป่วย: ${dayFullLabels[idx] || items[0]?.label || ''}`;
+                },
+                label: (ctx) => {
+                  if (ctx.datasetIndex === 0) {
+                    return ` ผู้ป่วยเริ่มป่วยวันนี้: ${ctx.parsed.y} ราย`;
+                  }
+                  return ` ค่าเฉลี่ยเคลื่อนที่ 7 วัน: ${ctx.parsed.y} ราย/วัน`;
+                },
+                afterBody: (items) => {
+                  const idx = items[0]?.dataIndex ?? 0;
+                  return ` สะสมถึงวันนี้ (ปี ${targetYearBe}): ${dayCumCounts[idx] ?? 0} ราย`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              suggestedMax: Math.max(3, peakDayCount + 1),
+              ticks: {
+                stepSize: 1,
+                precision: 0,
+                font: { family: 'Kanit', size: 11 },
+                color: '#64748b'
+              },
+              title: {
+                display: true,
+                text: 'จำนวนผู้ป่วย (ราย)',
+                font: { family: 'Kanit', size: 11 },
+                color: '#64748b'
+              },
+              grid: { color: '#f1f5f9' }
+            },
+            x: {
+              ticks: {
+                font: { family: 'Kanit', size: 10 },
+                color: '#475569',
+                autoSkip: true,
+                maxTicksLimit: 18,
+                maxRotation: 0
+              },
+              title: {
+                display: true,
+                text: `วันเริ่มป่วย (ปี พ.ศ. ${targetYearBe})`,
+                font: { family: 'Kanit', size: 11 },
+                color: '#64748b'
+              },
+              grid: { display: false }
+            }
+          }
+        },
+        plugins: [dailyBarLabelsPlugin]
+      });
+    }
+
     function renderDashboardCharts(list, selectedSubdistrict = null) {
       const totalPatients = list.length || 1;
 
@@ -5542,14 +5866,7 @@
           ? Date.UTC(yr, 0, 1 - dow)
           : Date.UTC(yr, 0, 1 + (7 - dow));
       };
-      const parseUtcDayMs = (dStr) => {
-        if (!dStr) return NaN;
-        const clean = String(dStr).split('T')[0].trim();
-        const m = clean.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-        if (m) return Date.UTC(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
-        const d = new Date(dStr);
-        return isNaN(d.getTime()) ? NaN : Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
-      };
+      const parseUtcDayMs = parseDashboardUtcDayMs;
       const targetYearAd = 2026;
       const week1StartMs = getEpiWeekStartUtc(targetYearAd);
       const msPerWeek = 7 * 86400000;
@@ -5578,10 +5895,7 @@
       let peakWeek = 1;
       let peakWeekCount = 0;
 
-      const formatThaiShortUtc = (utcMs) => {
-        const d = new Date(utcMs);
-        return `${d.getUTCDate()} ${monthsTh[d.getUTCMonth()]}`;
-      };
+      const formatThaiShortUtc = formatDashboardThaiShortUtc;
 
       for (let w = 1; w <= totalWeeks; w++) {
         const wStart = week1StartMs + (w - 1) * msPerWeek;
@@ -5730,6 +6044,12 @@
           plugins: [weeklyBarLabelsPlugin]
         });
       }
+
+      // -----------------------------------------------------------
+      // 1.6 Daily Epidemic Curve by Illness Onset Date (รายวันตามวันเริ่มป่วย)
+      // -----------------------------------------------------------
+      dailyEpiLastContext = { list, targetYearAd, hcHistCtx, subKey, todayUtcMs };
+      renderDailyEpiCurveChart(dailyEpiLastContext);
 
       // -----------------------------------------------------------
       // 2. Age Group Morbidity Rate per 100,000 Bar Chart (จากประชากรที่นำเข้า)
