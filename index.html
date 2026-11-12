@@ -27,7 +27,10 @@
   <!-- html2canvas CDN (Screenshot & Image Generation) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-  <!-- html2pdf.js CDN (PDF Generation) -->
+  <!-- jsPDF CDN (Direct PDF Rendering without html2canvas 1.0 crop bugs) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- html2pdf.js CDN (PDF Generation Fallback) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <!-- SheetJS (xlsx) CDN - สำหรับ parse ไฟล์ Excel -->
@@ -6807,7 +6810,26 @@
     // -------------------------------------------------------------
     // 8. PATIENT REGISTRY TABLE & FILTERS
     // -------------------------------------------------------------
-        function renderRecentPatientsTable(list) {
+    function getPatientConfirmationState(p, now = new Date()) {
+      const isConfirmedExternal = !!(p && (
+        p.confirmedStatus === 'confirmed_external' ||
+        p.areaConfirmed === 'ป่วยนอกพื้นที่' ||
+        p.areaConfirmed === 'ไม่อยู่ในพื้นที่'
+      ));
+      const isConfirmedLocal = !!(p && !isConfirmedExternal && (
+        p.confirmedStatus === 'confirmed_local' ||
+        p.areaConfirmed === 'ยืนยัน' ||
+        p.areaConfirmed === 'ยืนยันแล้ว'
+      ));
+      const isConfirmed = isConfirmedLocal || isConfirmedExternal;
+      const createdTime = p && p.createdAt ? new Date(p.createdAt) : null;
+      const elapsedHours = (createdTime && !isNaN(createdTime.getTime())) ? (now.getTime() - createdTime.getTime()) / (1000 * 3600) : 999;
+      const isNewCase = !!(p && p.createdAt && elapsedHours <= 24 && p.unconfirmedAlertSentAt !== 'OLD_CASE_SKIPPED');
+      const isOver3Hours = !isConfirmed && isNewCase && elapsedHours >= 3;
+      return { isConfirmedLocal, isConfirmedExternal, isConfirmed, createdTime, elapsedHours, isNewCase, isOver3Hours };
+    }
+
+    function renderRecentPatientsTable(list) {
       const tbody = document.getElementById('recentPatientsTbody');
       tbody.innerHTML = '';
 
@@ -6833,12 +6855,7 @@
           badgeHtml = '<span class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-700 font-bold border border-emerald-200">🟢 28 วัน</span>';
         }
 
-        const isConfirmedLocal = p.confirmedStatus === 'confirmed_local' || (p.areaConfirmed === 'ยืนยัน' && !p.confirmedStatus);
-        const isConfirmedExternal = p.confirmedStatus === 'confirmed_external';
-        const isConfirmed = isConfirmedLocal || isConfirmedExternal || p.areaConfirmed === 'ยืนยันแล้ว';
-        const createdTime = p.createdAt ? new Date(p.createdAt) : null;
-        const elapsedHours = (createdTime && !isNaN(createdTime.getTime())) ? (now.getTime() - createdTime.getTime()) / (1000 * 60 * 60) : 999;
-        const isNewCase = p.createdAt && elapsedHours <= 24 && p.unconfirmedAlertSentAt !== 'OLD_CASE_SKIPPED';
+        const { isConfirmedLocal, isConfirmedExternal, elapsedHours, isNewCase } = getPatientConfirmationState(p, now);
 
         let statusChip = '';
         if (isConfirmedLocal) {
@@ -6846,11 +6863,11 @@
         } else if (isConfirmedExternal) {
           statusChip = '<span class="text-[9px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200" title="ยืนยัน: ป่วยนอกพื้นที่">🔵 ป่วยนอกพื้นที่</span>';
         } else if (isNewCase && elapsedHours >= 3) {
-          statusChip = `<button onclick="confirmPatientCase('${p.id}')" class="animate-pulse text-[9px] font-bold text-rose-800 bg-rose-100 px-1.5 py-0.5 rounded border border-rose-300 hover:bg-rose-200 transition" title="รอยืนยันเกิน 3 ชม. แล้ว (คลิกยืนยัน)">⚠️ รอเกิน 3 ชม.</button>`;
+          statusChip = `<button onclick="event.stopPropagation(); confirmPatientCase('${p.id}')" class="animate-pulse text-[9px] font-bold text-rose-800 bg-rose-100 px-1.5 py-0.5 rounded border border-rose-300 hover:bg-rose-200 transition" title="รอยืนยันเกิน 3 ชม. แล้ว (คลิกยืนยัน)">⚠️ รอเกิน 3 ชม.</button>`;
         } else if (isNewCase && elapsedHours < 3) {
-          statusChip = `<button onclick="confirmPatientCase('${p.id}')" class="text-[9px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 hover:bg-amber-100 transition" title="คลิกเพื่อยืนยันเคส">⏳ รอยืนยัน</button>`;
+          statusChip = `<button onclick="event.stopPropagation(); confirmPatientCase('${p.id}')" class="text-[9px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 hover:bg-amber-100 transition" title="คลิกเพื่อยืนยันเคส">⏳ รอยืนยัน</button>`;
         } else {
-          statusChip = `<button onclick="confirmPatientCase('${p.id}')" class="text-[9px] font-medium text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-300 hover:bg-slate-200 transition" title="เคสเก่า: คลิกเพื่อยืนยันย้อนหลัง">⚪ ยังไม่ยืนยัน</button>`;
+          statusChip = `<button onclick="event.stopPropagation(); confirmPatientCase('${p.id}')" class="text-[9px] font-medium text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-300 hover:bg-slate-200 transition" title="เคสเก่า: คลิกเพื่อยืนยันย้อนหลัง">⚪ ยังไม่ยืนยัน</button>`;
         }
 
         const tr = document.createElement('tr');
@@ -7265,12 +7282,7 @@
           badgeHtml = '<span class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-700 font-bold border border-emerald-200">🟢 28 วัน</span>';
         }
 
-        const isConfirmedLocal = p.confirmedStatus === 'confirmed_local' || (p.areaConfirmed === 'ยืนยัน' && !p.confirmedStatus);
-        const isConfirmedExternal = p.confirmedStatus === 'confirmed_external';
-        const isConfirmed = isConfirmedLocal || isConfirmedExternal || p.areaConfirmed === 'ยืนยันแล้ว';
-        const createdTime = p.createdAt ? new Date(p.createdAt) : null;
-        const elapsedHours = (createdTime && !isNaN(createdTime.getTime())) ? (now.getTime() - createdTime.getTime()) / (1000 * 60 * 60) : 999;
-        const isNewCase = p.createdAt && elapsedHours <= 24 && p.unconfirmedAlertSentAt !== 'OLD_CASE_SKIPPED';
+        const { isConfirmedLocal, isConfirmedExternal, elapsedHours, isNewCase } = getPatientConfirmationState(p, now);
 
         let confirmBadgeHtml = '';
         if (isConfirmedLocal) {
@@ -7768,12 +7780,7 @@
       // Area Case Confirmation Card
       const confirmBox = document.getElementById('viewModalConfirmationBox');
       if (confirmBox) {
-        const isConfirmedLocal = p.confirmedStatus === 'confirmed_local' || (p.areaConfirmed === 'ยืนยัน' && !p.confirmedStatus);
-        const isConfirmedExternal = p.confirmedStatus === 'confirmed_external';
-        const isConfirmed = isConfirmedLocal || isConfirmedExternal || p.areaConfirmed === 'ยืนยันแล้ว';
-        const createdTime = p.createdAt ? new Date(p.createdAt) : null;
-        const elapsedHours = (createdTime && !isNaN(createdTime.getTime())) ? (now.getTime() - createdTime.getTime()) / (1000 * 60 * 60) : 999;
-        const isNewCase = p.createdAt && elapsedHours <= 24 && p.unconfirmedAlertSentAt !== 'OLD_CASE_SKIPPED';
+        const { isConfirmedLocal, isConfirmedExternal, elapsedHours, isNewCase } = getPatientConfirmationState(p, now);
         const isOver3Hours = !isConfirmed && isNewCase && elapsedHours >= 3;
 
         let bgClass = 'bg-amber-50/70 border-amber-200 text-amber-900';
@@ -7866,6 +7873,7 @@
     function closePatientViewModal() {
       const modal = document.getElementById('patientViewModal');
       if (modal) modal.classList.add('hidden');
+      currentViewPatientId = null;
     }
 
 
@@ -8924,8 +8932,11 @@
 
         await new Promise(resolve => setTimeout(resolve, 120));
 
+        const captureWidth = Math.max(widthPx, rootEl.scrollWidth || widthPx);
         const captureHeight = Math.max(rootEl.scrollHeight, rootEl.offsetHeight, 450);
+        iframe.style.width = `${captureWidth}px`;
         iframe.style.height = `${captureHeight + 40}px`;
+        rootEl.style.width = `${captureWidth}px`;
 
         const JsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
         if (window.html2canvas && JsPDFCtor) {
@@ -8939,9 +8950,9 @@
             y: 0,
             scrollX: 0,
             scrollY: 0,
-            width: widthPx,
+            width: captureWidth,
             height: captureHeight,
-            windowWidth: widthPx,
+            windowWidth: captureWidth,
             windowHeight: captureHeight + 40
           });
 
@@ -8959,14 +8970,23 @@
           const opt = {
             margin: [8, 8, 8, 8],
             filename: fileName,
-            image: { type: 'jpeg', quality: 0.9 },
-            html2canvas: { scale: 1.5, useCORS: true, allowTaint: false, backgroundColor: '#ffffff', logging: false, scrollX: 0, scrollY: 0, windowWidth: widthPx },
+            image: { type: 'jpeg', quality: 0.92 },
+            html2canvas: {
+              scale: 1.5,
+              useCORS: true,
+              allowTaint: false,
+              backgroundColor: '#ffffff',
+              logging: false,
+              scrollX: 0,
+              scrollY: 0
+            },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
           };
+          const fallbackHtml = `<div style="width:${widthPx}px; margin:0; padding:0; background:#ffffff; text-align:left;">${reportHtml}</div>`;
           if (shouldDownload) {
-            await html2pdf().set(opt).from(rootEl).save();
+            await html2pdf().set(opt).from(fallbackHtml).save();
           } else {
-            pdfBlob = await html2pdf().set(opt).from(rootEl).output('blob');
+            pdfBlob = await html2pdf().set(opt).from(fallbackHtml).output('blob');
           }
           if (pdfBlob || shouldDownload) {
             return { blob: pdfBlob, handled: true };
@@ -9494,32 +9514,60 @@ https://dengue-thepha.github.io/tdds/`;
           const selected = document.querySelector('input[name="swal_case_confirm"]:checked')?.value || 'confirmed_local';
           const note = document.getElementById('swal_confirm_note')?.value.trim() || '';
 
-          p.areaConfirmed = 'ยืนยันแล้ว';
-          p.confirmedStatus = selected;
-          p.confirmedStatusText = selected === 'confirmed_local' ? 'ป่วยในพื้นที่จริง' : 'ป่วยนอกพื้นที่';
-          p.confirmedBy = `${currentUser.fullName} (${currentUser.unit})`;
-          p.confirmedTime = new Date().toISOString();
-          p.confirmedNote = note;
-          if (selected === 'confirmed_local') {
-            p.controlAlert3hSentAt = null;
+          // ค้นหา object ปัจจุบันจาก patientsData อีกครั้ง ป้องกันกรณี background fetch เปลี่ยน reference ระหว่างเปิดหน้าต่างยืนยัน
+          let activeP = patientsData.find(item =>
+            item.id === p.id ||
+            (p.supabaseId && item.supabaseId === p.supabaseId) ||
+            (p.patientCode && item.patientCode === p.patientCode && normalizeThaiStr(item.fullName) === normalizeThaiStr(p.fullName))
+          );
+          if (!activeP) {
+            activeP = p;
+            patientsData.unshift(activeP);
           }
+
+          activeP.areaConfirmed = selected === 'confirmed_local' ? 'ยืนยันแล้ว' : 'ป่วยนอกพื้นที่';
+          activeP.confirmedStatus = selected;
+          activeP.confirmedStatusText = selected === 'confirmed_local' ? 'ป่วยในพื้นที่จริง' : 'ป่วยนอกพื้นที่';
+          activeP.confirmedBy = `${currentUser.fullName} (${currentUser.unit})`;
+          activeP.confirmedTime = new Date().toISOString();
+          activeP.confirmedNote = note;
+          if (selected === 'confirmed_local') {
+            activeP.controlAlert3hSentAt = null;
+          }
+
           savePatients();
-          upsertPatientToSupabase(p, true);
+          addAuditLog('CONFIRM_CASE', `ยืนยันเคส: ${activeP.fullName} (${activeP.confirmedStatusText}) โดย ${activeP.confirmedBy}`);
 
-          // ส่งแจ้งเตือนการยืนยันเข้า Telegram
-          sendTelegramCaseConfirmedNotice(p);
+          // อัปเดตหน้าเว็บทุกส่วนทันทีโดยไม่รอเครือข่าย
+          try { applyDashboardFilters(); } catch (e) { console.warn('[TDDS] applyDashboardFilters error:', e); }
+          try { renderPatientTable(); } catch (e) { console.warn('[TDDS] renderPatientTable error:', e); }
+          try { if (typeof renderDiseaseControlView === 'function') renderDiseaseControlView(); } catch (e) { console.warn('[TDDS] renderDiseaseControlView error:', e); }
+          try { if (typeof renderMapMarkers === 'function') renderMapMarkers(); } catch (e) { console.warn('[TDDS] renderMapMarkers error:', e); }
 
-          addAuditLog('CONFIRM_CASE', `ยืนยันเคส: ${p.fullName} (${p.confirmedStatusText}) โดย ${p.confirmedBy}`);
+          const viewModalEl = document.getElementById('patientViewModal');
+          if (viewModalEl && !viewModalEl.classList.contains('hidden') && (currentViewPatientId === activeP.id || currentViewPatientId === p.id)) {
+            openPatientViewModal(activeP.id);
+          }
+
+          // ส่งแจ้งเตือนเข้า Telegram และซิงค์ผลขึ้น Supabase
+          sendTelegramCaseConfirmedNotice(activeP);
+          const sbRes = await upsertPatientToSupabase(activeP, true);
+          savePatients();
+
+          const sbWarnHtml = (sbRes && !sbRes.ok)
+            ? `<div class="mt-2 p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px]">⚠️ บันทึกบนเครื่องเรียบร้อย แต่ซิงค์ Supabase ไม่สำเร็จ (${sbRes.error || 'RLS/Network'}) — อาจต้องรันไฟล์ <code>enable_current_dengue_cases_sync.sql</code></div>`
+            : '';
 
           Swal.fire({
             icon: 'success',
             title: 'ยืนยันการรับเคสเรียบร้อยแล้ว!',
             html: `
               <div class="text-xs text-slate-600 mt-1">
-                สถานะ: <b>${p.confirmedStatusText}</b><br>
-                ผู้ยืนยัน: <b>${p.confirmedBy}</b><br>
+                สถานะ: <b>${activeP.confirmedStatusText}</b><br>
+                ผู้ยืนยัน: <b>${activeP.confirmedBy}</b><br>
                 ส่งผลยืนยันเข้ากลุ่ม Telegram งานระบาด อ.เทพา แล้ว
                 ${selected === 'confirmed_local' ? '<div class="mt-2 p-2 rounded-xl bg-teal-50 border border-teal-200 text-teal-800 font-semibold">🛡️ ขั้นตอนถัดไป (3 ชม.ที่ 2): กรุณาบันทึกรายงานควบคุมโรคเบื้องต้นตามมาตรการ 3-3-1</div>' : ''}
+                ${sbWarnHtml}
               </div>
             `,
             showCancelButton: selected === 'confirmed_local',
@@ -9528,16 +9576,9 @@ https://dengue-thepha.github.io/tdds/`;
             confirmButtonColor: '#0D9488'
           }).then(nextRes => {
             if (selected === 'confirmed_local' && nextRes.isConfirmed && typeof openDiseaseControlModal === 'function') {
-              openDiseaseControlModal(p.id);
+              openDiseaseControlModal(activeP.id);
             }
           });
-
-          applyDashboardFilters();
-          renderPatientTable();
-          if (typeof renderDiseaseControlView === 'function') renderDiseaseControlView();
-          if (currentViewPatientId === p.id) {
-            openPatientViewModal(p.id);
-          }
         }
       });
     }
@@ -9692,9 +9733,7 @@ https://dengue-thepha.github.io/tdds/`;
     let dcOutdoorPhotos = [null, null, null, null];
 
     function isLocalConfirmedForControl(p) {
-      if (!p) return false;
-      return (p.confirmedStatus === 'confirmed_local' || p.areaConfirmed === 'ยืนยัน' || p.areaConfirmed === 'ยืนยันแล้ว')
-        && p.confirmedStatus !== 'confirmed_external';
+      return getPatientConfirmationState(p).isConfirmedLocal;
     }
 
     function getDiseaseControlReport(p) {
@@ -15644,7 +15683,7 @@ ${topHcText}${noteBlock}
         investigatorName: row.investigator_name || '',
         investigatorPosition: row.investigator_position || '',
         areaConfirmed: row.area_confirmed || '',
-        confirmedStatus: row.confirmed_status || (row.area_confirmed === 'ยืนยัน' || row.area_confirmed === 'ยืนยันแล้ว' ? 'confirmed_local' : (row.area_confirmed === 'ไม่อยู่ในพื้นที่' ? 'confirmed_external' : 'pending')),
+        confirmedStatus: row.confirmed_status || (row.area_confirmed === 'ยืนยัน' || row.area_confirmed === 'ยืนยันแล้ว' ? 'confirmed_local' : ((row.area_confirmed === 'ไม่อยู่ในพื้นที่' || row.area_confirmed === 'ป่วยนอกพื้นที่') ? 'confirmed_external' : 'pending')),
         confirmedBy: row.confirmed_by || null,
         confirmedTime: row.confirmed_time || null,
         confirmedNote: row.confirmed_note || '',
@@ -15699,6 +15738,15 @@ ${topHcText}${noteBlock}
             : '';
           const match = localByUuid.get(r.id) || (codeNameKey ? localUnsyncedByCodeName.get(codeNameKey) : null);
           const mapped = mapSupabaseRowToPatient(r, match);
+          // ป้องกันการเขียนทับผลการยืนยันที่เพิ่งบันทึกในเครื่องหากฝั่ง Supabase ยังไม่มีค่าหรือเก่ากว่า
+          if (match && match.confirmedTime && (!mapped.confirmedTime || new Date(match.confirmedTime).getTime() > new Date(mapped.confirmedTime).getTime())) {
+            mapped.areaConfirmed = match.areaConfirmed;
+            mapped.confirmedStatus = match.confirmedStatus;
+            mapped.confirmedStatusText = match.confirmedStatusText;
+            mapped.confirmedBy = match.confirmedBy;
+            mapped.confirmedTime = match.confirmedTime;
+            mapped.confirmedNote = match.confirmedNote;
+          }
           merged.push(mapped);
           if (match && match.id) matchedLocalIds.add(match.id);
           if (mapped.patientCode) usedCodes.add(mapped.patientCode);
@@ -15764,30 +15812,51 @@ ${topHcText}${noteBlock}
       const cfg = getSupabasePersonConfig();
       if (!cfg.url || !cfg.key) return { ok: false, error: 'Missing Supabase config' };
       try {
-        const sendReq = async (targetObj) => {
-          const payload = mapPatientToSupabaseRow(targetObj);
+        const sendReq = async (targetObj, customPayload = null, forceInsert = false) => {
+          const payload = customPayload || mapPatientToSupabaseRow(targetObj);
           let url = `${cfg.url}/rest/v1/current_dengue_cases`;
           let method = 'POST';
 
-          if (isEdit && targetObj.supabaseId) {
+          if (!forceInsert && isEdit && targetObj.supabaseId) {
             url = `${cfg.url}/rest/v1/current_dengue_cases?id=eq.${encodeURIComponent(targetObj.supabaseId)}`;
             method = 'PATCH';
-          } else if (isEdit && targetObj.patientCode) {
+          } else if (!forceInsert && isEdit && targetObj.patientCode) {
             url = `${cfg.url}/rest/v1/current_dengue_cases?patient_code=eq.${encodeURIComponent(targetObj.patientCode)}`;
             method = 'PATCH';
           }
 
-          return fetch(url, {
+          return {
             method,
-            headers: buildSupabaseHeaders(cfg.key, {
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            }),
-            body: JSON.stringify(payload)
-          });
+            payload,
+            res: await fetch(url, {
+              method,
+              headers: buildSupabaseHeaders(cfg.key, {
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+              }),
+              body: JSON.stringify(payload)
+            })
+          };
         };
 
-        let res = await sendReq(patientObj);
+        let attempt = await sendReq(patientObj);
+        let res = attempt.res;
+        let workingPayload = attempt.payload;
+
+        // หากมีบางคอลัมน์ใน schema Supabase ยังไม่มี (เช่น confirmed_status / confirmed_by / hcode) ให้ตัดคอลัมน์นั้นแล้วส่งใหม่
+        for (let retry = 0; retry < 5 && res.status === 400; retry++) {
+          const errTxt = await res.text();
+          const colMatch = errTxt.match(/'([a-zA-Z0-9_]+)' column/) || errTxt.match(/column ([a-zA-Z0-9_]+) does not exist/i);
+          if (colMatch && colMatch[1] && Object.prototype.hasOwnProperty.call(workingPayload, colMatch[1])) {
+            const nextPayload = { ...workingPayload };
+            delete nextPayload[colMatch[1]];
+            workingPayload = nextPayload;
+            attempt = await sendReq(patientObj, workingPayload, attempt.method === 'POST');
+            res = attempt.res;
+          } else {
+            return { ok: false, error: `HTTP 400: ${errTxt}` };
+          }
+        }
 
         if (res.status === 401 || res.status === 403) {
           const txt = await res.text();
@@ -15799,7 +15868,8 @@ ${topHcText}${noteBlock}
         if (!isEdit && res.status === 409) {
           const y = String(patientObj.year || '2569').trim();
           patientObj.patientCode = `${generateNextPatientCode(y)}-${String(Date.now()).slice(-4)}`;
-          res = await sendReq(patientObj);
+          attempt = await sendReq(patientObj, null, true);
+          res = attempt.res;
         }
 
         if (!res.ok) {
@@ -15808,7 +15878,14 @@ ${topHcText}${noteBlock}
           return { ok: false, error: `HTTP ${res.status}: ${txt}` };
         }
 
-        const data = await res.json();
+        let data = await res.json();
+        // หากเป็น PATCH แล้วไม่พบแถวเดิมบน Supabase ให้สร้างแถวใหม่แบบ POST
+        if (isEdit && attempt.method === 'PATCH' && Array.isArray(data) && data.length === 0) {
+          const insertAttempt = await sendReq(patientObj, workingPayload, true);
+          if (insertAttempt.res.ok) {
+            data = await insertAttempt.res.json();
+          }
+        }
         if (Array.isArray(data) && data[0] && data[0].id) {
           patientObj.supabaseId = data[0].id;
           if (data[0].created_at) patientObj.createdAt = data[0].created_at;
@@ -15851,9 +15928,13 @@ ${topHcText}${noteBlock}
         const action = urlParams.get('action');
         const patientId = urlParams.get('id');
         if (action === 'verify' && patientId) {
-          setTimeout(() => {
-            confirmCaseAreaStatus(patientId);
-          }, 600);
+          setTimeout(async () => {
+            const exists = patientsData.some(item => item.id === patientId || item.patientCode === patientId || item.supabaseId === patientId);
+            if (!exists && typeof fetchPatientsFromSupabase === 'function') {
+              await fetchPatientsFromSupabase(true);
+            }
+            confirmPatientCase(patientId);
+          }, 500);
         }
       } catch (e) {
         console.warn('URL params check error:', e);
