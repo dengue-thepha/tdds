@@ -9679,7 +9679,7 @@
       }
     }
 
-    function runBackgroundPdfAndDrivePipeline({ label, generatePdfFn, telegramDocCaption, driveUploadFn, onDriveSaved }) {
+    function runBackgroundPdfAndDrivePipeline({ label, generatePdfFn, telegramDocCaption, driveUploadFn, onDriveSaved, skipTelegram = false }) {
       setTimeout(async () => {
         try {
           setBackgroundFileStatusPill('working', `กำลังสร้างไฟล์ .PDF (${label})...`);
@@ -9687,7 +9687,7 @@
           let blob = pdfRes && pdfRes.blob ? pdfRes.blob : null;
 
           const sendTelegramDoc = async (docBlob) => {
-            if (!docBlob) return;
+            if (!docBlob || skipTelegram) return;
             setBackgroundFileStatusPill('working', `กำลังส่งแนบไฟล์ .PDF เข้า Telegram (${label})...`);
             try {
               const formData = new FormData();
@@ -9705,7 +9705,7 @@
             }
           };
 
-          if (blob) {
+          if (blob && !skipTelegram) {
             await sendTelegramDoc(blob);
           }
 
@@ -9715,7 +9715,7 @@
             const driveRes = await driveUploadFn(blob, pdfRes);
             if (!blob && driveRes && driveRes.pdfBlob) {
               blob = driveRes.pdfBlob;
-              await sendTelegramDoc(blob);
+              if (!skipTelegram) await sendTelegramDoc(blob);
             }
             if (driveRes && driveRes.ok) {
               const savedCount = driveRes.count ?? 1;
@@ -10075,6 +10075,8 @@ https://dengue-thepha.github.io/tdds/`;
             patientsData.unshift(activeP);
           }
 
+          const wasAlreadyConfirmed = Boolean(activeP.confirmedStatus || (activeP.areaConfirmed && activeP.areaConfirmed !== 'รอยืนยันพื้นที่'));
+
           activeP.areaConfirmed = selected === 'confirmed_local' ? 'ยืนยันแล้ว' : 'ป่วยนอกพื้นที่';
           activeP.confirmedStatus = selected;
           activeP.confirmedStatusText = selected === 'confirmed_local' ? 'ป่วยในพื้นที่จริง' : 'ป่วยนอกพื้นที่';
@@ -10099,8 +10101,10 @@ https://dengue-thepha.github.io/tdds/`;
             openPatientViewModal(activeP.id);
           }
 
-          // ส่งแจ้งเตือนเข้า Telegram และซิงค์ผลขึ้น Supabase
-          sendTelegramCaseConfirmedNotice(activeP);
+          // ส่งแจ้งเตือนเข้า Telegram เฉพาะการยืนยันครั้งแรก (ไม่ส่งซ้ำกรณีแก้ไขสถานะ) และซิงค์ผลขึ้น Supabase
+          if (!wasAlreadyConfirmed) {
+            sendTelegramCaseConfirmedNotice(activeP);
+          }
           const sbRes = await upsertPatientToSupabase(activeP, true);
           savePatients();
 
@@ -10110,12 +10114,12 @@ https://dengue-thepha.github.io/tdds/`;
 
           Swal.fire({
             icon: 'success',
-            title: 'ยืนยันการรับเคสเรียบร้อยแล้ว!',
+            title: wasAlreadyConfirmed ? 'แก้ไขผลการยืนยันเคสเรียบร้อยแล้ว!' : 'ยืนยันการรับเคสเรียบร้อยแล้ว!',
             html: `
               <div class="text-xs text-slate-600 mt-1">
                 สถานะ: <b>${activeP.confirmedStatusText}</b><br>
                 ผู้ยืนยัน: <b>${activeP.confirmedBy}</b><br>
-                ส่งผลยืนยันเข้ากลุ่ม Telegram งานระบาด อ.เทพา แล้ว
+                ${wasAlreadyConfirmed ? '🔕 ไม่ส่งแจ้งเตือนซ้ำเข้า Telegram (โหมดแก้ไขข้อมูล)' : 'ส่งผลยืนยันเข้ากลุ่ม Telegram งานระบาด อ.เทพา แล้ว'}
                 ${selected === 'confirmed_local' ? '<div class="mt-2 p-2 rounded-xl bg-teal-50 border border-teal-200 text-teal-800 font-semibold">🛡️ ขั้นตอนถัดไป (3 ชม.ที่ 2): กรุณาบันทึกรายงานควบคุมโรคเบื้องต้นตามมาตรการ 3-3-1</div>' : ''}
                 ${sbWarnHtml}
               </div>
@@ -11182,6 +11186,12 @@ https://dengue-thepha.github.io/tdds/`;
       const p = patientsData.find(x => x.id === pid);
       if (!p) return;
 
+      const existingReport = p.diseaseControlReport
+        || diseaseControlReportsMap[p.id]
+        || (p.supabaseId && diseaseControlReportsMap[p.supabaseId])
+        || (p.patientCode && diseaseControlReportsMap[p.patientCode]);
+      const isEdit = Boolean(existingReport);
+
       const val = (id) => document.getElementById(id)?.value?.trim() || '';
       const num = (id) => Math.max(0, parseInt(document.getElementById(id)?.value || '0', 10) || 0);
       const readContacts = (short) => [1, 2].map(i => ({
@@ -11225,10 +11235,10 @@ https://dengue-thepha.github.io/tdds/`;
         controllerName: val('dc_controller_name'),
         controllerPosition: val('dc_controller_position'),
         submittedAt: new Date().toISOString(),
-        telegramSentAt: new Date().toISOString()
+        telegramSentAt: existingReport?.telegramSentAt || new Date().toISOString()
       };
 
-      showLoading('กำลังบันทึกข้อมูลและส่งแจ้งเตือนเข้า Telegram...');
+      showLoading(isEdit ? 'กำลังบันทึกการแก้ไขรายงานควบคุมโรค...' : 'กำลังบันทึกข้อมูลและส่งแจ้งเตือนเข้า Telegram...');
 
       p.diseaseControlReport = report;
       p.controlCompletedAt = toIsoTimestampOrNull(report.controlDatetime) || report.submittedAt;
@@ -11244,10 +11254,10 @@ https://dengue-thepha.github.io/tdds/`;
           saveDiseaseControlReportToSupabase(p, report),
           new Promise(resolve => setTimeout(() => resolve({ ok: false, timeout: true }), 7000))
         ]),
-        sendTelegramTextFast(tgMsg)
+        isEdit ? Promise.resolve(false) : sendTelegramTextFast(tgMsg)
       ]);
 
-      addAuditLog('DISEASE_CONTROL_331', `บันทึกรายงานควบคุมโรคเบื้องต้น: ${p.fullName} (CI บ้าน ${report.ciPatient}%, CI 100ม. ${report.ci100m}%, HI ${report.hi100m}%)`);
+      addAuditLog('DISEASE_CONTROL_331', `${isEdit ? 'แก้ไข' : 'บันทึก'}รายงานควบคุมโรคเบื้องต้น: ${p.fullName} (CI บ้าน ${report.ciPatient}%, CI 100ม. ${report.ci100m}%, HI ${report.hi100m}%)`);
       hideLoading();
       closeDiseaseControlModal();
       renderPatientTable();
@@ -11256,11 +11266,11 @@ https://dengue-thepha.github.io/tdds/`;
       const hasGasUrl = !!(localStorage.getItem('tdds_gas_webapp_url') || '').trim();
       Swal.fire({
         icon: 'success',
-        title: 'บันทึกรายงานและแจ้งเตือนสำเร็จ!',
+        title: isEdit ? 'บันทึกการแก้ไขรายงานสำเร็จ!' : 'บันทึกรายงานและแจ้งเตือนสำเร็จ!',
         html: `
           <div class="text-left text-xs space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
-            <div>✅ บันทึกข้อมูลรายงานควบคุมโรคเบื้องต้นเรียบร้อยแล้ว</div>
-            <div>${tgOk ? '📲 ส่งข้อความแจ้งเตือนเข้ากลุ่ม Telegram ทันทีเรียบร้อยแล้ว' : '⚠️ ส่งเข้า Telegram ไม่สำเร็จ (กรุณาตรวจสอบอินเทอร์เน็ต)'}</div>
+            <div>✅ ${isEdit ? 'แก้ไขข้อมูลรายงานควบคุมโรคเบื้องต้นเรียบร้อยแล้ว' : 'บันทึกข้อมูลรายงานควบคุมโรคเบื้องต้นเรียบร้อยแล้ว'}</div>
+            <div>${isEdit ? '🔕 ไม่ส่งแจ้งเตือนซ้ำเข้า Telegram (โหมดแก้ไขข้อมูล)' : (tgOk ? '📲 ส่งข้อความแจ้งเตือนเข้ากลุ่ม Telegram ทันทีเรียบร้อยแล้ว' : '⚠️ ส่งเข้า Telegram ไม่สำเร็จ (กรุณาตรวจสอบอินเทอร์เน็ต)')}</div>
             <div class="text-indigo-700 font-semibold">⚙️ กำลังสร้างไฟล์ <b>.PDF</b>${hasGasUrl ? ' และอัปโหลดภาพขึ้น <b>Google Drive</b>' : ''} แยกทำงานเบื้องหลังให้โดยอัตโนมัติ (สามารถใช้งานเมนูอื่นต่อได้ทันที)</div>
             ${!hasGasUrl ? `<div class="text-[11px] text-amber-700">ℹ️ ภาพเก็บในระบบและ PDF แล้ว — หากต้องการอัปโหลดเข้า <a href="${DISEASE_CONTROL_PHOTOS_DRIVE_URL}" target="_blank" class="underline font-semibold">Google Drive</a> อัตโนมัติ กรุณาใส่ Web App URL ใน <b>⚙️ ตั้งค่า Drive & Telegram</b></div>` : ''}
             ${sbRes && sbRes.missingTable ? '<div class="text-[11px] text-amber-700 pt-1">ℹ️ หมายเหตุ: หากต้องการเก็บขึ้นตารางกลางบน Supabase ด้วย กรุณารันไฟล์ <code>create_disease_control_reports.sql</code></div>' : ''}
@@ -11278,6 +11288,7 @@ https://dengue-thepha.github.io/tdds/`;
 
       runBackgroundPdfAndDrivePipeline({
         label: `ควบคุมโรค ${p.fullName || p.patientCode || ''}`,
+        skipTelegram: isEdit,
         generatePdfFn: () => generateDiseaseControlPDF(p, report, true),
         telegramDocCaption: `📎 แนบไฟล์ .PDF รายงานควบคุมโรคเบื้องต้น (${p.fullName || '-'})`,
         driveUploadFn: (blob, pdfRes) => uploadDiseaseControlPhotosToDrive(p, report, blob, pdfRes?.html, pdfRes?.filename),
@@ -11937,6 +11948,12 @@ https://dengue-thepha.github.io/tdds/`;
       const p = patientsData.find(x => x.id === pid);
       if (!p) return;
 
+      const existingReport = p.sprayControlReport
+        || sprayControlReportsMap[p.id]
+        || (p.supabaseId && sprayControlReportsMap[p.supabaseId])
+        || (p.patientCode && sprayControlReportsMap[p.patientCode]);
+      const isEdit = Boolean(existingReport);
+
       const val = (id) => document.getElementById(id)?.value?.trim() || '';
       const num = (id) => Math.max(0, parseInt(document.getElementById(id)?.value || '0', 10) || 0);
       const indices = recalcScIndices();
@@ -11957,10 +11974,10 @@ https://dengue-thepha.github.io/tdds/`;
         controllerName: val('sc_controller_name'),
         controllerPosition: val('sc_controller_position'),
         submittedAt: new Date().toISOString(),
-        telegramSentAt: new Date().toISOString()
+        telegramSentAt: existingReport?.telegramSentAt || new Date().toISOString()
       };
 
-      showLoading('กำลังบันทึกข้อมูลพ่นเคมีและส่งแจ้งเตือนเข้า Telegram...');
+      showLoading(isEdit ? 'กำลังบันทึกการแก้ไขรายงานพ่นสารเคมี...' : 'กำลังบันทึกข้อมูลพ่นเคมีและส่งแจ้งเตือนเข้า Telegram...');
 
       p.sprayControlReport = report;
       p.sprayCompletedAt = toIsoTimestampOrNull(report.sprayDatetime) || report.submittedAt;
@@ -11976,10 +11993,10 @@ https://dengue-thepha.github.io/tdds/`;
           saveSprayControlReportToSupabase(p, report),
           new Promise(resolve => setTimeout(() => resolve({ ok: false, timeout: true }), 7000))
         ]),
-        sendTelegramTextFast(tgMsg)
+        isEdit ? Promise.resolve(false) : sendTelegramTextFast(tgMsg)
       ]);
 
-      addAuditLog('SPRAY_CONTROL_331', `บันทึกรายงานพ่นเคมี 1 วัน: ${p.fullName} (พ่น ${report.radiusSprayedHouses}/${report.radiusTotalHouses} หลัง, HI ${report.hi100m}%, CI ${report.ci100m}%)`);
+      addAuditLog('SPRAY_CONTROL_331', `${isEdit ? 'แก้ไข' : 'บันทึก'}รายงานพ่นเคมี 1 วัน: ${p.fullName} (พ่น ${report.radiusSprayedHouses}/${report.radiusTotalHouses} หลัง, HI ${report.hi100m}%, CI ${report.ci100m}%)`);
       hideLoading();
       closeSprayControlModal();
       renderPatientTable();
@@ -11988,11 +12005,11 @@ https://dengue-thepha.github.io/tdds/`;
       const hasGasUrl = !!(localStorage.getItem('tdds_gas_webapp_url') || '').trim();
       Swal.fire({
         icon: 'success',
-        title: 'บันทึกรายงานและแจ้งเตือนสำเร็จ!',
+        title: isEdit ? 'บันทึกการแก้ไขรายงานพ่นสารเคมีสำเร็จ!' : 'บันทึกรายงานและแจ้งเตือนสำเร็จ!',
         html: `
           <div class="text-left text-xs space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
-            <div>✅ บันทึกรายงานพ่นสารเคมี 1 วันเรียบร้อยแล้ว</div>
-            <div>${tgOk ? '📲 ส่งข้อความแจ้งเตือนเข้ากลุ่ม Telegram ทันทีเรียบร้อยแล้ว' : '⚠️ ส่งเข้า Telegram ไม่สำเร็จ (กรุณาตรวจสอบอินเทอร์เน็ต)'}</div>
+            <div>✅ ${isEdit ? 'แก้ไขข้อมูลรายงานพ่นสารเคมี 1 วันเรียบร้อยแล้ว' : 'บันทึกรายงานพ่นสารเคมี 1 วันเรียบร้อยแล้ว'}</div>
+            <div>${isEdit ? '🔕 ไม่ส่งแจ้งเตือนซ้ำเข้า Telegram (โหมดแก้ไขข้อมูล)' : (tgOk ? '📲 ส่งข้อความแจ้งเตือนเข้ากลุ่ม Telegram ทันทีเรียบร้อยแล้ว' : '⚠️ ส่งเข้า Telegram ไม่สำเร็จ (กรุณาตรวจสอบอินเทอร์เน็ต)')}</div>
             <div class="text-indigo-700 font-semibold">⚙️ กำลังสร้างไฟล์ <b>.PDF</b>${hasGasUrl ? ' และอัปโหลดภาพทีมพ่น/ขณะพ่น ขึ้น <b>Google Drive</b>' : ''} แยกทำงานเบื้องหลังให้โดยอัตโนมัติ</div>
             ${!hasGasUrl ? `<div class="text-[11px] text-amber-700">ℹ️ ภาพเก็บในระบบและ PDF แล้ว — หากต้องการอัปโหลดเข้า <a href="${DISEASE_CONTROL_PHOTOS_DRIVE_URL}" target="_blank" class="underline font-semibold">Google Drive</a> อัตโนมัติ กรุณาตั้งค่า Web App URL ใน <b>⚙️ ตั้งค่า Drive & Telegram</b></div>` : ''}
             ${sbRes && sbRes.missingTable ? '<div class="text-[11px] text-amber-700 pt-1">ℹ️ หมายเหตุ: หากต้องการเก็บรายงานพ่นเคมีขึ้นตารางกลาง Supabase ด้วย กรุณารันไฟล์ <code>create_disease_control_reports.sql</code></div>' : ''}
@@ -12010,6 +12027,7 @@ https://dengue-thepha.github.io/tdds/`;
 
       runBackgroundPdfAndDrivePipeline({
         label: `พ่นเคมี ${p.fullName || p.patientCode || ''}`,
+        skipTelegram: isEdit,
         generatePdfFn: () => generateSprayControlPDF(p, report, true),
         telegramDocCaption: `📎 แนบไฟล์ .PDF รายงานพ่นสารเคมี 1 วัน (${p.fullName || '-'})`,
         driveUploadFn: (blob, pdfRes) => uploadSprayControlPhotosToDrive(p, report, blob, pdfRes?.html, pdfRes?.filename),
