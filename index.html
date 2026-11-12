@@ -13376,6 +13376,32 @@ https://dengue-thepha.github.io/tdds/`;
       };
     }
 
+    function buildSituationDirectiveText(metrics, customNote = '') {
+      const cleaned = String(customNote || '').trim();
+      const autoPlaceholder = 'ระบบส่งรายงานสถานการณ์โรคไข้เลือดออกประจำวัน อัตโนมัติ เวลา 15:00 น.';
+      if (cleaned && cleaned !== autoPlaceholder) {
+        return cleaned;
+      }
+
+      const savedDirective = (localStorage.getItem('tdds_auto_report_directive') || '').trim();
+      if (savedDirective) return savedDirective;
+
+      const hcList = Array.isArray(metrics?.hcList) ? metrics.hcList : [];
+      const top5Hc = Array.isArray(metrics?.top5Hc) ? metrics.top5Hc : [];
+      const active14 = hcList.filter(h => h.c14 > 0).map(h => h.name);
+      const active28 = hcList.filter(h => h.c28 > 0).map(h => h.name);
+      const topUnits = top5Hc.filter(h => h.cases > 0).slice(0, 3).map(h => h.name);
+
+      if (active14.length > 0) {
+        return `ขอให้หน่วยบริการที่มีผู้ป่วยในช่วง 14 วันล่าสุด (${active14.join(', ')}) เร่งรัดดำเนินการตามมาตรการ 3-3-1 สำรวจและทำลายแหล่งเพาะพันธุ์ลูกน้ำยุงลาย (ค่า HI/CI) พร้อมประสาน อปท. พ่นสารเคมีกำจัดยุงตัวแก่รัศมี 100 เมตรรอบบ้านผู้ป่วย และเฝ้าระวังผู้ป่วยรายใหม่อย่างใกล้ชิด`;
+      }
+      if (active28.length > 0 || topUnits.length > 0) {
+        const focusList = (active28.length > 0 ? active28 : topUnits).join(', ');
+        return `ขอให้หน่วยบริการพื้นที่เฝ้าระวัง (${focusList}) ดำเนินการควบคุมโรคตามมาตรการ 3-3-1 สำรวจลูกน้ำยุงลาย (HI/CI) และเฝ้าระวังผู้ป่วยต่อเนื่องจนครบ 28 วัน`;
+      }
+      return 'ขอให้ทุกหน่วยบริการเฝ้าระวังโรคไข้เลือดออกเชิงรุก รณรงค์สำรวจและทำลายแหล่งเพาะพันธุ์ลูกน้ำยุงลายในชุมชน สถานศึกษา และศาสนสถานอย่างต่อเนื่อง';
+    }
+
     function buildSituationReportTextMessage(metrics, customNote, format = 'image') {
       const adminName = currentUser ? `${currentUser.fullName} (${currentUser.unit})` : 'ผู้ดูแลระบบงานระบาด';
       const formatTag = format === 'image' ? '🖼️ [แนบรูปภาพสรุปสถานการณ์]' : (format === 'pdf' ? '📄 [แนบเอกสาร PDF]' : '💬 [รายงานข้อความ]');
@@ -13386,10 +13412,10 @@ https://dengue-thepha.github.io/tdds/`;
       });
       if (!topHcText) topHcText = '• ไม่พบผู้ป่วยในพื้นที่ที่เลือก\n';
 
-      let noteBlock = '';
-      if (customNote && customNote.trim()) {
-        noteBlock = `\n📢 ข้อสั่งการ/เน้นย้ำจาก สสอ.:\n"${customNote.trim()}"\n`;
-      }
+      const effectiveDirective = buildSituationDirectiveText(metrics, customNote);
+      const noteBlock = effectiveDirective
+        ? `\n📢 ข้อสั่งการ/เน้นย้ำจาก สสอ.:\n"${effectiveDirective}"\n`
+        : '';
 
       return `📢 รายงานสถานการณ์โรคไข้เลือดออก อ.เทพา ปี 2569
 ${formatTag}
@@ -13434,12 +13460,13 @@ ${topHcText}${noteBlock}
         `;
       }).join('');
 
+      const effectiveDirective = buildSituationDirectiveText(metrics, customNote);
       let noteHtml = '';
-      if (customNote && customNote.trim()) {
+      if (effectiveDirective) {
         noteHtml = `
           <div style="margin-top:14px; background:#eff6ff; border:1px solid #bfdbfe; border-left:4px solid #2563eb; border-radius:8px; padding:10px 14px;">
             <div style="font-size:11px; font-weight:bold; color:#1e40af; margin-bottom:3px;">📢 ข้อสั่งการ / มาตรการเน้นย้ำจากผู้ดูแลระบบอำเภอ (สสอ.เทพา):</div>
-            <div style="font-size:11px; color:#1e3a8a; line-height:1.5;">${customNote.trim()}</div>
+            <div style="font-size:11px; color:#1e3a8a; line-height:1.5;">${effectiveDirective}</div>
           </div>
         `;
       }
@@ -13536,6 +13563,7 @@ ${topHcText}${noteBlock}
     function updateSituationReportPreview() {
       const scope = document.getElementById('tgReportScope')?.value || 'all';
       const customNote = document.getElementById('tgReportCustomNote')?.value || '';
+      localStorage.setItem('tdds_auto_report_directive', customNote.trim());
       const format = document.querySelector('input[name="tgReportFormat"]:checked')?.value || 'image';
 
       const metrics = getSituationReportMetrics(scope);
@@ -14021,32 +14049,138 @@ ${topHcText}${noteBlock}
       }
     }
 
-    async function triggerDaily1500AutoReport(todayStr, isManualTest = false) {
-      const format = localStorage.getItem('tdds_auto_report_format') || 'image';
-      const scope = 'all';
-      const customNote = 'ระบบส่งรายงานสถานการณ์โรคไข้เลือดออกประจำวัน อัตโนมัติ เวลา 15:00 น.';
+    async function renderHtmlToJpegBlob(reportHtml, widthPx = 794) {
+      if (!window.html2canvas) return null;
 
-      const metrics = getSituationReportMetrics(scope);
-      const messageText = buildSituationReportTextMessage(metrics, customNote, format);
-      const reportHtml = buildSituationReportHTML(metrics, customNote);
+      // 1. เรนเดอร์ผ่าน iframe แยกอิสระเพื่อป้องกัน CSS ของ Tailwind/Overlay/Map ทำให้ภาพว่างหรือค้าง
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.left = '-99999px';
+      iframe.style.top = '0';
+      iframe.style.width = `${widthPx}px`;
+      iframe.style.height = '1400px';
+      iframe.style.border = '0';
+      iframe.style.background = '#ffffff';
+      iframe.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(iframe);
 
-      // สร้าง container สำหรับ capture
+      const canvasToBlobSafe = async (canvas) => {
+        if (!canvas || canvas.width === 0 || canvas.height === 0) return null;
+        let blob = await new Promise(resolve => {
+          try {
+            canvas.toBlob(resolve, 'image/jpeg', 0.94);
+          } catch (e) {
+            resolve(null);
+          }
+        });
+        if (!blob) {
+          try {
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.94);
+            const arr = dataUrl.split(',');
+            const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) u8arr[n] = bstr.charCodeAt(n);
+            blob = new Blob([u8arr], { type: mime });
+          } catch (e) {}
+        }
+        return blob && blob.size > 0 ? blob : null;
+      };
+
+      try {
+        const doc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (doc) {
+          doc.open();
+          doc.write(`<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8"><link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet"><style>html,body{margin:0;padding:0;background:#ffffff;font-family:'Kanit',sans-serif;}*{box-sizing:border-box;}</style></head><body><div id="captureRoot" style="width:${widthPx}px;background:#ffffff;">${reportHtml}</div></body></html>`);
+          doc.close();
+
+          try {
+            if (doc.fonts && doc.fonts.ready) {
+              await Promise.race([doc.fonts.ready, new Promise(r => setTimeout(r, 700))]);
+            }
+          } catch (e) {}
+          await new Promise(r => setTimeout(r, 250));
+
+          const rootEl = doc.getElementById('captureRoot') || doc.body;
+          if (rootEl) {
+            const targetHeight = Math.max(rootEl.scrollHeight || 900, 600);
+            iframe.style.height = `${targetHeight + 40}px`;
+            const canvas = await window.html2canvas(rootEl, {
+              scale: 2,
+              useCORS: true,
+              logging: false,
+              backgroundColor: '#ffffff',
+              width: widthPx,
+              height: targetHeight,
+              windowWidth: widthPx,
+              windowHeight: targetHeight,
+              scrollX: 0,
+              scrollY: 0
+            });
+            const blob = await canvasToBlobSafe(canvas);
+            if (blob) return blob;
+          }
+        }
+      } catch (iframeErr) {
+        console.warn('[AutoReport] iframe capture failed, trying fallback container:', iframeErr);
+      } finally {
+        if (iframe.parentNode) document.body.removeChild(iframe);
+      }
+
+      // 2. Fallback: capture ใน container หลัก
       const tempContainer = document.createElement('div');
       tempContainer.id = 'tempAutoReportCapture';
       tempContainer.style.position = 'fixed';
       tempContainer.style.left = '0';
       tempContainer.style.top = '0';
-      tempContainer.style.width = '794px';
+      tempContainer.style.width = `${widthPx}px`;
       tempContainer.style.zIndex = '-99999';
       tempContainer.style.opacity = '1';
       tempContainer.style.pointerEvents = 'none';
       tempContainer.style.backgroundColor = '#ffffff';
       tempContainer.innerHTML = reportHtml;
       document.body.appendChild(tempContainer);
+      await new Promise(r => setTimeout(r, 300));
+      try {
+        const canvas = await window.html2canvas(tempContainer, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: widthPx + 40,
+          onclone: (clonedDoc) => {
+            const el = clonedDoc.getElementById('tempAutoReportCapture');
+            if (el) {
+              el.style.position = 'relative';
+              el.style.zIndex = '99999';
+              el.style.display = 'block';
+              el.style.visibility = 'visible';
+            }
+          }
+        });
+        return await canvasToBlobSafe(canvas);
+      } catch (e) {
+        return null;
+      } finally {
+        if (tempContainer.parentNode) document.body.removeChild(tempContainer);
+      }
+    }
 
-      await new Promise(r => setTimeout(r, 350));
+    async function triggerDaily1500AutoReport(todayStr, isManualTest = false) {
+      const format = localStorage.getItem('tdds_auto_report_format') || 'image';
+      const scope = 'all';
+
+      const metrics = getSituationReportMetrics(scope);
+      const savedDirective = (document.getElementById('tgReportCustomNote')?.value || localStorage.getItem('tdds_auto_report_directive') || '').trim();
+      const customNote = buildSituationDirectiveText(metrics, savedDirective);
+      const messageText = buildSituationReportTextMessage(metrics, customNote, 'image');
+      const reportHtml = buildSituationReportHTML(metrics, customNote);
 
       let sendSuccess = false;
+      let sentPhoto = false;
       const nowTs = new Date().toISOString().replace(/[:.]/g, '-');
       const filenameBase = `Thepha_Daily_1500_${nowTs}`;
 
@@ -14054,70 +14188,85 @@ ${topHcText}${noteBlock}
       if (captionText.length > 1000) captionText = captionText.substring(0, 995) + '...';
 
       try {
-        if (format === 'image' && window.html2canvas) {
-          const canvas = await html2canvas(tempContainer, {
-            scale: 2, useCORS: true, logging: false, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0, windowWidth: 850,
-            onclone: (clonedDoc) => {
-              const el = clonedDoc.getElementById('tempAutoReportCapture');
-              if (el) { el.style.position = 'relative'; el.style.zIndex = '99999'; el.style.display = 'block'; }
-            }
-          });
+        // ส่งภาพสรุปสถานการณ์พร้อมข้อความเข้า Telegram เสมอ (เวลา 15:00 น.)
+        const imgBlob = await renderHtmlToJpegBlob(reportHtml, 794);
+        if (imgBlob && imgBlob.size > 0) {
+          const formData = new FormData();
+          formData.append('chat_id', TELEGRAM_CONFIG.chatId);
+          formData.append('caption', captionText);
+          formData.append('photo', imgBlob, `${filenameBase}.jpg`);
 
-          let imgBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
-          if (imgBlob && imgBlob.size > 0) {
-            const formData = new FormData();
-            formData.append('chat_id', TELEGRAM_CONFIG.chatId);
-            formData.append('caption', captionText);
-            formData.append('photo', imgBlob, `${filenameBase}.jpg`);
-
-            const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendPhoto`, { method: 'POST', body: formData });
-            const data = await res.json();
-            if (data && data.ok) sendSuccess = true;
+          const res = await fetchWithTimeout(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendPhoto`, {
+            method: 'POST',
+            body: formData
+          }, 20000);
+          const data = await res.json();
+          if (data && data.ok) {
+            sendSuccess = true;
+            sentPhoto = true;
           }
-        } else if (format === 'pdf' && window.html2pdf) {
+        }
+
+        // หากข้อความยาวเกินขีดจำกัด caption ของรูป (1000 ตัวอักษร) ให้ส่งข้อความฉบับเต็มตามไปด้วย
+        if (sentPhoto && messageText.length > 1000) {
+          await fetchWithTimeout(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: TELEGRAM_CONFIG.chatId, text: messageText })
+          }, 12000).catch(() => {});
+        }
+
+        // กรณีตั้งค่ารูปแบบไฟล์ .PDF ไว้ด้วย ให้ส่งแนบ .PDF เพิ่มเติมอีกฉบับ
+        if (format === 'pdf' && window.html2pdf) {
+          const tempPdfEl = document.createElement('div');
+          tempPdfEl.style.width = '794px';
+          tempPdfEl.style.background = '#ffffff';
+          tempPdfEl.innerHTML = reportHtml;
           const opt = {
             margin: [6, 6, 6, 6], filename: `${filenameBase}.pdf`, image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 850 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
           };
-          const pdfBlob = await html2pdf().from(tempContainer).set(opt).outputPdf('blob');
+          const pdfBlob = await html2pdf().from(tempPdfEl).set(opt).outputPdf('blob').catch(() => null);
           if (pdfBlob && pdfBlob.size > 0) {
-            const formData = new FormData();
-            formData.append('chat_id', TELEGRAM_CONFIG.chatId);
-            formData.append('caption', captionText);
-            formData.append('document', pdfBlob, `${filenameBase}.pdf`);
-
-            const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendDocument`, { method: 'POST', body: formData });
-            const data = await res.json();
-            if (data && data.ok) sendSuccess = true;
+            const pdfForm = new FormData();
+            pdfForm.append('chat_id', TELEGRAM_CONFIG.chatId);
+            pdfForm.append('caption', `📎 ไฟล์ .PDF รายงานสถานการณ์ประจำวัน 15:00 น.`);
+            pdfForm.append('document', pdfBlob, `${filenameBase}.pdf`);
+            const resPdf = await fetchWithTimeout(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendDocument`, {
+              method: 'POST',
+              body: pdfForm
+            }, 20000).catch(() => null);
+            const dataPdf = resPdf ? await resPdf.json().catch(() => null) : null;
+            if (dataPdf && dataPdf.ok) sendSuccess = true;
           }
         }
 
-        // Fallback text if needed
+        // Fallback text หากไม่สามารถสร้าง/ส่งภาพได้
         if (!sendSuccess) {
-          const res = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`, {
+          const res = await fetchWithTimeout(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ chat_id: TELEGRAM_CONFIG.chatId, text: messageText })
-          });
+          }, 12000);
           const data = await res.json();
           if (data && data.ok) sendSuccess = true;
         }
       } catch (err) {
         console.error('Trigger daily 15:00 error:', err);
-      } finally {
-        if (tempContainer.parentNode) document.body.removeChild(tempContainer);
       }
 
       if (sendSuccess) {
-        addAuditLog('AUTO_REPORT_1500', `ส่งรายงานสถานการณ์โรคประจำวันเวลา 15:00 น. อัตโนมัติเข้ากลุ่ม Telegram เรียบร้อย`);
+        addAuditLog('AUTO_REPORT_1500', `ส่งรายงานสถานการณ์โรคประจำวันเวลา 15:00 น. อัตโนมัติเข้ากลุ่ม Telegram เรียบร้อย (${sentPhoto ? 'พร้อมภาพสรุปรายงาน' : 'ข้อความ'})`);
         updateAutoReportUIStatus();
 
         if (isManualTest) {
           Swal.fire({
             icon: 'success',
             title: 'ทดสอบส่งรายงานอัตโนมัติ 15:00 น. สำเร็จ!',
-            text: 'ระบบได้ส่งรายงานสถานการณ์เข้ากลุ่ม Telegram เรียบร้อยแล้ว',
+            text: sentPhoto
+              ? 'ระบบได้ส่งภาพสรุปสถานการณ์พร้อมข้อความเข้ากลุ่ม Telegram เรียบร้อยแล้ว'
+              : 'ระบบได้ส่งรายงานสถานการณ์เข้ากลุ่ม Telegram เรียบร้อยแล้ว',
             confirmButtonColor: '#26A69A'
           });
         } else {
@@ -14127,7 +14276,7 @@ ${topHcText}${noteBlock}
             position: 'top-end',
             icon: 'success',
             title: '⏰ รายงานประจำวันเวลา 15:00 น.',
-            text: 'ส่งรายงานสถานการณ์เข้ากลุ่ม Telegram งานระบาดแล้ว',
+            text: sentPhoto ? 'ส่งภาพสรุปสถานการณ์และรายงานเข้า Telegram แล้ว' : 'ส่งรายงานสถานการณ์เข้ากลุ่ม Telegram งานระบาดแล้ว',
             showConfirmButton: false,
             timer: 5000,
             timerProgressBar: true
