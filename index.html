@@ -3570,9 +3570,10 @@
           <span class="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full border border-emerald-200">ปลายทาง</span>
         </div>
         <div class="text-[11px] text-slate-600 space-y-1">
-          <div><b>โฟลเดอร์รายงาน .PDF:</b> <span class="font-mono text-slate-800 bg-white px-1.5 py-0.5 rounded border border-emerald-200">1qTXv5IZaE5NAUA5Y_Q7vd6l68u-OLzGA</span></div>
-          <div><b>โฟลเดอร์ภาพควบคุมโรค (3-3-1):</b> <span class="font-mono text-slate-800 bg-white px-1.5 py-0.5 rounded border border-emerald-200">1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm</span></div>
-          <div class="truncate"><b>Link ภาพควบคุมโรค:</b> <a href="https://drive.google.com/drive/folders/1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm?usp=sharing" target="_blank" class="text-teal-700 underline font-mono text-[10px]">drive.google.com/.../1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm</a></div>
+          <div><b>📄 รายงานสอบสวนโรค (.PDF):</b> <span class="font-mono text-slate-800 bg-white px-1.5 py-0.5 rounded border border-emerald-200">162IJmyjS2vJoS00R-ThCps4hEafewjKB</span></div>
+          <div><b>📄 รายงานควบคุม 3 ชม. (.PDF):</b> <span class="font-mono text-slate-800 bg-white px-1.5 py-0.5 rounded border border-emerald-200">18l8d1egIzo3Z8koter0QXLKY4tr8_TVr</span></div>
+          <div><b>📄 รายงานพ่นสารเคมี (.PDF):</b> <span class="font-mono text-slate-800 bg-white px-1.5 py-0.5 rounded border border-emerald-200">1RrT1TxflPRU73e9uoou5q2kwdvTiiSP4</span></div>
+          <div><b>🖼️ ภาพควบคุมโรค (3-3-1):</b> <span class="font-mono text-slate-800 bg-white px-1.5 py-0.5 rounded border border-emerald-200">1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm</span></div>
         </div>
 
         <div>
@@ -3582,11 +3583,17 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <button type="button" onclick="window.open('https://drive.google.com/drive/folders/1qTXv5IZaE5NAUA5Y_Q7vd6l68u-OLzGA', '_blank')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-2 px-3 rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5 shadow-xs">
-            <span>📂</span> เปิดโฟลเดอร์รายงาน .PDF
+          <button type="button" onclick="window.open('https://drive.google.com/drive/folders/162IJmyjS2vJoS00R-ThCps4hEafewjKB?usp=sharing', '_blank')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-2 px-3 rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5 shadow-xs">
+            <span>📄</span> โฟลเดอร์สอบสวนโรค .PDF
+          </button>
+          <button type="button" onclick="window.open('https://drive.google.com/drive/folders/18l8d1egIzo3Z8koter0QXLKY4tr8_TVr?usp=sharing', '_blank')" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold text-xs py-2 px-3 rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5 shadow-xs">
+            <span>🛡️</span> โฟลเดอร์ควบคุม 3 ชม. .PDF
+          </button>
+          <button type="button" onclick="window.open('https://drive.google.com/drive/folders/1RrT1TxflPRU73e9uoou5q2kwdvTiiSP4?usp=sharing', '_blank')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs py-2 px-3 rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5 shadow-xs">
+            <span>🌫️</span> โฟลเดอร์พ่นสารเคมี .PDF
           </button>
           <button type="button" onclick="window.open('https://drive.google.com/drive/folders/1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm?usp=sharing', '_blank')" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs py-2 px-3 rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5 shadow-xs">
-            <span>🖼️</span> เปิดโฟลเดอร์ภาพควบคุมโรค
+            <span>🖼️</span> โฟลเดอร์ภาพควบคุมโรค
           </button>
         </div>
       </div>
@@ -3779,6 +3786,12 @@
     const STORAGE_AUDIT_KEY = 'tdds_audit_logs_prod_v1';
     const STORAGE_SESSION_KEY = 'tdds_current_user_prod_v1';
     const STORAGE_DISEASE_CONTROL_KEY = 'tdds_disease_control_reports_v1';
+    const PATIENT_PDF_DRIVE_FOLDER_ID = '162IJmyjS2vJoS00R-ThCps4hEafewjKB';
+    const PATIENT_PDF_DRIVE_URL = 'https://drive.google.com/drive/folders/162IJmyjS2vJoS00R-ThCps4hEafewjKB?usp=sharing';
+    const CONTROL_3H_PDF_DRIVE_FOLDER_ID = '18l8d1egIzo3Z8koter0QXLKY4tr8_TVr';
+    const CONTROL_3H_PDF_DRIVE_URL = 'https://drive.google.com/drive/folders/18l8d1egIzo3Z8koter0QXLKY4tr8_TVr?usp=sharing';
+    const SPRAY_PDF_DRIVE_FOLDER_ID = '1RrT1TxflPRU73e9uoou5q2kwdvTiiSP4';
+    const SPRAY_PDF_DRIVE_URL = 'https://drive.google.com/drive/folders/1RrT1TxflPRU73e9uoou5q2kwdvTiiSP4?usp=sharing';
     const DISEASE_CONTROL_PHOTOS_DRIVE_FOLDER_ID = '1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm';
     const DISEASE_CONTROL_PHOTOS_DRIVE_URL = 'https://drive.google.com/drive/folders/1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm?usp=sharing';
     const STORAGE_SPRAY_CONTROL_KEY = 'tdds_spray_control_reports_v1';
@@ -8793,44 +8806,133 @@
     }
 
     // ฟังก์ชันกลางสำหรับเรนเดอร์ HTML เป็น PDF โดยใช้ html2canvas + jsPDF โดยตรง (แก้ปัญหาหน้าเปล่า)
-    async function renderHtmlToPdfDirect(reportHtml, fileName, shouldDownload = true, widthPx = 794) {
-      const prevScrollX = window.scrollX || window.pageXOffset || 0;
-      const prevScrollY = window.scrollY || window.pageYOffset || 0;
+    function isCanvasBlankWhite(canvas) {
+      if (!canvas || !canvas.width || !canvas.height) return true;
+      try {
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return false;
+        const stepX = Math.max(1, Math.floor(canvas.width / 24));
+        const stepY = Math.max(1, Math.floor(canvas.height / 32));
+        let nonWhiteCount = 0;
+        for (let y = 0; y < canvas.height; y += stepY) {
+          const row = ctx.getImageData(0, y, canvas.width, 1).data;
+          for (let x = 0; x < canvas.width; x += stepX) {
+            const i = x * 4;
+            if (row[i + 3] > 10 && (row[i] < 248 || row[i + 1] < 248 || row[i + 2] < 248)) {
+              nonWhiteCount++;
+              if (nonWhiteCount >= 12) return false;
+            }
+          }
+        }
+        return nonWhiteCount < 12;
+      } catch (e) {
+        return false;
+      }
+    }
 
-      const tempContainer = document.createElement('div');
-      tempContainer.id = 'tempPatientPdfCapture';
-      tempContainer.style.position = 'absolute';
-      tempContainer.style.left = '0';
-      tempContainer.style.top = '0';
-      tempContainer.style.width = `${widthPx}px`;
-      tempContainer.style.backgroundColor = '#ffffff';
-      tempContainer.style.color = '#000000';
-      tempContainer.style.zIndex = '999999';
-      tempContainer.style.opacity = '1';
-      tempContainer.style.visibility = 'visible';
-      tempContainer.style.pointerEvents = 'none';
-      tempContainer.innerHTML = reportHtml;
-      document.body.appendChild(tempContainer);
+    function buildPdfFromRenderedCanvas(canvas, fileName, shouldDownload, JsPDFCtor) {
+      const pdf = new JsPDFCtor({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const margin = 8;
+      const usableW = pageW - margin * 2;
+      const usableH = pageH - margin * 2;
+
+      const totalImgW = usableW;
+      const totalImgH = (canvas.height * totalImgW) / canvas.width;
+
+      if (totalImgH <= usableH * 1.12) {
+        let drawW = totalImgW;
+        let drawH = totalImgH;
+        if (drawH > usableH) {
+          const ratio = usableH / drawH;
+          drawW = drawW * ratio;
+          drawH = usableH;
+        }
+        const xOffset = (pageW - drawW) / 2;
+        const imgData = canvas.toDataURL('image/jpeg', 0.90);
+        pdf.addImage(imgData, 'JPEG', xOffset, margin, drawW, drawH);
+      } else {
+        // แบ่งหน้าตัดเป็นแถบตามสัดส่วนความสูง A4 จริง ป้องกันหน้าขาวและภาพซ้อนทับ
+        const pageSlicePx = Math.max(200, Math.floor((usableH / totalImgW) * canvas.width));
+        let offsetY = 0;
+        let pageIdx = 0;
+        while (offsetY < canvas.height - 8) {
+          const sliceH = Math.min(pageSlicePx, canvas.height - offsetY);
+          const sliceCanvas = document.createElement('canvas');
+          sliceCanvas.width = canvas.width;
+          sliceCanvas.height = sliceH;
+          const sCtx = sliceCanvas.getContext('2d');
+          sCtx.fillStyle = '#ffffff';
+          sCtx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+          sCtx.drawImage(canvas, 0, offsetY, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+
+          if (!isCanvasBlankWhite(sliceCanvas) || pageIdx === 0) {
+            if (pageIdx > 0) pdf.addPage();
+            const sliceMmH = (sliceH * usableW) / canvas.width;
+            pdf.addImage(sliceCanvas.toDataURL('image/jpeg', 0.90), 'JPEG', margin, margin, usableW, sliceMmH);
+            pageIdx++;
+          }
+          offsetY += pageSlicePx;
+        }
+      }
+
+      const pdfBlob = pdf.output('blob');
+      if (shouldDownload) {
+        pdf.save(fileName);
+      }
+      return pdfBlob;
+    }
+
+    async function renderHtmlToPdfDirect(reportHtml, fileName, shouldDownload = true, widthPx = 794) {
+      // ใช้ iframe แยกอิสระออกจาก DOM หลัก ป้องกัน CSS ของ Tailwind/Overlay/Map ทำให้ html2canvas จับได้หน้าว่าง
+      const iframe = document.createElement('iframe');
+      iframe.id = 'tempPdfRenderFrame';
+      iframe.setAttribute('aria-hidden', 'true');
+      iframe.style.cssText = `position:fixed; left:-12000px; top:0; width:${widthPx}px; height:1600px; border:0; background:#ffffff; pointer-events:none; z-index:-1;`;
+      document.body.appendChild(iframe);
 
       let pdfBlob = null;
       try {
-        // เลื่อนหน้าไปบนสุดชั่วคราวเพื่อให้ html2canvas จับพิกัด (0,0) ได้แม่นยำ ไม่ติด offset หน้าเปล่า
-        window.scrollTo(0, 0);
-        if (document.fonts && document.fonts.ready) {
+        const iDoc = iframe.contentDocument || iframe.contentWindow.document;
+        iDoc.open();
+        iDoc.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;}html,body{margin:0;padding:0;background:#ffffff;color:#0f172a;font-family:'Sarabun',Tahoma,sans-serif;width:${widthPx}px;}table{border-collapse:collapse;}</style></head><body><div id="pdfRenderRoot" style="width:${widthPx}px;background:#ffffff;color:#0f172a;">${reportHtml}</div></body></html>`);
+        iDoc.close();
+
+        const rootEl = iDoc.getElementById('pdfRenderRoot');
+        if (!rootEl) return { blob: null, handled: false };
+
+        if (iDoc.fonts && iDoc.fonts.ready) {
           await Promise.race([
-            document.fonts.ready,
-            new Promise(resolve => setTimeout(resolve, 800))
+            iDoc.fonts.ready,
+            new Promise(resolve => setTimeout(resolve, 900))
           ]);
         }
+
+        // รอรูปภาพทั้งหมดโหลดเสร็จ และแทนที่ภาพภายนอกที่ติด CORS เพื่อไม่ให้ canvas ถูก taint
+        const imgs = Array.from(rootEl.querySelectorAll('img'));
+        await Promise.all(imgs.map(img => new Promise(resolve => {
+          const src = img.getAttribute('src') || '';
+          if (src && !src.startsWith('data:') && !src.startsWith('blob:')) {
+            img.crossOrigin = 'anonymous';
+          }
+          if (img.complete && img.naturalWidth > 0) return resolve();
+          const timer = setTimeout(resolve, 1500);
+          img.addEventListener('load', () => { clearTimeout(timer); resolve(); }, { once: true });
+          img.addEventListener('error', () => { clearTimeout(timer); img.style.display = 'none'; resolve(); }, { once: true });
+        })));
+
         await new Promise(resolve => setTimeout(resolve, 120));
+
+        const captureHeight = Math.max(rootEl.scrollHeight, rootEl.offsetHeight, 450);
+        iframe.style.height = `${captureHeight + 40}px`;
 
         const JsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
         if (window.html2canvas && JsPDFCtor) {
-          const captureHeight = Math.max(tempContainer.scrollHeight, tempContainer.offsetHeight, 400);
-          const canvas = await window.html2canvas(tempContainer, {
+          const canvas = await window.html2canvas(rootEl, {
             scale: 1.5,
             useCORS: true,
-            allowTaint: true,
+            allowTaint: false,
             backgroundColor: '#ffffff',
             logging: false,
             x: 0,
@@ -8839,48 +8941,18 @@
             scrollY: 0,
             width: widthPx,
             height: captureHeight,
-            windowWidth: Math.max(widthPx + 20, document.documentElement.clientWidth)
+            windowWidth: widthPx,
+            windowHeight: captureHeight + 40
           });
 
-          const imgData = canvas.toDataURL('image/jpeg', 0.88);
-          const pdf = new JsPDFCtor({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-          const pageW = pdf.internal.pageSize.getWidth();
-          const pageH = pdf.internal.pageSize.getHeight();
-          const margin = 8;
-          const usableW = pageW - margin * 2;
-          const usableH = pageH - margin * 2;
-
-          let imgW = usableW;
-          let imgH = (canvas.height * imgW) / canvas.width;
-
-          if (imgH <= usableH * 1.12) {
-            // ปรับขนาดให้พอดี 1 หน้า A4 สวยงามโดยไม่เกิดหน้า 2 เปล่า
-            if (imgH > usableH) {
-              const ratio = usableH / imgH;
-              imgW = imgW * ratio;
-              imgH = usableH;
+          if (!isCanvasBlankWhite(canvas)) {
+            pdfBlob = buildPdfFromRenderedCanvas(canvas, fileName, shouldDownload, JsPDFCtor);
+            if (pdfBlob && pdfBlob.size > 500) {
+              return { blob: pdfBlob, handled: true };
             }
-            const xOffset = (pageW - imgW) / 2;
-            pdf.addImage(imgData, 'JPEG', xOffset, margin, imgW, imgH);
           } else {
-            // รองรับหลายหน้าอัตโนมัติสำหรับรายงานที่ยาวเกิน 1 หน้า
-            let heightLeft = imgH;
-            let position = margin;
-            pdf.addImage(imgData, 'JPEG', margin, position, imgW, imgH);
-            heightLeft -= usableH;
-            while (heightLeft > 2) {
-              position = heightLeft - imgH + margin;
-              pdf.addPage();
-              pdf.addImage(imgData, 'JPEG', margin, position, imgW, imgH);
-              heightLeft -= usableH;
-            }
+            console.warn('[TDDS] html2canvas produced blank white canvas in iframe, trying html2pdf/GAS fallback');
           }
-
-          pdfBlob = pdf.output('blob');
-          if (shouldDownload) {
-            pdf.save(fileName);
-          }
-          return { blob: pdfBlob, handled: true };
         }
 
         if (window.html2pdf) {
@@ -8888,22 +8960,99 @@
             margin: [8, 8, 8, 8],
             filename: fileName,
             image: { type: 'jpeg', quality: 0.9 },
-            html2canvas: { scale: 1.5, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: widthPx + 10 },
+            html2canvas: { scale: 1.5, useCORS: true, allowTaint: false, backgroundColor: '#ffffff', logging: false, scrollX: 0, scrollY: 0, windowWidth: widthPx },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
           };
           if (shouldDownload) {
-            await html2pdf().set(opt).from(tempContainer).save();
+            await html2pdf().set(opt).from(rootEl).save();
           } else {
-            pdfBlob = await html2pdf().set(opt).from(tempContainer).output('blob');
+            pdfBlob = await html2pdf().set(opt).from(rootEl).output('blob');
           }
-          return { blob: pdfBlob, handled: true };
+          if (pdfBlob || shouldDownload) {
+            return { blob: pdfBlob, handled: true };
+          }
         }
         return { blob: null, handled: false };
+      } catch (err) {
+        console.warn('[TDDS] renderHtmlToPdfDirect error:', err);
+        return { blob: null, handled: false };
       } finally {
-        if (tempContainer.parentNode) {
-          document.body.removeChild(tempContainer);
+        if (iframe.parentNode) {
+          iframe.parentNode.removeChild(iframe);
         }
-        window.scrollTo(prevScrollX, prevScrollY);
+      }
+    }
+
+    function base64ToBlob(b64, mimeType = 'application/pdf') {
+      const clean = String(b64 || '').replace(/^data:[^;]+;base64,/, '');
+      const bin = atob(clean);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return new Blob([bytes], { type: mimeType });
+    }
+
+    // Helper กลางสำหรับบันทึกไฟล์ .PDF ลงโฟลเดอร์ Google Drive เฉพาะของแต่ละรายงาน
+    async function savePdfToDedicatedDriveFolder({ folderId, filename, blob, html }) {
+      const gasUrl = (localStorage.getItem('tdds_gas_webapp_url') || '').trim();
+      if (!gasUrl) {
+        return { ok: false, skipped: true, reason: 'missing_gas_url' };
+      }
+      try {
+        if (blob && blob.size > 500) {
+          const pdfB64 = await blobToBase64(blob);
+          const res = await fetchWithTimeout(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              folderId,
+              filename,
+              mimeType: 'application/pdf',
+              base64: pdfB64
+            })
+          }, 22000);
+          const data = await res.json();
+          if (data && data.status === 'success') {
+            return {
+              ok: true,
+              fileId: data.fileId,
+              fileUrl: data.fileUrl,
+              downloadUrl: data.downloadUrl,
+              folderUrl: data.folderUrl,
+              pdfBlob: blob
+            };
+          }
+        }
+
+        if (html) {
+          const res = await fetchWithTimeout(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: 'createPdfFromHtml',
+              folderId,
+              filename,
+              html,
+              returnBase64: true
+            })
+          }, 25000);
+          const data = await res.json();
+          if (data && data.status === 'success') {
+            const generatedBlob = data.pdfBase64 ? base64ToBlob(data.pdfBase64, 'application/pdf') : null;
+            return {
+              ok: true,
+              fileId: data.fileId,
+              fileUrl: data.fileUrl,
+              downloadUrl: data.downloadUrl,
+              folderUrl: data.folderUrl,
+              pdfBlob: generatedBlob
+            };
+          }
+          return { ok: false, error: data?.message || 'PDF creation on Drive failed' };
+        }
+        return { ok: false, error: 'Missing PDF content' };
+      } catch (err) {
+        console.warn('[TDDS] savePdfToDedicatedDriveFolder error:', err);
+        return { ok: false, error: err.message };
       }
     }
 
@@ -8965,14 +9114,15 @@
         try {
           setBackgroundFileStatusPill('working', `กำลังสร้างไฟล์ .PDF (${label})...`);
           const pdfRes = await generatePdfFn();
-          const blob = pdfRes && pdfRes.blob ? pdfRes.blob : null;
+          let blob = pdfRes && pdfRes.blob ? pdfRes.blob : null;
 
-          if (blob) {
+          const sendTelegramDoc = async (docBlob) => {
+            if (!docBlob) return;
             setBackgroundFileStatusPill('working', `กำลังส่งแนบไฟล์ .PDF เข้า Telegram (${label})...`);
             try {
               const formData = new FormData();
               formData.append('chat_id', TELEGRAM_CONFIG.chatId);
-              formData.append('document', blob, pdfRes.filename || `${label}.pdf`);
+              formData.append('document', docBlob, (pdfRes && pdfRes.filename) || `${label}.pdf`);
               if (telegramDocCaption) {
                 formData.append('caption', telegramDocCaption.length > 1000 ? telegramDocCaption.slice(0, 995) + '...' : telegramDocCaption);
               }
@@ -8983,14 +9133,23 @@
             } catch (docErr) {
               console.warn('[TDDS] Background Telegram sendDocument error:', docErr);
             }
+          };
+
+          if (blob) {
+            await sendTelegramDoc(blob);
           }
 
           let driveNote = '';
           if (typeof driveUploadFn === 'function') {
             setBackgroundFileStatusPill('working', `กำลังอัปโหลดภาพและ .PDF ขึ้น Google Drive (${label})...`);
-            const driveRes = await driveUploadFn(blob);
+            const driveRes = await driveUploadFn(blob, pdfRes);
+            if (!blob && driveRes && driveRes.pdfBlob) {
+              blob = driveRes.pdfBlob;
+              await sendTelegramDoc(blob);
+            }
             if (driveRes && driveRes.ok) {
-              driveNote = ` และอัปโหลด Drive (${driveRes.count || 0} ไฟล์)`;
+              const savedCount = driveRes.count ?? 1;
+              driveNote = ` และอัปโหลด Drive (${savedCount} ไฟล์)`;
               if (typeof onDriveSaved === 'function') onDriveSaved(driveRes);
             }
           }
@@ -9024,7 +9183,7 @@
         if (shouldDownload) openPatientPrintWindow(patient);
       }
 
-      return { blob: pdfBlob, base64: pdfBase64, filename: fileName };
+      return { blob: pdfBlob, base64: pdfBase64, filename: fileName, html: reportHtml };
     }
 
     // หน้าต่างพิมพ์/บันทึก PDF ความละเอียดสูงผ่านเบราว์เซอร์ (Native High-Resolution Print)
@@ -9194,7 +9353,19 @@ https://dengue-thepha.github.io/tdds/`;
       runBackgroundPdfAndDrivePipeline({
         label: patientObj.patientCode || patientObj.fullName || 'เคสใหม่',
         generatePdfFn: () => generatePatientReportPDF(patientObj, false),
-        telegramDocCaption: `📎 แนบไฟล์รายงาน .PDF (${patientObj.fullName || '-'} • ${patientObj.healthCenter || '-'})`
+        telegramDocCaption: `📎 แนบไฟล์รายงาน .PDF (${patientObj.fullName || '-'} • ${patientObj.healthCenter || '-'})`,
+        driveUploadFn: (blob, pdfRes) => savePdfToDedicatedDriveFolder({
+          folderId: PATIENT_PDF_DRIVE_FOLDER_ID,
+          filename: pdfRes?.filename || `แบบสอบสวนโรค_${(patientObj.fullName || 'ผู้ป่วย').replace(/\s+/g, '_')}_${patientObj.patientCode || patientObj.id}.pdf`,
+          blob,
+          html: pdfRes?.html || buildPatientReportHtml(patientObj)
+        }),
+        onDriveSaved: (driveRes) => {
+          if (driveRes?.fileUrl) {
+            patientObj.investigationPdfDriveUrl = driveRes.fileUrl;
+            savePatients();
+          }
+        }
       });
     }
 
@@ -10151,7 +10322,7 @@ https://dengue-thepha.github.io/tdds/`;
         console.warn('[TDDS] generateDiseaseControlPDF error:', err);
         if (shouldDownload) openDiseaseControlPrintWindow(patient, report);
       }
-      return { blob: pdfBlob, filename: fileName };
+      return { blob: pdfBlob, filename: fileName, html };
     }
 
     async function downloadDiseaseControlPDF(patientId) {
@@ -10332,7 +10503,7 @@ https://dengue-thepha.github.io/tdds/`;
       });
     }
 
-    async function uploadDiseaseControlPhotosToDrive(p, report, pdfBlob = null) {
+    async function uploadDiseaseControlPhotosToDrive(p, report, pdfBlob = null, pdfHtml = null, pdfFilename = null) {
       const gasUrl = (localStorage.getItem('tdds_gas_webapp_url') || '').trim();
       if (!gasUrl) {
         return { ok: false, skipped: true, reason: 'missing_gas_url' };
@@ -10364,46 +10535,54 @@ https://dengue-thepha.github.io/tdds/`;
           });
         }
       });
-      if (pdfBlob) {
-        try {
-          const pdfB64 = await blobToBase64(pdfBlob);
-          files.push({
-            type: 'pdf',
-            slot: 1,
-            mimeType: 'application/pdf',
-            filename: `รายงานควบคุมโรค331_${safeName}_${code}.pdf`,
-            base64: pdfB64
-          });
-        } catch (e) {}
+
+      const resolvedPdfName = pdfFilename || `รายงานควบคุมโรค331_${safeName}_${code}.pdf`;
+      const resolvedPdfHtml = pdfHtml || buildDiseaseControlPdfHtml(p, report);
+
+      const uploadPhotosPromise = files.length > 0
+        ? fetchWithTimeout(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: 'uploadControlBundle',
+              folderId: DISEASE_CONTROL_PHOTOS_DRIVE_FOLDER_ID,
+              subfolderName: `${code}_${safeName}`,
+              files
+            })
+          }, 25000).then(r => r.json()).catch(err => ({ status: 'error', message: err.message }))
+        : Promise.resolve({ status: 'success', files: [], folderUrl: DISEASE_CONTROL_PHOTOS_DRIVE_URL });
+
+      // บันทึกไฟล์ .PDF รายงานควบคุม 3 ชม. ลงโฟลเดอร์เฉพาะ 18l8d1egIzo3Z8koter0QXLKY4tr8_TVr
+      const uploadPdfPromise = savePdfToDedicatedDriveFolder({
+        folderId: CONTROL_3H_PDF_DRIVE_FOLDER_ID,
+        filename: resolvedPdfName,
+        blob: pdfBlob,
+        html: resolvedPdfHtml
+      });
+
+      const [photoData, pdfDriveRes] = await Promise.all([uploadPhotosPromise, uploadPdfPromise]);
+      const photoOk = photoData && photoData.status === 'success';
+      if (photoOk) {
+        report.driveFolderUrl = photoData.folderUrl || DISEASE_CONTROL_PHOTOS_DRIVE_URL;
+        report.indoorPhotoDriveUrls = (photoData.files || []).filter(f => f.type === 'indoor').map(f => f.fileUrl);
+        report.outdoorPhotoDriveUrls = (photoData.files || []).filter(f => f.type === 'outdoor').map(f => f.fileUrl);
+      }
+      if (pdfDriveRes && pdfDriveRes.ok && pdfDriveRes.fileUrl) {
+        report.pdfDriveUrl = pdfDriveRes.fileUrl;
       }
 
-      if (files.length === 0) {
-        return { ok: true, count: 0 };
+      const photoCount = photoOk ? (photoData.files || []).length : 0;
+      const pdfCount = (pdfDriveRes && pdfDriveRes.ok) ? 1 : 0;
+      if (photoOk || (pdfDriveRes && pdfDriveRes.ok)) {
+        return {
+          ok: true,
+          count: photoCount + pdfCount,
+          folderUrl: report.driveFolderUrl || CONTROL_3H_PDF_DRIVE_URL,
+          pdfUrl: report.pdfDriveUrl,
+          pdfBlob: (pdfDriveRes && pdfDriveRes.pdfBlob) || pdfBlob
+        };
       }
-
-      try {
-        const res = await fetch(gasUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'uploadControlBundle',
-            folderId: DISEASE_CONTROL_PHOTOS_DRIVE_FOLDER_ID,
-            subfolderName: `${code}_${safeName}`,
-            files
-          })
-        });
-        const data = await res.json();
-        if (data && data.status === 'success') {
-          report.driveFolderUrl = data.folderUrl || DISEASE_CONTROL_PHOTOS_DRIVE_URL;
-          report.indoorPhotoDriveUrls = (data.files || []).filter(f => f.type === 'indoor').map(f => f.fileUrl);
-          report.outdoorPhotoDriveUrls = (data.files || []).filter(f => f.type === 'outdoor').map(f => f.fileUrl);
-          return { ok: true, count: (data.files || []).length, folderUrl: report.driveFolderUrl };
-        }
-        return { ok: false, error: data?.message || 'Upload failed' };
-      } catch (err) {
-        console.warn('[TDDS] uploadDiseaseControlPhotosToDrive error:', err);
-        return { ok: false, error: err.message };
-      }
+      return { ok: false, error: photoData?.message || pdfDriveRes?.error || 'Upload failed' };
     }
 
     async function handleDiseaseControlSubmit(e) {
@@ -10510,7 +10689,7 @@ https://dengue-thepha.github.io/tdds/`;
         label: `ควบคุมโรค ${p.fullName || p.patientCode || ''}`,
         generatePdfFn: () => generateDiseaseControlPDF(p, report, true),
         telegramDocCaption: `📎 แนบไฟล์ .PDF รายงานควบคุมโรคเบื้องต้น (${p.fullName || '-'})`,
-        driveUploadFn: (blob) => uploadDiseaseControlPhotosToDrive(p, report, blob),
+        driveUploadFn: (blob, pdfRes) => uploadDiseaseControlPhotosToDrive(p, report, blob, pdfRes?.html, pdfRes?.filename),
         onDriveSaved: () => {
           saveDiseaseControlStore();
           savePatients();
@@ -10934,11 +11113,11 @@ https://dengue-thepha.github.io/tdds/`;
       try {
         const res = await renderHtmlToPdfDirect(html, fileName, shouldDownload, 794);
         if (!res.handled && shouldDownload) openSprayControlPrintWindow(patient, report);
-        return { blob: res.blob, filename: fileName, handled: res.handled };
+        return { blob: res.blob, filename: fileName, handled: res.handled, html };
       } catch (err) {
         console.warn('[TDDS] generateSprayControlPDF fallback:', err);
         if (shouldDownload) openSprayControlPrintWindow(patient, report);
-        return { blob: null, filename: fileName, handled: false };
+        return { blob: null, filename: fileName, handled: false, html };
       }
     }
 
@@ -11079,7 +11258,7 @@ https://dengue-thepha.github.io/tdds/`;
       } catch (e) {}
     }
 
-    async function uploadSprayControlPhotosToDrive(p, report, pdfBlob = null) {
+    async function uploadSprayControlPhotosToDrive(p, report, pdfBlob = null, pdfHtml = null, pdfFilename = null) {
       const gasUrl = (localStorage.getItem('tdds_gas_webapp_url') || '').trim();
       if (!gasUrl) {
         return { ok: false, skipped: true, reason: 'missing_gas_url' };
@@ -11111,44 +11290,52 @@ https://dengue-thepha.github.io/tdds/`;
           });
         }
       });
-      if (pdfBlob) {
-        try {
-          const pdfB64 = await blobToBase64(pdfBlob);
-          files.push({
-            type: 'spray_pdf',
-            slot: 1,
-            mimeType: 'application/pdf',
-            filename: `รายงานพ่นเคมี1วัน_${safeName}_${code}.pdf`,
-            base64: pdfB64
-          });
-        } catch (e) {}
+
+      const resolvedPdfName = pdfFilename || `รายงานพ่นเคมี1วัน_${safeName}_${code}.pdf`;
+      const resolvedPdfHtml = pdfHtml || buildSprayControlPdfHtml(p, report);
+
+      const uploadPhotosPromise = files.length > 0
+        ? fetchWithTimeout(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: 'uploadControlBundle',
+              folderId: DISEASE_CONTROL_PHOTOS_DRIVE_FOLDER_ID,
+              subfolderName: `${code}_${safeName}`,
+              files
+            })
+          }, 25000).then(r => r.json()).catch(err => ({ status: 'error', message: err.message }))
+        : Promise.resolve({ status: 'success', files: [], folderUrl: DISEASE_CONTROL_PHOTOS_DRIVE_URL });
+
+      // บันทึกไฟล์ .PDF รายงานพ่นสารเคมี ลงโฟลเดอร์เฉพาะ 1RrT1TxflPRU73e9uoou5q2kwdvTiiSP4
+      const uploadPdfPromise = savePdfToDedicatedDriveFolder({
+        folderId: SPRAY_PDF_DRIVE_FOLDER_ID,
+        filename: resolvedPdfName,
+        blob: pdfBlob,
+        html: resolvedPdfHtml
+      });
+
+      const [photoData, pdfDriveRes] = await Promise.all([uploadPhotosPromise, uploadPdfPromise]);
+      const photoOk = photoData && photoData.status === 'success';
+      if (photoOk) {
+        report.driveFolderUrl = photoData.folderUrl || DISEASE_CONTROL_PHOTOS_DRIVE_URL;
+      }
+      if (pdfDriveRes && pdfDriveRes.ok && pdfDriveRes.fileUrl) {
+        report.pdfDriveUrl = pdfDriveRes.fileUrl;
       }
 
-      if (files.length === 0) {
-        return { ok: true, count: 0 };
+      const photoCount = photoOk ? (photoData.files || []).length : 0;
+      const pdfCount = (pdfDriveRes && pdfDriveRes.ok) ? 1 : 0;
+      if (photoOk || (pdfDriveRes && pdfDriveRes.ok)) {
+        return {
+          ok: true,
+          count: photoCount + pdfCount,
+          folderUrl: report.driveFolderUrl || SPRAY_PDF_DRIVE_URL,
+          pdfUrl: report.pdfDriveUrl,
+          pdfBlob: (pdfDriveRes && pdfDriveRes.pdfBlob) || pdfBlob
+        };
       }
-
-      try {
-        const res = await fetch(gasUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'uploadControlBundle',
-            folderId: DISEASE_CONTROL_PHOTOS_DRIVE_FOLDER_ID,
-            subfolderName: `${code}_${safeName}`,
-            files
-          })
-        });
-        const data = await res.json();
-        if (data && data.status === 'success') {
-          report.driveFolderUrl = data.folderUrl || DISEASE_CONTROL_PHOTOS_DRIVE_URL;
-          return { ok: true, count: (data.files || []).length, folderUrl: report.driveFolderUrl };
-        }
-        return { ok: false, error: data?.message || 'Upload failed' };
-      } catch (err) {
-        console.warn('[TDDS] uploadSprayControlPhotosToDrive error:', err);
-        return { ok: false, error: err.message };
-      }
+      return { ok: false, error: photoData?.message || pdfDriveRes?.error || 'Upload failed' };
     }
 
     async function handleSprayControlSubmit(e) {
@@ -11232,7 +11419,7 @@ https://dengue-thepha.github.io/tdds/`;
         label: `พ่นเคมี ${p.fullName || p.patientCode || ''}`,
         generatePdfFn: () => generateSprayControlPDF(p, report, true),
         telegramDocCaption: `📎 แนบไฟล์ .PDF รายงานพ่นสารเคมี 1 วัน (${p.fullName || '-'})`,
-        driveUploadFn: (blob) => uploadSprayControlPhotosToDrive(p, report, blob),
+        driveUploadFn: (blob, pdfRes) => uploadSprayControlPhotosToDrive(p, report, blob, pdfRes?.html, pdfRes?.filename),
         onDriveSaved: () => {
           saveSprayControlStore();
           savePatients();
