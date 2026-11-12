@@ -419,7 +419,7 @@
           </div>
           <div class="flex flex-wrap items-center gap-2 self-stretch md:self-auto justify-end">
             <!-- Filter by Subdistrict dropdown -->
-            <select id="dashSubdistrictFilter" onchange="applyDashboardFilters()" class="text-xs bg-white/10 hover:bg-white/20 border border-white/30 text-white rounded-xl px-3 py-2 outline-none cursor-pointer backdrop-blur-sm">
+            <select id="dashSubdistrictFilter" onchange="handleDashSubdistrictChange()" class="text-xs bg-white/10 hover:bg-white/20 border border-white/30 text-white rounded-xl px-3 py-2 outline-none cursor-pointer backdrop-blur-sm">
               <option value="all" class="text-slate-800">ทุกตำบล (7 ตำบล)</option>
               <option value="เทพา" class="text-slate-800">ต.เทพา</option>
               <option value="ปากบาง" class="text-slate-800">ต.ปากบาง</option>
@@ -428,6 +428,11 @@
               <option value="ท่าม่วง" class="text-slate-800">ต.ท่าม่วง</option>
               <option value="วังใหญ่" class="text-slate-800">ต.วังใหญ่</option>
               <option value="สะกอม" class="text-slate-800">ต.สะกอม</option>
+            </select>
+
+            <!-- Filter by Village dropdown (แสดงเมื่อสถานพยาบาล/เจ้าหน้าที่ Login) -->
+            <select id="dashVillageFilter" onchange="applyDashboardFilters()" class="hidden text-xs bg-white/10 hover:bg-white/20 border border-white/30 text-white rounded-xl px-3 py-2 outline-none cursor-pointer backdrop-blur-sm" title="เลือกดูข้อมูลรายหมู่บ้านในเขตรับผิดชอบ">
+              <option value="all" class="text-slate-800">ทุกหมู่บ้าน</option>
             </select>
 
             <button onclick="refreshData()" class="text-xs bg-white text-teal-800 hover:bg-teal-50 font-bold px-3.5 py-2 rounded-xl shadow-sm transition active:scale-95 flex items-center gap-1.5">
@@ -4536,6 +4541,7 @@
       }
 
       if (typeof syncPatientHealthCenterFilterLock === 'function') syncPatientHealthCenterFilterLock();
+      if (typeof syncDashboardVillageFilterOptions === 'function') syncDashboardVillageFilterOptions(false);
       applyDashboardFilters();
       renderPatientTable();
       if (typeof renderDiseaseControlView === 'function') renderDiseaseControlView();
@@ -5010,9 +5016,127 @@
       thephaPopulationData.total = Object.values(thephaPopulationData.subdistricts).reduce((a, b) => a + b, 0);
     }
 
-    function getAgeGroupPopulationContext(selectedSubdistrict = 'all') {
+    function normalizeDashVillageNo(v) {
+      const s = normalizeThaiStr(String(v || '').trim());
+      if (!s) return '';
+      const n = parseInt(s, 10);
+      return !isNaN(n) && String(n) === s.replace(/^0+/, '') ? String(n) : (!isNaN(n) && /^\d+$/.test(s) ? String(n) : s);
+    }
+
+    function parseDashVillageSelection(rawVal) {
+      const val = String(rawVal || '').trim();
+      if (!val || val === 'all') return null;
+      const parts = val.split('::');
+      if (parts.length >= 2) {
+        return {
+          subdistrict: normalizeThaiStr(parts[0]),
+          villageNo: normalizeDashVillageNo(parts[1])
+        };
+      }
+      return { subdistrict: '', villageNo: normalizeDashVillageNo(val) };
+    }
+
+    function matchesDashVillageSelection(subdistrict, villageNo, selection) {
+      const parsed = typeof selection === 'string' ? parseDashVillageSelection(selection) : selection;
+      if (!parsed) return true;
+      const normV = normalizeDashVillageNo(villageNo);
+      if (normV !== parsed.villageNo) return false;
+      if (parsed.subdistrict) {
+        return normalizeThaiStr(subdistrict) === parsed.subdistrict;
+      }
+      return true;
+    }
+
+    function formatDashVillageScopeLabel(rawVal) {
+      const parsed = parseDashVillageSelection(rawVal);
+      if (!parsed) return '';
+      return parsed.subdistrict
+        ? `ม.${parsed.villageNo} ต.${parsed.subdistrict}`
+        : `หมู่ที่ ${parsed.villageNo}`;
+    }
+
+    function syncDashboardVillageFilterOptions(resetSelection = false) {
+      const selEl = document.getElementById('dashVillageFilter');
+      if (!selEl) return 'all';
+
+      if (!currentUser) {
+        selEl.classList.add('hidden');
+        selEl.value = 'all';
+        return 'all';
+      }
+
+      selEl.classList.remove('hidden');
+      const prevVal = resetSelection ? 'all' : (selEl.value || 'all');
+      const selectedSub = document.getElementById('dashSubdistrictFilter')?.value || 'all';
+      const isOsm = currentUser.position === 'อสม.' || currentUser.role === 'OSM' || currentUser.role === 'osm';
+      const userUnit = normalizeThaiStr(currentUser.unit || '');
+      const userHcode = currentUser.hcode || getHCodeByName(userUnit);
+      const limitToUnit = currentUser.role !== 'admin' && userUnit && userUnit !== 'สสอ.เทพา' && userUnit !== 'รพ.เทพา';
+
+      const villageMap = new Map();
+      const registerOpt = (sub, vNo) => {
+        const cleanSub = normalizeThaiStr(sub || '');
+        const cleanV = normalizeDashVillageNo(vNo);
+        if (!cleanSub || !cleanV) return;
+        if (selectedSub !== 'all' && cleanSub !== normalizeThaiStr(selectedSub)) return;
+        if (isOsm && currentUser.villageNo && cleanV !== normalizeDashVillageNo(currentUser.villageNo)) return;
+        const key = `${cleanSub}::${cleanV}`;
+        if (!villageMap.has(key)) {
+          villageMap.set(key, { key, subdistrict: cleanSub, villageNo: cleanV });
+        }
+      };
+
+      if (typeof locationMasterData !== 'undefined' && Array.isArray(locationMasterData)) {
+        locationMasterData.forEach(loc => {
+          if (limitToUnit) {
+            const locHcode = loc.hcode || getHCodeByName(loc.healthCenter);
+            const matchU = (userHcode && locHcode && userHcode === locHcode) || normalizeThaiStr(loc.healthCenter) === userUnit;
+            if (!matchU) return;
+          }
+          registerOpt(loc.subdistrict, loc.villageNo);
+        });
+      }
+
+      // เผื่อกรณีมีหมู่บ้านจากข้อมูลผู้ป่วยหรือประชากร person ในขอบเขตที่ล็อกอิน
+      const scopedPatients = typeof getFilteredPatientsForUser === 'function' ? getFilteredPatientsForUser() : [];
+      scopedPatients.forEach(p => registerOpt(p.subdistrict, p.villageNo));
+
+      if (typeof personsData !== 'undefined' && Array.isArray(personsData) && personsData.length > 0) {
+        const scopedPersons = (currentUser.role !== 'admin' && typeof getFilteredPersonsForUser === 'function')
+          ? getFilteredPersonsForUser()
+          : personsData;
+        scopedPersons.forEach(p => registerOpt(p.subdistrict, p.village_no));
+      }
+
+      const subOrder = ['เทพา', 'ปากบาง', 'เกาะสะบ้า', 'ลำไพล', 'ท่าม่วง', 'วังใหญ่', 'สะกอม'];
+      const entries = Array.from(villageMap.values()).sort((a, b) => {
+        const sa = subOrder.indexOf(a.subdistrict);
+        const sb = subOrder.indexOf(b.subdistrict);
+        if (sa !== sb) return (sa === -1 ? 99 : sa) - (sb === -1 ? 99 : sb);
+        return (parseInt(a.villageNo, 10) || 999) - (parseInt(b.villageNo, 10) || 999);
+      });
+
+      const defaultLabel = limitToUnit
+        ? `ทุกหมู่บ้านในเขต (${entries.length} หมู่)`
+        : `ทุกหมู่บ้าน (${entries.length} หมู่)`;
+
+      selEl.innerHTML = `<option value="all" class="text-slate-800">${defaultLabel}</option>` +
+        entries.map(item => `<option value="${item.key}" class="text-slate-800">หมู่ที่ ${item.villageNo} (ต.${item.subdistrict})</option>`).join('');
+
+      const hasPrev = prevVal !== 'all' && entries.some(item => item.key === prevVal);
+      selEl.value = hasPrev ? prevVal : 'all';
+      return selEl.value;
+    }
+
+    function handleDashSubdistrictChange() {
+      syncDashboardVillageFilterOptions(true);
+      applyDashboardFilters();
+    }
+
+    function getAgeGroupPopulationContext(selectedSubdistrict = 'all', selectedVillage = 'all') {
       const ageGroups = ['0-4 ปี', '5-9 ปี', '10-14 ปี', '15-24 ปี', '25-34 ปี', '35-44 ปี', '45-54 ปี', '55-64 ปี', '65 ปีขึ้นไป'];
       const hasImported = typeof personsData !== 'undefined' && Array.isArray(personsData) && personsData.length > 0;
+      const villageSel = parseDashVillageSelection(selectedVillage);
 
       let matchedPersons = [];
       if (hasImported) {
@@ -5028,6 +5152,11 @@
           matchedPersons = matchedPersons.filter(p =>
             normalizeThaiStr(p.subdistrict) === normalizeThaiStr(selectedSubdistrict) ||
             unitHcodesInSub.has(String(p.pcucodeperson || '').trim())
+          );
+        }
+        if (villageSel) {
+          matchedPersons = matchedPersons.filter(p =>
+            matchesDashVillageSelection(p.subdistrict, p.village_no, villageSel)
           );
         }
       }
@@ -5067,9 +5196,14 @@
       // ประมวลผลหน้า Dashboard เฉพาะผู้ป่วยยืนยัน (ไม่รวมเคส R/O เพราะยังไม่ใช่ผู้ป่วย)
       let scopedList = getFilteredPatientsForUser().filter(p => !isRuleOutCase(p));
       const selectedSubdistrict = document.getElementById('dashSubdistrictFilter').value;
+      const selectedVillage = syncDashboardVillageFilterOptions(false);
+      const villageSel = parseDashVillageSelection(selectedVillage);
 
       if (selectedSubdistrict !== 'all') {
         scopedList = scopedList.filter(p => p.subdistrict === selectedSubdistrict);
+      }
+      if (villageSel) {
+        scopedList = scopedList.filter(p => matchesDashVillageSelection(p.subdistrict, p.villageNo, villageSel));
       }
 
       const metrics = calculateMetrics(scopedList);
@@ -5081,23 +5215,18 @@
       document.getElementById('kpi28DaysCases').innerText = metrics.within28;
 
       // Calculate Morbidity Rate per 100,000 (ใช้ฐานประชากรที่นำเข้าจาก person เมื่อมีข้อมูลในขอบเขต)
-      const popCtx = getAgeGroupPopulationContext(selectedSubdistrict);
+      const popCtx = getAgeGroupPopulationContext(selectedSubdistrict, selectedVillage);
       let targetPop = thephaPopulationData.total;
-      if (currentUser && currentUser.role !== 'admin') {
+      if (popCtx.source === 'person' && popCtx.totalPop > 0) {
+        targetPop = popCtx.totalPop;
+      } else if (currentUser && currentUser.role !== 'admin') {
         const userHcode = currentUser.hcode || getHCodeByName(currentUser.unit);
         const hcInfo = HEALTH_CENTERS_MASTER.find(h => h.hcode === userHcode);
-        if (popCtx.source === 'person' && popCtx.totalPop > 0) {
-          targetPop = popCtx.totalPop;
-        } else if (hcInfo && hcInfo.population > 0) {
+        if (hcInfo && hcInfo.population > 0) {
           targetPop = hcInfo.population;
         }
       } else if (selectedSubdistrict !== 'all' && thephaPopulationData.subdistricts[selectedSubdistrict]) {
-        targetPop = (popCtx.source === 'person' && popCtx.totalPop > 0)
-          ? popCtx.totalPop
-          : thephaPopulationData.subdistricts[selectedSubdistrict];
-      } else if (popCtx.source === 'person' && popCtx.totalPop > 0) {
-        // ถ้า Admin นำเข้า person มาแล้ว ใช้ยอดประชากรจาก person หรือผลรวมที่มีจริง
-        targetPop = popCtx.totalPop;
+        targetPop = thephaPopulationData.subdistricts[selectedSubdistrict];
       }
       const morbidityRate = targetPop > 0 ? ((metrics.total / targetPop) * 100000).toFixed(2) : '0.00';
       const kpiRateEl = document.getElementById('kpiMorbidityRate');
@@ -5125,7 +5254,7 @@
       }
 
       // Render Charts, Numerical Stats & Inline Map
-      renderDashboardCharts(scopedList, selectedSubdistrict);
+      renderDashboardCharts(scopedList, selectedSubdistrict, selectedVillage);
       renderPublicSubdistrictStats(scopedList);
       renderHealthCenterStats(scopedList);
       renderRecentPatientsTable(scopedList);
@@ -5256,21 +5385,36 @@
       };
     }
 
+    function getDashboardScopeTitlePrefix(hcHistCtx, subKey, villageKey = 'all') {
+      const villageLabel = formatDashVillageScopeLabel(villageKey);
+      const baseTitle = hcHistCtx
+        ? `${hcHistCtx.name}${hcHistCtx.hcode ? ` (${hcHistCtx.hcode})` : ''}`
+        : ((subKey && subKey !== 'all') ? `ต.${subKey}` : 'อ.เทพา');
+      return villageLabel ? `${baseTitle} • ${villageLabel}` : baseTitle;
+    }
+
     // ฟังก์ชันวิเคราะห์และประเมินสถานการณ์ทางระบาดวิทยาแบบไดนามิกตามกราฟที่แสดง
     function updateEpidemicAlertBox(subKey, monthlyCurrent, median5Years, cases2568, list, monthsTh) {
       const box = document.getElementById('epidemicAlertBox');
       if (!box) return;
 
       const hcHistCtx = getLoggedInHealthCenterHistContext();
+      const villageFilterEl = document.getElementById('dashVillageFilter');
+      const villageKey = (villageFilterEl && !villageFilterEl.classList.contains('hidden')) ? (villageFilterEl.value || 'all') : 'all';
+      const villageLabel = formatDashVillageScopeLabel(villageKey);
       const totalCases = list.length;
       const isAll = (subKey === 'all' || !subKey);
-      const areaTitle = hcHistCtx
+      const baseAreaTitle = hcHistCtx
         ? `${hcHistCtx.hcode ? hcHistCtx.hcode + ' ' : ''}${hcHistCtx.name}`
         : (isAll ? 'ภาพรวม อ.เทพา' : `ต.${subKey}`);
+      const areaTitle = villageLabel ? `${baseAreaTitle} (${villageLabel})` : baseAreaTitle;
 
       // คำนวณอัตราป่วยต่อแสน
+      const popCtx = getAgeGroupPopulationContext(subKey, villageKey);
       let targetPop = thephaPopulationData.total;
-      if (hcHistCtx && hcHistCtx.population > 0) {
+      if (popCtx && popCtx.source === 'person' && popCtx.totalPop > 0) {
+        targetPop = popCtx.totalPop;
+      } else if (hcHistCtx && hcHistCtx.population > 0) {
         targetPop = hcHistCtx.population;
       } else if (!isAll && thephaPopulationData.subdistricts[subKey]) {
         targetPop = thephaPopulationData.subdistricts[subKey];
@@ -5438,7 +5582,7 @@
 
     function renderDailyEpiCurveChart(ctxObj) {
       if (!ctxObj) return;
-      const { list, targetYearAd, hcHistCtx, subKey, todayUtcMs } = ctxObj;
+      const { list, targetYearAd, hcHistCtx, subKey, selectedVillage = 'all', todayUtcMs } = ctxObj;
       const targetYearBe = targetYearAd + 543;
       const msPerDay = 86400000;
       const yearStartMs = Date.UTC(targetYearAd, 0, 1);
@@ -5446,13 +5590,8 @@
 
       const dailyTitleEl = document.getElementById('dailyEpiChartTitle');
       if (dailyTitleEl) {
-        if (hcHistCtx) {
-          dailyTitleEl.innerText = `จำนวนผู้ป่วยโรคไข้เลือดออก ${hcHistCtx.name} (${hcHistCtx.hcode}) ปี ${targetYearBe} จำแนกรายวันตามวันเริ่มป่วย (Epidemic curve)`;
-        } else if (subKey !== 'all') {
-          dailyTitleEl.innerText = `จำนวนผู้ป่วยโรคไข้เลือดออก ต.${subKey} ปี ${targetYearBe} จำแนกรายวันตามวันเริ่มป่วย (Epidemic curve)`;
-        } else {
-          dailyTitleEl.innerText = `จำนวนผู้ป่วยโรคไข้เลือดออก อ.เทพา ปี ${targetYearBe} จำแนกรายวันตามวันเริ่มป่วย (Epidemic curve)`;
-        }
+        const scopeTitle = getDashboardScopeTitlePrefix(hcHistCtx, subKey, selectedVillage);
+        dailyTitleEl.innerText = `จำนวนผู้ป่วยโรคไข้เลือดออก ${scopeTitle} ปี ${targetYearBe} จำแนกรายวันตามวันเริ่มป่วย (Epidemic curve)`;
       }
 
       const dailyMap = {};
@@ -5685,7 +5824,7 @@
       });
     }
 
-    function renderDashboardCharts(list, selectedSubdistrict = null) {
+    function renderDashboardCharts(list, selectedSubdistrict = null, selectedVillage = 'all') {
       const totalPatients = list.length || 1;
 
       // -----------------------------------------------------------
@@ -5694,30 +5833,31 @@
       // -----------------------------------------------------------
       const hcHistCtx = getLoggedInHealthCenterHistContext();
       const subKey = selectedSubdistrict || document.getElementById('dashSubdistrictFilter')?.value || 'all';
+      const villageFilterEl = document.getElementById('dashVillageFilter');
+      const villageKey = (selectedVillage && selectedVillage !== 'all')
+        ? selectedVillage
+        : ((villageFilterEl && !villageFilterEl.classList.contains('hidden')) ? (villageFilterEl.value || 'all') : 'all');
+      const villageLabel = formatDashVillageScopeLabel(villageKey);
       const monthsTh = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
       const histData = hcHistCtx || subdistrictHistoricalMonthly[subKey] || subdistrictHistoricalMonthly['all'];
       const median5Years = histData.median5Years;
       const cases2568 = histData.cases2568;
 
-      // ปรับปรุงชื่อหัวเรื่องกราฟตามสถานพยาบาลที่ล็อกอิน หรือตำบลที่เลือก
+      // ปรับปรุงชื่อหัวเรื่องกราฟตามสถานพยาบาลที่ล็อกอิน หรือตำบล/หมู่บ้านที่เลือก
       const chartTitleEl = document.getElementById('monthlyChartTitle');
       const chartSubtitleEl = document.getElementById('monthlyChartSubtitle');
       if (chartTitleEl) {
-        if (hcHistCtx) {
-          chartTitleEl.innerText = `จำนวนผู้ป่วยโรคไข้เลือดออก ${hcHistCtx.name} (${hcHistCtx.hcode}) ปี 2569 จำแนกรายเดือน เปรียบเทียบกับ Median 5 ปีย้อนหลัง`;
-        } else {
-          chartTitleEl.innerText = (subKey !== 'all')
-            ? `จำนวนผู้ป่วยโรคไข้เลือดออก ต.${subKey} ปี 2569 จำแนกรายเดือน เปรียบเทียบกับ Median 5 ปีย้อนหลัง`
-            : 'จำนวนผู้ป่วยโรคไข้เลือดออก อ.เทพา ปี 2569 จำแนกรายเดือน เปรียบเทียบกับ Median 5 ปีย้อนหลัง';
-        }
+        const scopeTitle = getDashboardScopeTitlePrefix(hcHistCtx, subKey, villageKey);
+        chartTitleEl.innerText = `จำนวนผู้ป่วยโรคไข้เลือดออก ${scopeTitle} ปี 2569 จำแนกรายเดือน เปรียบเทียบกับ Median 5 ปีย้อนหลัง`;
       }
       if (chartSubtitleEl) {
+        const villageSuffix = villageLabel ? ` เฉพาะ ${villageLabel}` : '';
         if (hcHistCtx) {
-          chartSubtitleEl.innerText = `เปรียบเทียบแนวโน้มการเกิดโรครายเดือนปี 2569 เฉพาะพื้นที่ ${hcHistCtx.name} (เส้นสีแดง) เทียบกับปี 2568 ของสถานพยาบาล (เส้นสีน้ำเงิน) และค่ามัธยฐาน 5 ปีย้อนหลัง พ.ศ. 2564 - 2568 (พื้นที่สีเขียว)`;
+          chartSubtitleEl.innerText = `เปรียบเทียบแนวโน้มการเกิดโรครายเดือนปี 2569 พื้นที่ ${hcHistCtx.name}${villageSuffix} (เส้นสีแดง) เทียบกับปี 2568 ของสถานพยาบาล (เส้นสีน้ำเงิน) และค่ามัธยฐาน 5 ปีย้อนหลัง พ.ศ. 2564 - 2568 (พื้นที่สีเขียว)`;
         } else {
           chartSubtitleEl.innerText = (subKey !== 'all')
-            ? `เปรียบเทียบแนวโน้มการเกิดโรครายเดือนปี 2569 ตำบล${subKey} (เส้นสีแดง) เทียบกับปี 2568 (เส้นสีน้ำเงิน) และเส้นฐานค่ามัธยฐาน 5 ปีย้อนหลัง พ.ศ. 2564 - 2568 (พื้นที่สีเขียว)`
-            : 'เปรียบเทียบแนวโน้มการเกิดโรครายเดือนปี 2569 (เส้นสีแดง) เทียบกับปี 2568 (เส้นสีน้ำเงิน) และเส้นฐานค่ามัธยฐาน 5 ปีย้อนหลัง พ.ศ. 2564 - 2568 (พื้นที่สีเขียว)';
+            ? `เปรียบเทียบแนวโน้มการเกิดโรครายเดือนปี 2569 ตำบล${subKey}${villageSuffix} (เส้นสีแดง) เทียบกับปี 2568 (เส้นสีน้ำเงิน) และเส้นฐานค่ามัธยฐาน 5 ปีย้อนหลัง พ.ศ. 2564 - 2568 (พื้นที่สีเขียว)`
+            : `เปรียบเทียบแนวโน้มการเกิดโรครายเดือนปี 2569${villageSuffix} (เส้นสีแดง) เทียบกับปี 2568 (เส้นสีน้ำเงิน) และเส้นฐานค่ามัธยฐาน 5 ปีย้อนหลัง พ.ศ. 2564 - 2568 (พื้นที่สีเขียว)`;
         }
       }
 
@@ -5942,13 +6082,8 @@
 
       const weeklyTitleEl = document.getElementById('weeklyChartTitle');
       if (weeklyTitleEl) {
-        if (hcHistCtx) {
-          weeklyTitleEl.innerText = `จำนวนผู้ป่วยโรคไข้เลือดออก ${hcHistCtx.name} (${hcHistCtx.hcode}) จำแนกรายสัปดาห์(ตามวันเริ่มป่วย)`;
-        } else if (subKey !== 'all') {
-          weeklyTitleEl.innerText = `จำนวนผู้ป่วยโรคไข้เลือดออก ต.${subKey} จำแนกรายสัปดาห์(ตามวันเริ่มป่วย)`;
-        } else {
-          weeklyTitleEl.innerText = 'จำนวนผู้ป่วยโรคไข้เลือดออก อ.เทพา จำแนกรายสัปดาห์(ตามวันเริ่มป่วย)';
-        }
+        const scopeTitle = getDashboardScopeTitlePrefix(hcHistCtx, subKey, villageKey);
+        weeklyTitleEl.innerText = `จำนวนผู้ป่วยโรคไข้เลือดออก ${scopeTitle} จำแนกรายสัปดาห์(ตามวันเริ่มป่วย)`;
       }
 
       const weeklyBadgesEl = document.getElementById('weeklySummaryBadges');
@@ -6078,7 +6213,7 @@
       // -----------------------------------------------------------
       // 1.6 Daily Epidemic Curve by Illness Onset Date (รายวันตามวันเริ่มป่วย)
       // -----------------------------------------------------------
-      dailyEpiLastContext = { list, targetYearAd, hcHistCtx, subKey, todayUtcMs };
+      dailyEpiLastContext = { list, targetYearAd, hcHistCtx, subKey, selectedVillage: villageKey, todayUtcMs };
       renderDailyEpiCurveChart(dailyEpiLastContext);
 
       // -----------------------------------------------------------
@@ -6105,7 +6240,7 @@
         }
       });
 
-      const agePopCtx = getAgeGroupPopulationContext(subKey);
+      const agePopCtx = getAgeGroupPopulationContext(subKey, villageKey);
       const agePopData = ageGroups.map(g => agePopCtx.popByAge[g] || 0);
       const ageRawData = ageGroups.map(g => ageCounts[g]);
       const agePercentages = ageGroups.map(g => parseFloat(((ageCounts[g] / totalPatients) * 100).toFixed(1)));
@@ -6469,6 +6604,7 @@
 
         locationMasterData.forEach(loc => {
           if (subKey !== 'all' && normalizeThaiStr(loc.subdistrict) !== normalizeThaiStr(subKey)) return;
+          if (villageKey !== 'all' && !matchesDashVillageSelection(loc.subdistrict, loc.villageNo, villageKey)) return;
           if (limitToUnit) {
             const locHcode = loc.hcode || getHCodeByName(loc.healthCenter);
             const matchU = (uHcode && locHcode && uHcode === locHcode) || normalizeThaiStr(loc.healthCenter) === uUnit;
