@@ -8817,15 +8817,18 @@
         // เลื่อนหน้าไปบนสุดชั่วคราวเพื่อให้ html2canvas จับพิกัด (0,0) ได้แม่นยำ ไม่ติด offset หน้าเปล่า
         window.scrollTo(0, 0);
         if (document.fonts && document.fonts.ready) {
-          await document.fonts.ready;
+          await Promise.race([
+            document.fonts.ready,
+            new Promise(resolve => setTimeout(resolve, 800))
+          ]);
         }
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 120));
 
         const JsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
         if (window.html2canvas && JsPDFCtor) {
           const captureHeight = Math.max(tempContainer.scrollHeight, tempContainer.offsetHeight, 400);
           const canvas = await window.html2canvas(tempContainer, {
-            scale: 2,
+            scale: 1.5,
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
@@ -8839,7 +8842,7 @@
             windowWidth: Math.max(widthPx + 20, document.documentElement.clientWidth)
           });
 
-          const imgData = canvas.toDataURL('image/jpeg', 0.96);
+          const imgData = canvas.toDataURL('image/jpeg', 0.88);
           const pdf = new JsPDFCtor({ unit: 'mm', format: 'a4', orientation: 'portrait' });
           const pageW = pdf.internal.pageSize.getWidth();
           const pageH = pdf.internal.pageSize.getHeight();
@@ -8873,10 +8876,9 @@
             }
           }
 
+          pdfBlob = pdf.output('blob');
           if (shouldDownload) {
             pdf.save(fileName);
-          } else {
-            pdfBlob = pdf.output('blob');
           }
           return { blob: pdfBlob, handled: true };
         }
@@ -8885,8 +8887,8 @@
           const opt = {
             margin: [8, 8, 8, 8],
             filename: fileName,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: widthPx + 10 },
+            image: { type: 'jpeg', quality: 0.9 },
+            html2canvas: { scale: 1.5, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: widthPx + 10 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
           };
           if (shouldDownload) {
@@ -8903,6 +8905,102 @@
         }
         window.scrollTo(prevScrollX, prevScrollY);
       }
+    }
+
+    // ตัวช่วยแยกการบันทึก/ส่ง Telegram ออกจากงานสร้าง PDF และอัปโหลดไฟล์เบื้องหลัง (ไม่หน่วงหน้าจอ)
+    function setBackgroundFileStatusPill(state, text) {
+      let pill = document.getElementById('tddsBgFileStatusPill');
+      if (!pill) {
+        pill = document.createElement('div');
+        pill.id = 'tddsBgFileStatusPill';
+        pill.className = 'fixed bottom-4 right-4 z-[60] max-w-xs sm:max-w-sm px-4 py-2.5 rounded-2xl shadow-xl border text-xs font-semibold flex items-center gap-2 transition-all duration-200';
+        document.body.appendChild(pill);
+      }
+      if (state === 'working') {
+        pill.className = 'fixed bottom-4 right-4 z-[60] max-w-xs sm:max-w-sm px-4 py-2.5 rounded-2xl shadow-xl border text-xs font-semibold flex items-center gap-2 transition-all duration-200 bg-slate-900 text-white border-slate-700';
+        pill.innerHTML = `<span class="inline-block w-3.5 h-3.5 border-2 border-teal-400 border-t-transparent rounded-full animate-spin shrink-0"></span><span>${text}</span>`;
+      } else if (state === 'done') {
+        pill.className = 'fixed bottom-4 right-4 z-[60] max-w-xs sm:max-w-sm px-4 py-2.5 rounded-2xl shadow-xl border text-xs font-semibold flex items-center gap-2 transition-all duration-200 bg-emerald-700 text-white border-emerald-500';
+        pill.innerHTML = `<span>✅</span><span>${text}</span>`;
+        setTimeout(() => { if (pill && pill.dataset.state === 'done') pill.classList.add('hidden'); }, 4500);
+      } else {
+        pill.className = 'fixed bottom-4 right-4 z-[60] max-w-xs sm:max-w-sm px-4 py-2.5 rounded-2xl shadow-xl border text-xs font-semibold flex items-center gap-2 transition-all duration-200 bg-amber-600 text-white border-amber-400';
+        pill.innerHTML = `<span>⚠️</span><span>${text}</span>`;
+        setTimeout(() => { if (pill && pill.dataset.state === 'warn') pill.classList.add('hidden'); }, 5000);
+      }
+      pill.dataset.state = state;
+      pill.classList.remove('hidden');
+    }
+
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+      if (typeof AbortController === 'undefined') {
+        return fetch(url, options);
+      }
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: ctrl.signal });
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function sendTelegramTextFast(text) {
+      try {
+        const res = await fetchWithTimeout(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: TELEGRAM_CONFIG.chatId, text })
+        }, 8000);
+        const data = await res.json();
+        return !!(data && data.ok);
+      } catch (err) {
+        console.warn('[TDDS] sendTelegramTextFast error:', err);
+        return false;
+      }
+    }
+
+    function runBackgroundPdfAndDrivePipeline({ label, generatePdfFn, telegramDocCaption, driveUploadFn, onDriveSaved }) {
+      setTimeout(async () => {
+        try {
+          setBackgroundFileStatusPill('working', `กำลังสร้างไฟล์ .PDF (${label})...`);
+          const pdfRes = await generatePdfFn();
+          const blob = pdfRes && pdfRes.blob ? pdfRes.blob : null;
+
+          if (blob) {
+            setBackgroundFileStatusPill('working', `กำลังส่งแนบไฟล์ .PDF เข้า Telegram (${label})...`);
+            try {
+              const formData = new FormData();
+              formData.append('chat_id', TELEGRAM_CONFIG.chatId);
+              formData.append('document', blob, pdfRes.filename || `${label}.pdf`);
+              if (telegramDocCaption) {
+                formData.append('caption', telegramDocCaption.length > 1000 ? telegramDocCaption.slice(0, 995) + '...' : telegramDocCaption);
+              }
+              await fetchWithTimeout(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendDocument`, {
+                method: 'POST',
+                body: formData
+              }, 15000);
+            } catch (docErr) {
+              console.warn('[TDDS] Background Telegram sendDocument error:', docErr);
+            }
+          }
+
+          let driveNote = '';
+          if (typeof driveUploadFn === 'function') {
+            setBackgroundFileStatusPill('working', `กำลังอัปโหลดภาพและ .PDF ขึ้น Google Drive (${label})...`);
+            const driveRes = await driveUploadFn(blob);
+            if (driveRes && driveRes.ok) {
+              driveNote = ` และอัปโหลด Drive (${driveRes.count || 0} ไฟล์)`;
+              if (typeof onDriveSaved === 'function') onDriveSaved(driveRes);
+            }
+          }
+
+          setBackgroundFileStatusPill('done', `สร้างไฟล์ .PDF${driveNote} เรียบร้อย (${label})`);
+        } catch (err) {
+          console.warn('[TDDS] Background file pipeline error:', err);
+          setBackgroundFileStatusPill('warn', `สร้าง/อัปโหลดไฟล์บางส่วนไม่สมบูรณ์ (${label})`);
+        }
+      }, 150);
     }
 
     // ฟังก์ชันสร้าง PDF และดาวน์โหลด (รองรับ html2canvas+jsPDF และ Native Browser Print)
@@ -9059,58 +9157,16 @@
 https://dengue-thepha.github.io/tdds/`;
     }
 
-    // กระบวนการเมื่อบันทึกผู้ป่วยรายใหม่: ส่งแจ้งเตือน Telegram พร้อมแนบไฟล์ PDF เฉพาะเคสนี้
+    // กระบวนการเมื่อบันทึกผู้ป่วยรายใหม่: ส่งข้อความแจ้งเตือน Telegram ทันทีก่อน แล้วค่อยสร้าง/แนบ PDF เบื้องหลัง
     async function processNewPatientActions(patientObj) {
-      showLoading('กำลังส่งรายงานและไฟล์ PDF เข้ากลุ่ม Telegram...');
+      showLoading('กำลังส่งข้อความแจ้งเตือนเข้ากลุ่ม Telegram...');
 
       const messageText = buildTelegramNotificationMessage(patientObj);
-      let documentSent = false;
-
-      // 1. พยายามสร้างและแนบไฟล์ PDF รายงานสอบสวนโรคเฉพาะเคสนี้เข้า Telegram (ปลอดภัย: ผู้รับเปิดดูได้เฉพาะไฟล์ของเคสนี้ ไม่เปิดเผยโฟลเดอร์รวม)
-      try {
-        const pdfResult = await generatePatientReportPDF(patientObj, false);
-        if (pdfResult && pdfResult.blob) {
-          const formData = new FormData();
-          formData.append('chat_id', TELEGRAM_CONFIG.chatId);
-          formData.append('document', pdfResult.blob, pdfResult.filename);
-          // ใช้ข้อความแจ้งเตือนเป็น Caption ของเอกสารโดยตรง (ไม่เกิน 1,024 ตัวอักษร)
-          const caption = messageText.length > 1000 ? messageText.substring(0, 995) + '...' : messageText;
-          formData.append('caption', caption);
-
-          const docRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendDocument`, {
-            method: 'POST',
-            body: formData
-          });
-          const docData = await docRes.json();
-          if (docData && docData.ok) {
-            documentSent = true;
-          } else {
-            console.warn('Telegram sendDocument failed, will fallback to sendMessage:', docData);
-          }
-        }
-      } catch (pdfErr) {
-        console.warn('PDF generation/send error, falling back to text message:', pdfErr);
-      }
-
-      // 2. หากไม่สามารถแนบไฟล์ PDF ได้ ให้ส่งข้อความแจ้งเตือนปกติทาง sendMessage (Fallback)
-      if (!documentSent) {
-        try {
-          await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: TELEGRAM_CONFIG.chatId,
-              text: messageText
-            })
-          });
-        } catch (tgErr) {
-          console.error('Telegram sendMessage fallback error:', tgErr);
-        }
-      }
+      const tgOk = await sendTelegramTextFast(messageText);
 
       hideLoading();
 
-      // 3. แสดงแจ้งเตือนยืนยันการบันทึกและส่งรายงาน
+      // แสดงแจ้งเตือนยืนยันการบันทึกและส่งข้อความทันที
       Swal.fire({
         icon: 'success',
         title: 'บันทึกผู้ป่วยรายใหม่สำเร็จ!',
@@ -9120,19 +9176,25 @@ https://dengue-thepha.github.io/tdds/`;
               <span class="text-base">✅</span>
               <div>บันทึกข้อมูล <b>${patientObj.fullName}</b> (${patientObj.diagnosis}) เรียบร้อยแล้ว</div>
             </div>
-            <div class="flex items-start gap-2 text-emerald-800 font-semibold">
-              <span class="text-base">📲</span>
-              <div>ส่งการแจ้งเตือนพร้อมแนบไฟล์ PDF เข้ากลุ่ม Telegram เรียบร้อยแล้ว</div>
+            <div class="flex items-start gap-2 ${tgOk ? 'text-emerald-800' : 'text-amber-700'} font-semibold">
+              <span class="text-base">${tgOk ? '📲' : '⚠️'}</span>
+              <div>${tgOk ? 'ส่งข้อความแจ้งเตือนเข้ากลุ่ม Telegram เรียบร้อยแล้ว' : 'ส่งข้อความ Telegram ไม่สำเร็จ (กรุณาตรวจสอบอินเทอร์เน็ต)'}</div>
             </div>
             <div class="text-[11px] text-slate-500 pt-1 border-t border-slate-200 flex items-center gap-1">
-              <span>🔒</span> ไฟล์ PDF แนบเฉพาะเคสนี้ เพื่อความปลอดภัยของข้อมูลผู้ป่วย (PDPA)
+              <span>⚙️</span> ระบบกำลังสร้างและแนบไฟล์ .PDF เฉพาะเคสนี้เพิ่มเติมในเบื้องหลัง (ไม่ต้องรอหน้าต่างนี้)
             </div>
           </div>
         `,
-        timer: 2500,
+        timer: 2600,
         showConfirmButton: true,
         confirmButtonText: 'ตกลง',
         confirmButtonColor: '#0d9488'
+      });
+
+      runBackgroundPdfAndDrivePipeline({
+        label: patientObj.patientCode || patientObj.fullName || 'เคสใหม่',
+        generatePdfFn: () => generatePatientReportPDF(patientObj, false),
+        telegramDocCaption: `📎 แนบไฟล์รายงาน .PDF (${patientObj.fullName || '-'} • ${patientObj.healthCenter || '-'})`
       });
     }
 
@@ -10396,7 +10458,7 @@ https://dengue-thepha.github.io/tdds/`;
         telegramSentAt: new Date().toISOString()
       };
 
-      showLoading('กำลังบันทึกรายงานควบคุมโรค สร้างไฟล์ .PDF และส่ง Telegram...');
+      showLoading('กำลังบันทึกข้อมูลและส่งแจ้งเตือนเข้า Telegram...');
 
       p.diseaseControlReport = report;
       p.controlCompletedAt = toIsoTimestampOrNull(report.controlDatetime) || report.submittedAt;
@@ -10406,44 +10468,14 @@ https://dengue-thepha.github.io/tdds/`;
       saveDiseaseControlStore();
       savePatients();
 
-      const sbRes = await saveDiseaseControlReportToSupabase(p, report);
       const tgMsg = buildDiseaseControlTelegramMessage(p, report);
-      let pdfRes = null;
-      let tgOk = false;
-
-      try {
-        pdfRes = await generateDiseaseControlPDF(p, report, true);
-        if (pdfRes && pdfRes.blob) {
-          const formData = new FormData();
-          formData.append('chat_id', TELEGRAM_CONFIG.chatId);
-          formData.append('document', pdfRes.blob, pdfRes.filename);
-          formData.append('caption', tgMsg.length > 1000 ? tgMsg.slice(0, 995) + '...' : tgMsg);
-          const docRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendDocument`, { method: 'POST', body: formData });
-          const docJson = await docRes.json();
-          if (docJson && docJson.ok) tgOk = true;
-        }
-      } catch (err) {
-        console.warn('[TDDS] DC PDF+Telegram sendDocument error:', err);
-      }
-
-      if (!tgOk) {
-        try {
-          const msgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: TELEGRAM_CONFIG.chatId, text: tgMsg })
-          });
-          const msgJson = await msgRes.json();
-          if (msgJson && msgJson.ok) tgOk = true;
-        } catch (err) {}
-      }
-
-      // อัปโหลดภาพสำรวจ/ทำลาย (และ PDF) เข้า Google Drive โฟลเดอร์ 1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm
-      const driveRes = await uploadDiseaseControlPhotosToDrive(p, report, pdfRes ? pdfRes.blob : null);
-      if (driveRes && driveRes.ok && driveRes.folderUrl) {
-        saveDiseaseControlStore();
-        savePatients();
-      }
+      const [sbRes, tgOk] = await Promise.all([
+        Promise.race([
+          saveDiseaseControlReportToSupabase(p, report),
+          new Promise(resolve => setTimeout(() => resolve({ ok: false, timeout: true }), 7000))
+        ]),
+        sendTelegramTextFast(tgMsg)
+      ]);
 
       addAuditLog('DISEASE_CONTROL_331', `บันทึกรายงานควบคุมโรคเบื้องต้น: ${p.fullName} (CI บ้าน ${report.ciPatient}%, CI 100ม. ${report.ci100m}%, HI ${report.hi100m}%)`);
       hideLoading();
@@ -10451,27 +10483,38 @@ https://dengue-thepha.github.io/tdds/`;
       renderPatientTable();
       renderDiseaseControlView();
 
-      let driveStatusHtml = '';
-      if (driveRes && driveRes.ok) {
-        driveStatusHtml = `<div>☁️ อัปโหลดภาพและไฟล์ขึ้น <a href="${driveRes.folderUrl || DISEASE_CONTROL_PHOTOS_DRIVE_URL}" target="_blank" class="text-teal-700 underline font-bold">Google Drive (${driveRes.count || 0} ไฟล์) ↗️</a> เรียบร้อยแล้ว</div>`;
-      } else if (driveRes && driveRes.skipped) {
-        driveStatusHtml = `<div class="text-[11px] text-amber-700">⚠️ ภาพเก็บในระบบและ PDF แล้ว — หากต้องการให้อัปโหลดตรงเข้า <a href="${DISEASE_CONTROL_PHOTOS_DRIVE_URL}" target="_blank" class="underline font-semibold">Google Drive โฟลเดอร์ภาพ</a> อัตโนมัติ กรุณาใส่ Web App URL ใน <b>ตั้งค่า Drive & Telegram</b></div>`;
-      } else {
-        driveStatusHtml = `<div class="text-[11px] text-rose-700">⚠️ อัปโหลด Google Drive ไม่สำเร็จ (${driveRes?.error || 'ตรวจสอบ Web App URL'})</div>`;
-      }
-
+      const hasGasUrl = !!(localStorage.getItem('tdds_gas_webapp_url') || '').trim();
       Swal.fire({
         icon: 'success',
-        title: 'บันทึกรายงานควบคุมโรคเบื้องต้นสำเร็จ!',
+        title: 'บันทึกรายงานและแจ้งเตือนสำเร็จ!',
         html: `
           <div class="text-left text-xs space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
-            <div>✅ สร้างและดาวน์โหลดไฟล์ <b>.PDF</b> ตามแบบสอบสวนโรคแล้ว</div>
-            <div>${tgOk ? '📲 ส่งข้อความและไฟล์รายงานเข้ากลุ่ม Telegram เรียบร้อยแล้ว' : '⚠️ ส่งเข้า Telegram ไม่สำเร็จ (กรุณาตรวจสอบอินเทอร์เน็ต)'}</div>
-            ${driveStatusHtml}
-            ${sbRes && sbRes.missingTable ? '<div class="text-[11px] text-amber-700 pt-1">ℹ️ หมายเหตุ: หากต้องการเก็บรายงานควบคุมโรคขึ้นตารางกลางบน Supabase ด้วย กรุณารันไฟล์ <code>create_disease_control_reports.sql</code> ใน Supabase SQL Editor</div>' : ''}
+            <div>✅ บันทึกข้อมูลรายงานควบคุมโรคเบื้องต้นเรียบร้อยแล้ว</div>
+            <div>${tgOk ? '📲 ส่งข้อความแจ้งเตือนเข้ากลุ่ม Telegram ทันทีเรียบร้อยแล้ว' : '⚠️ ส่งเข้า Telegram ไม่สำเร็จ (กรุณาตรวจสอบอินเทอร์เน็ต)'}</div>
+            <div class="text-indigo-700 font-semibold">⚙️ กำลังสร้างไฟล์ <b>.PDF</b>${hasGasUrl ? ' และอัปโหลดภาพขึ้น <b>Google Drive</b>' : ''} แยกทำงานเบื้องหลังให้โดยอัตโนมัติ (สามารถใช้งานเมนูอื่นต่อได้ทันที)</div>
+            ${!hasGasUrl ? `<div class="text-[11px] text-amber-700">ℹ️ ภาพเก็บในระบบและ PDF แล้ว — หากต้องการอัปโหลดเข้า <a href="${DISEASE_CONTROL_PHOTOS_DRIVE_URL}" target="_blank" class="underline font-semibold">Google Drive</a> อัตโนมัติ กรุณาใส่ Web App URL ใน <b>⚙️ ตั้งค่า Drive & Telegram</b></div>` : ''}
+            ${sbRes && sbRes.missingTable ? '<div class="text-[11px] text-amber-700 pt-1">ℹ️ หมายเหตุ: หากต้องการเก็บขึ้นตารางกลางบน Supabase ด้วย กรุณารันไฟล์ <code>create_disease_control_reports.sql</code></div>' : ''}
           </div>
         `,
+        showCancelButton: true,
+        confirmButtonText: 'ตกลง',
+        cancelButtonText: '🖨️ เปิดดู/พิมพ์ทันที',
         confirmButtonColor: '#0D9488'
+      }).then((res) => {
+        if (res.dismiss === Swal.DismissReason.cancel) {
+          openDiseaseControlPrintWindow(p, report);
+        }
+      });
+
+      runBackgroundPdfAndDrivePipeline({
+        label: `ควบคุมโรค ${p.fullName || p.patientCode || ''}`,
+        generatePdfFn: () => generateDiseaseControlPDF(p, report, true),
+        telegramDocCaption: `📎 แนบไฟล์ .PDF รายงานควบคุมโรคเบื้องต้น (${p.fullName || '-'})`,
+        driveUploadFn: (blob) => uploadDiseaseControlPhotosToDrive(p, report, blob),
+        onDriveSaved: () => {
+          saveDiseaseControlStore();
+          savePatients();
+        }
       });
     }
 
@@ -11137,7 +11180,7 @@ https://dengue-thepha.github.io/tdds/`;
         telegramSentAt: new Date().toISOString()
       };
 
-      showLoading('กำลังบันทึกรายงานพ่นสารเคมี สร้าง .PDF และส่ง Telegram...');
+      showLoading('กำลังบันทึกข้อมูลพ่นเคมีและส่งแจ้งเตือนเข้า Telegram...');
 
       p.sprayControlReport = report;
       p.sprayCompletedAt = toIsoTimestampOrNull(report.sprayDatetime) || report.submittedAt;
@@ -11147,44 +11190,14 @@ https://dengue-thepha.github.io/tdds/`;
       saveSprayControlStore();
       savePatients();
 
-      const sbRes = await saveSprayControlReportToSupabase(p, report);
       const tgMsg = buildSprayControlTelegramMessage(p, report);
-      let pdfRes = null;
-      let tgOk = false;
-
-      try {
-        pdfRes = await generateSprayControlPDF(p, report, true);
-        if (pdfRes && pdfRes.blob) {
-          const formData = new FormData();
-          formData.append('chat_id', TELEGRAM_CONFIG.chatId);
-          formData.append('document', pdfRes.blob, pdfRes.filename);
-          formData.append('caption', tgMsg.length > 1000 ? tgMsg.slice(0, 995) + '...' : tgMsg);
-          const docRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendDocument`, { method: 'POST', body: formData });
-          const docJson = await docRes.json();
-          if (docJson && docJson.ok) tgOk = true;
-        }
-      } catch (err) {
-        console.warn('[TDDS] Spray PDF+Telegram sendDocument error:', err);
-      }
-
-      if (!tgOk) {
-        try {
-          const msgRes = await fetch(`https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: TELEGRAM_CONFIG.chatId, text: tgMsg })
-          });
-          const msgJson = await msgRes.json();
-          if (msgJson && msgJson.ok) tgOk = true;
-        } catch (err) {}
-      }
-
-      const driveRes = await uploadSprayControlPhotosToDrive(p, report, pdfRes ? pdfRes.blob : null);
-      if (driveRes && driveRes.ok && driveRes.folderUrl) {
-        saveSprayControlStore();
-        savePatients();
-        if (sbRes && sbRes.ok) saveSprayControlReportToSupabase(p, report);
-      }
+      const [sbRes, tgOk] = await Promise.all([
+        Promise.race([
+          saveSprayControlReportToSupabase(p, report),
+          new Promise(resolve => setTimeout(() => resolve({ ok: false, timeout: true }), 7000))
+        ]),
+        sendTelegramTextFast(tgMsg)
+      ]);
 
       addAuditLog('SPRAY_CONTROL_331', `บันทึกรายงานพ่นเคมี 1 วัน: ${p.fullName} (พ่น ${report.radiusSprayedHouses}/${report.radiusTotalHouses} หลัง, HI ${report.hi100m}%, CI ${report.ci100m}%)`);
       hideLoading();
@@ -11192,27 +11205,39 @@ https://dengue-thepha.github.io/tdds/`;
       renderPatientTable();
       renderDiseaseControlView();
 
-      let driveStatusHtml = '';
-      if (driveRes && driveRes.ok) {
-        driveStatusHtml = `<div>☁️ อัปโหลดภาพทีมพ่น/ขณะพ่น และไฟล์ขึ้น <a href="${driveRes.folderUrl || DISEASE_CONTROL_PHOTOS_DRIVE_URL}" target="_blank" class="text-indigo-700 underline font-bold">Google Drive (${driveRes.count || 0} ไฟล์) ↗️</a> เรียบร้อยแล้ว</div>`;
-      } else if (driveRes && driveRes.skipped) {
-        driveStatusHtml = `<div class="text-[11px] text-amber-700">⚠️ ภาพเก็บในระบบและ PDF แล้ว — หากต้องการอัปโหลดเข้า <a href="${DISEASE_CONTROL_PHOTOS_DRIVE_URL}" target="_blank" class="underline font-semibold">Google Drive</a> อัตโนมัติ กรุณาตั้งค่า Web App URL ใน <b>⚙️ ตั้งค่า Drive & Telegram</b></div>`;
-      } else {
-        driveStatusHtml = `<div class="text-[11px] text-rose-700">⚠️ อัปโหลด Google Drive ไม่สำเร็จ (${driveRes?.error || 'ตรวจสอบ Web App URL'})</div>`;
-      }
-
+      const hasGasUrl = !!(localStorage.getItem('tdds_gas_webapp_url') || '').trim();
       Swal.fire({
         icon: 'success',
-        title: 'บันทึกรายงานพ่นสารเคมี 1 วันสำเร็จ!',
+        title: 'บันทึกรายงานและแจ้งเตือนสำเร็จ!',
         html: `
           <div class="text-left text-xs space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
-            <div>✅ สร้างและดาวน์โหลดไฟล์ <b>.PDF</b> รายงานพ่นสารเคมีแล้ว</div>
-            <div>${tgOk ? '📲 ส่งข้อความและไฟล์รายงานเข้ากลุ่ม Telegram เรียบร้อยแล้ว' : '⚠️ ส่งเข้า Telegram ไม่สำเร็จ (กรุณาตรวจสอบอินเทอร์เน็ต)'}</div>
-            ${driveStatusHtml}
+            <div>✅ บันทึกรายงานพ่นสารเคมี 1 วันเรียบร้อยแล้ว</div>
+            <div>${tgOk ? '📲 ส่งข้อความแจ้งเตือนเข้ากลุ่ม Telegram ทันทีเรียบร้อยแล้ว' : '⚠️ ส่งเข้า Telegram ไม่สำเร็จ (กรุณาตรวจสอบอินเทอร์เน็ต)'}</div>
+            <div class="text-indigo-700 font-semibold">⚙️ กำลังสร้างไฟล์ <b>.PDF</b>${hasGasUrl ? ' และอัปโหลดภาพทีมพ่น/ขณะพ่น ขึ้น <b>Google Drive</b>' : ''} แยกทำงานเบื้องหลังให้โดยอัตโนมัติ</div>
+            ${!hasGasUrl ? `<div class="text-[11px] text-amber-700">ℹ️ ภาพเก็บในระบบและ PDF แล้ว — หากต้องการอัปโหลดเข้า <a href="${DISEASE_CONTROL_PHOTOS_DRIVE_URL}" target="_blank" class="underline font-semibold">Google Drive</a> อัตโนมัติ กรุณาตั้งค่า Web App URL ใน <b>⚙️ ตั้งค่า Drive & Telegram</b></div>` : ''}
             ${sbRes && sbRes.missingTable ? '<div class="text-[11px] text-amber-700 pt-1">ℹ️ หมายเหตุ: หากต้องการเก็บรายงานพ่นเคมีขึ้นตารางกลาง Supabase ด้วย กรุณารันไฟล์ <code>create_disease_control_reports.sql</code></div>' : ''}
           </div>
         `,
+        showCancelButton: true,
+        confirmButtonText: 'ตกลง',
+        cancelButtonText: '🖨️ เปิดดู/พิมพ์ทันที',
         confirmButtonColor: '#4F46E5'
+      }).then((res) => {
+        if (res.dismiss === Swal.DismissReason.cancel) {
+          openSprayControlPrintWindow(p, report);
+        }
+      });
+
+      runBackgroundPdfAndDrivePipeline({
+        label: `พ่นเคมี ${p.fullName || p.patientCode || ''}`,
+        generatePdfFn: () => generateSprayControlPDF(p, report, true),
+        telegramDocCaption: `📎 แนบไฟล์ .PDF รายงานพ่นสารเคมี 1 วัน (${p.fullName || '-'})`,
+        driveUploadFn: (blob) => uploadSprayControlPhotosToDrive(p, report, blob),
+        onDriveSaved: () => {
+          saveSprayControlStore();
+          savePatients();
+          if (sbRes && sbRes.ok) saveSprayControlReportToSupabase(p, report);
+        }
       });
     }
 
