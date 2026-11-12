@@ -4323,13 +4323,41 @@
       }
     }
     function savePatients() {
-      localStorage.setItem(STORAGE_PATIENTS_KEY, JSON.stringify(patientsData));
+      try {
+        localStorage.setItem(STORAGE_PATIENTS_KEY, JSON.stringify(patientsData));
+      } catch (e) {
+        console.warn('[TDDS] savePatients quota/storage warning:', e);
+        try {
+          const slimPatients = (patientsData || []).map(p => {
+            if (!p || (!p.diseaseControlReport && !p.sprayControlReport)) return p;
+            const clone = { ...p };
+            if (clone.diseaseControlReport) {
+              clone.diseaseControlReport = { ...clone.diseaseControlReport, indoorPhotos: [], outdoorPhotos: [] };
+            }
+            if (clone.sprayControlReport) {
+              clone.sprayControlReport = { ...clone.sprayControlReport, teamPhotos: [], actionPhotos: [] };
+            }
+            return clone;
+          });
+          localStorage.setItem(STORAGE_PATIENTS_KEY, JSON.stringify(slimPatients));
+        } catch (e2) {
+          console.warn('[TDDS] savePatients fallback warning:', e2);
+        }
+      }
     }
     function saveUsers() {
-      localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(usersData));
+      try {
+        localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(usersData));
+      } catch (e) {
+        console.warn('[TDDS] saveUsers storage warning:', e);
+      }
     }
     function saveAudit() {
-      localStorage.setItem(STORAGE_AUDIT_KEY, JSON.stringify(auditData));
+      try {
+        localStorage.setItem(STORAGE_AUDIT_KEY, JSON.stringify(auditData));
+      } catch (e) {
+        console.warn('[TDDS] saveAudit storage warning:', e);
+      }
     }
     function addAuditLog(action, detail) {
       const entry = {
@@ -4350,14 +4378,19 @@
     // -------------------------------------------------------------
     function showLoading(text = 'กำลังประมวลผลข้อมูล...') {
       const overlay = document.getElementById('loadingOverlay');
-      document.getElementById('loadingText').innerText = text;
-      overlay.classList.remove('opacity-0', 'pointer-events-none');
-      overlay.classList.add('opacity-100');
+      const textEl = document.getElementById('loadingText');
+      if (textEl) textEl.innerText = text;
+      if (overlay) {
+        overlay.classList.remove('opacity-0', 'pointer-events-none');
+        overlay.classList.add('opacity-100');
+      }
     }
     function hideLoading() {
       const overlay = document.getElementById('loadingOverlay');
-      overlay.classList.remove('opacity-100');
-      overlay.classList.add('opacity-0', 'pointer-events-none');
+      if (overlay) {
+        overlay.classList.remove('opacity-100');
+        overlay.classList.add('opacity-0', 'pointer-events-none');
+      }
     }
 
     // -------------------------------------------------------------
@@ -4595,9 +4628,9 @@
       const cfg = typeof getSupabasePersonConfig === 'function' ? getSupabasePersonConfig() : null;
       if (!cfg || !cfg.url || !cfg.key) return;
       try {
-        const res = await fetch(`${cfg.url}/rest/v1/staff_accounts?select=*`, {
+        const res = await fetchWithTimeout(`${cfg.url}/rest/v1/staff_accounts?select=*`, {
           headers: buildSupabaseHeaders(cfg.key)
-        });
+        }, 8000);
         if (!res.ok) return;
         const rows = await res.json();
         if (!Array.isArray(rows) || rows.length === 0) return;
@@ -5103,19 +5136,15 @@
       showLoading('กำลังดึงข้อมูลล่าสุดจาก Supabase...');
       try {
         initStores();
-        const syncRes = (typeof fetchPatientsFromSupabase === 'function')
-          ? await fetchPatientsFromSupabase(true)
-          : { ok: true };
-        if (typeof fetchUsersFromSupabase === 'function') {
-          await fetchUsersFromSupabase();
-        }
-        if (typeof fetchEventReportsFromSupabase === 'function') {
-          await fetchEventReportsFromSupabase(true);
-        }
+        const [patRes] = await Promise.allSettled([
+          typeof fetchPatientsFromSupabase === 'function' ? fetchPatientsFromSupabase(true) : Promise.resolve({ ok: true }),
+          typeof fetchUsersFromSupabase === 'function' ? fetchUsersFromSupabase() : Promise.resolve(),
+          typeof fetchEventReportsFromSupabase === 'function' ? fetchEventReportsFromSupabase(true) : Promise.resolve()
+        ]);
+        const syncRes = (patRes && patRes.status === 'fulfilled') ? patRes.value : { ok: false, error: 'ไม่สามารถเชื่อมต่อ Supabase ได้ทันเวลา' };
         applyDashboardFilters();
         renderPatientTable();
         if (typeof renderMapMarkers === 'function') renderMapMarkers();
-        hideLoading();
         if (syncRes && syncRes.ok === false) {
           Swal.fire({
             icon: 'warning',
@@ -5133,8 +5162,9 @@
           });
         }
       } catch (err) {
-        hideLoading();
         console.warn('[TDDS] refreshData error:', err);
+      } finally {
+        hideLoading();
       }
     }
 
@@ -10858,9 +10888,9 @@ https://dengue-thepha.github.io/tdds/`;
       const cfg = getSupabasePersonConfig();
       if (!cfg.url || !cfg.key) return;
       try {
-        const res = await fetch(`${cfg.url}/rest/v1/disease_control_reports?select=*&order=updated_at.desc&limit=2000`, {
+        const res = await fetchWithTimeout(`${cfg.url}/rest/v1/disease_control_reports?select=*&order=updated_at.desc&limit=2000`, {
           headers: buildSupabaseHeaders(cfg.key)
-        });
+        }, 15000);
         if (!res.ok) return; // ข้ามเงียบๆ หากยังไม่สร้างตาราง disease_control_reports
         const rows = await res.json();
         if (!Array.isArray(rows) || rows.length === 0) return;
@@ -10914,6 +10944,8 @@ https://dengue-thepha.github.io/tdds/`;
           }
         });
         saveDiseaseControlStore();
+        if (typeof renderPatientTable === 'function') renderPatientTable();
+        if (typeof renderDiseaseControlView === 'function') renderDiseaseControlView();
       } catch (e) {}
     }
 
@@ -11639,9 +11671,9 @@ https://dengue-thepha.github.io/tdds/`;
       const cfg = getSupabasePersonConfig();
       if (!cfg.url || !cfg.key) return;
       try {
-        const res = await fetch(`${cfg.url}/rest/v1/spray_control_reports?select=*&order=updated_at.desc&limit=2000`, {
+        const res = await fetchWithTimeout(`${cfg.url}/rest/v1/spray_control_reports?select=*&order=updated_at.desc&limit=2000`, {
           headers: buildSupabaseHeaders(cfg.key)
-        });
+        }, 15000);
         if (!res.ok) return;
         const rows = await res.json();
         if (!Array.isArray(rows) || rows.length === 0) return;
@@ -11678,6 +11710,8 @@ https://dengue-thepha.github.io/tdds/`;
           }
         });
         saveSprayControlStore();
+        if (typeof renderPatientTable === 'function') renderPatientTable();
+        if (typeof renderDiseaseControlView === 'function') renderDiseaseControlView();
       } catch (e) {}
     }
 
@@ -12177,9 +12211,9 @@ https://dengue-thepha.github.io/tdds/`;
       const cfg = typeof getSupabasePersonConfig === 'function' ? getSupabasePersonConfig() : null;
       if (!cfg || !cfg.url || !cfg.key) return { ok: false };
       try {
-        const res = await fetch(`${cfg.url}/rest/v1/event_reports?select=*&order=created_at.desc&limit=1000`, {
+        const res = await fetchWithTimeout(`${cfg.url}/rest/v1/event_reports?select=*&order=created_at.desc&limit=1000`, {
           headers: buildSupabaseHeaders(cfg.key)
-        });
+        }, 10000);
         if (!res.ok) {
           if (!silent && res.status === 404) {
             Swal.fire({ icon: 'info', title: 'ยังไม่ได้สร้างตาราง event_reports บน Supabase', text: 'ระบบเก็บข้อมูลในเครื่องแล้ว กรุณารันไฟล์ create_event_reports.sql ใน Supabase SQL Editor เพื่อซิงค์ระหว่างเครื่อง' });
@@ -14545,6 +14579,19 @@ ${topHcText}${noteBlock}
       return headers;
     }
 
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
+      if (typeof AbortController === 'undefined' || options.signal) {
+        return fetch(url, options);
+      }
+      const controller = new AbortController();
+      const timerId = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        clearTimeout(timerId);
+      }
+    }
+
     function loadSupabasePersonConfigUI() {
       const cfg = getSupabasePersonConfig();
       const urlEl = document.getElementById('sb_person_url');
@@ -16088,9 +16135,9 @@ ${topHcText}${noteBlock}
       const cfg = getSupabasePersonConfig();
       if (!cfg.url || !cfg.key) return { ok: false, error: 'Missing Supabase config' };
       try {
-        const res = await fetch(`${cfg.url}/rest/v1/current_dengue_cases?select=*&order=notified_datetime.desc.nullslast,illness_date.desc.nullslast&limit=5000`, {
+        const res = await fetchWithTimeout(`${cfg.url}/rest/v1/current_dengue_cases?select=*&order=notified_datetime.desc.nullslast,illness_date.desc.nullslast&limit=5000`, {
           headers: buildSupabaseHeaders(cfg.key)
-        });
+        }, 10000);
         if (!res.ok) {
           const txt = await res.text().catch(() => '');
           console.warn('[TDDS] fetchPatientsFromSupabase HTTP error:', res.status, txt);
@@ -16166,17 +16213,22 @@ ${topHcText}${noteBlock}
         loadDiseaseControlStore();
         loadSprayControlStore();
         savePatients();
-        if (typeof fetchDiseaseControlReportsFromSupabase === 'function') {
-          await fetchDiseaseControlReportsFromSupabase();
-        }
-        if (typeof fetchSprayControlReportsFromSupabase === 'function') {
-          await fetchSprayControlReportsFromSupabase();
-        }
         applyDashboardFilters();
         renderPatientTable();
         if (typeof renderDiseaseControlView === 'function') renderDiseaseControlView();
         renderMapMarkers();
         if (typeof populatePersonFilters === 'function') populatePersonFilters();
+
+        // ซิงค์รายงาน 3 ชม. และพ่นสารเคมี (มีรูปภาพขนาดใหญ่) แบบขนานในพื้นหลังเพื่อไม่ให้หน้าเว็บค้างรอโหลด
+        const extraReportSync = Promise.allSettled([
+          typeof fetchDiseaseControlReportsFromSupabase === 'function' ? fetchDiseaseControlReportsFromSupabase() : Promise.resolve(),
+          typeof fetchSprayControlReportsFromSupabase === 'function' ? fetchSprayControlReportsFromSupabase() : Promise.resolve()
+        ]);
+        if (!silent) {
+          await extraReportSync;
+        } else {
+          extraReportSync.catch(() => {});
+        }
 
         // พยายามส่งเคสที่ค้างอยู่ในเครื่องขึ้น Supabase อัตโนมัติ
         pendingUpload.forEach(p => {
@@ -16327,34 +16379,49 @@ ${topHcText}${noteBlock}
 
     document.addEventListener('DOMContentLoaded', async () => {
       showLoading('กำลังเริ่มต้นระบบ TDDS Thepha และซิงค์ข้อมูลจาก Supabase...');
-      
-      initStores();
-      initPersonStore();
-      initMaps();
-      updateAuthUI();
+      const startupHideTimer = setTimeout(() => hideLoading(), 4500);
+      try {
+        initStores();
+        Promise.resolve(initPersonStore()).catch(err => console.warn('[TDDS] initPersonStore warning:', err));
+        try {
+          if (typeof L !== 'undefined') initMaps();
+        } catch (mapErr) {
+          console.warn('[TDDS] initMaps warning:', mapErr);
+        }
+        updateAuthUI();
 
-      // หากเครื่องนี้ยังไม่มีแคช (เปิดครั้งแรกหรือล้างข้อมูลเบราว์เซอร์) ให้รอดึงข้อมูลจาก Supabase ก่อนปิดหน้าโหลด
-      if (patientsData.length === 0 || usersData.length === 0) {
-        await Promise.allSettled([
-          fetchUsersFromSupabase(),
-          fetchPatientsFromSupabase(true),
-          typeof fetchEventReportsFromSupabase === 'function' ? fetchEventReportsFromSupabase(true) : Promise.resolve()
-        ]);
-      } else {
-        fetchUsersFromSupabase();
-        fetchPatientsFromSupabase(true);
-        if (typeof fetchEventReportsFromSupabase === 'function') fetchEventReportsFromSupabase(true);
+        const syncTasks = [
+          typeof fetchUsersFromSupabase === 'function' ? fetchUsersFromSupabase() : Promise.resolve(),
+          typeof fetchPatientsFromSupabase === 'function' ? fetchPatientsFromSupabase(true) : Promise.resolve()
+        ];
+        if (typeof fetchEventReportsFromSupabase === 'function') {
+          fetchEventReportsFromSupabase(true).catch(() => {});
+        }
+
+        // หากเครื่องนี้ยังไม่มีแคช ให้รอซิงค์ข้อมูลหลักไม่เกิน 3.5 วินาทีแล้วเปิดหน้าเว็บทันที (ส่วนที่เหลือซิงค์ต่อเบื้องหลัง)
+        if (patientsData.length === 0 || usersData.length === 0) {
+          await Promise.race([
+            Promise.allSettled(syncTasks),
+            new Promise(resolve => setTimeout(resolve, 3500))
+          ]);
+        } else {
+          Promise.allSettled(syncTasks);
+        }
+
+        if (typeof initDailyAutoReportScheduler === 'function') initDailyAutoReportScheduler();
+        if (typeof initUnconfirmedCases3HoursScheduler === 'function') initUnconfirmedCases3HoursScheduler();
+
+        // Ensure view starts on dashboard
+        navigateTo('dashboard');
+
+        // ตรวจสอบ Parameter ลิงก์ยืนยันเคสจาก Telegram (?action=verify&id=...)
+        handleUrlActionParams();
+      } catch (err) {
+        console.warn('[TDDS] DOMContentLoaded init warning:', err);
+      } finally {
+        clearTimeout(startupHideTimer);
+        hideLoading();
       }
-
-      initDailyAutoReportScheduler();
-      initUnconfirmedCases3HoursScheduler();
-
-      // Ensure view starts on dashboard
-      navigateTo('dashboard');
-      hideLoading();
-
-      // ตรวจสอบ Parameter ลิงก์ยืนยันเคสจาก Telegram (?action=verify&id=...)
-      handleUrlActionParams();
     });
   </script>
 </body>
