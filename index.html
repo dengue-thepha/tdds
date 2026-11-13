@@ -296,6 +296,15 @@
             <span>รายงานแจ้งเหตุผิดปกติ / แจ้งโรค</span>
           </button>
 
+          <!-- Menu: NS1 Test Report Link (Google Sheets) -->
+          <a href="https://docs.google.com/spreadsheets/d/1iHRWKus950yhxL7DpU1p2jvY78s94-_ROzecrAGZ2tE/edit?gid=114043581#gid=114043581" target="_blank" rel="noopener noreferrer" id="menu-ns1-report" class="sidebar-menu-item w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-emerald-800 hover:text-emerald-900 bg-emerald-50/60 hover:bg-emerald-100/70 border border-emerald-200/70 transition shadow-2xs group" title="เปิดดูรายงานการตรวจ NS1 (Google Sheets)">
+            <span class="flex items-center gap-3 min-w-0">
+              <span class="w-5 text-center text-base">🧪</span>
+              <span class="truncate font-semibold">รายงานการตรวจ NS1</span>
+            </span>
+            <span class="text-xs text-emerald-600 group-hover:translate-x-0.5 transition-transform">↗</span>
+          </a>
+
           <!-- Menu: Patient Registry (Visible for Logged In) -->
           <button onclick="navigateTo('patients')" id="menu-patients" class="sidebar-menu-item auth-only hidden w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-700 hover:text-teal-700 hover:bg-teal-50/70 transition">
             <span class="w-5 text-center text-base">🗂️</span>
@@ -430,8 +439,8 @@
               <option value="สะกอม" class="text-slate-800">ต.สะกอม</option>
             </select>
 
-            <!-- Filter by Village dropdown (แสดงเมื่อสถานพยาบาล/เจ้าหน้าที่ Login) -->
-            <select id="dashVillageFilter" onchange="applyDashboardFilters()" class="hidden text-xs bg-white/10 hover:bg-white/20 border border-white/30 text-white rounded-xl px-3 py-2 outline-none cursor-pointer backdrop-blur-sm" title="เลือกดูข้อมูลรายหมู่บ้านในเขตรับผิดชอบ">
+            <!-- Filter by Village dropdown (แสดงทั้ง Public Dashboard และเมื่อเข้าสู่ระบบ) -->
+            <select id="dashVillageFilter" onchange="applyDashboardFilters()" class="text-xs bg-white/10 hover:bg-white/20 border border-white/30 text-white rounded-xl px-3 py-2 outline-none cursor-pointer backdrop-blur-sm" title="เลือกดูข้อมูลรายหมู่บ้าน">
               <option value="all" class="text-slate-800">ทุกหมู่บ้าน</option>
             </select>
 
@@ -5059,19 +5068,13 @@
       const selEl = document.getElementById('dashVillageFilter');
       if (!selEl) return 'all';
 
-      if (!currentUser) {
-        selEl.classList.add('hidden');
-        selEl.value = 'all';
-        return 'all';
-      }
-
       selEl.classList.remove('hidden');
       const prevVal = resetSelection ? 'all' : (selEl.value || 'all');
       const selectedSub = document.getElementById('dashSubdistrictFilter')?.value || 'all';
-      const isOsm = currentUser.position === 'อสม.' || currentUser.role === 'OSM' || currentUser.role === 'osm';
-      const userUnit = normalizeThaiStr(currentUser.unit || '');
-      const userHcode = currentUser.hcode || getHCodeByName(userUnit);
-      const limitToUnit = currentUser.role !== 'admin' && userUnit && userUnit !== 'สสอ.เทพา' && userUnit !== 'รพ.เทพา';
+      const isOsm = currentUser && (currentUser.position === 'อสม.' || currentUser.role === 'OSM' || currentUser.role === 'osm');
+      const userUnit = currentUser ? normalizeThaiStr(currentUser.unit || '') : '';
+      const userHcode = currentUser ? (currentUser.hcode || getHCodeByName(userUnit)) : '';
+      const limitToUnit = currentUser && currentUser.role !== 'admin' && userUnit && userUnit !== 'สสอ.เทพา' && userUnit !== 'รพ.เทพา';
 
       const villageMap = new Map();
       const registerOpt = (sub, vNo) => {
@@ -5079,7 +5082,7 @@
         const cleanV = normalizeDashVillageNo(vNo);
         if (!cleanSub || !cleanV) return;
         if (selectedSub !== 'all' && cleanSub !== normalizeThaiStr(selectedSub)) return;
-        if (isOsm && currentUser.villageNo && cleanV !== normalizeDashVillageNo(currentUser.villageNo)) return;
+        if (isOsm && currentUser && currentUser.villageNo && cleanV !== normalizeDashVillageNo(currentUser.villageNo)) return;
         const key = `${cleanSub}::${cleanV}`;
         if (!villageMap.has(key)) {
           villageMap.set(key, { key, subdistrict: cleanSub, villageNo: cleanV });
@@ -5097,12 +5100,12 @@
         });
       }
 
-      // เผื่อกรณีมีหมู่บ้านจากข้อมูลผู้ป่วยหรือประชากร person ในขอบเขตที่ล็อกอิน
+      // เผื่อกรณีมีหมู่บ้านจากข้อมูลผู้ป่วยหรือประชากร person ในขอบเขต
       const scopedPatients = typeof getFilteredPatientsForUser === 'function' ? getFilteredPatientsForUser() : [];
       scopedPatients.forEach(p => registerOpt(p.subdistrict, p.villageNo));
 
       if (typeof personsData !== 'undefined' && Array.isArray(personsData) && personsData.length > 0) {
-        const scopedPersons = (currentUser.role !== 'admin' && typeof getFilteredPersonsForUser === 'function')
+        const scopedPersons = (currentUser && currentUser.role !== 'admin' && typeof getFilteredPersonsForUser === 'function')
           ? getFilteredPersonsForUser()
           : personsData;
         scopedPersons.forEach(p => registerOpt(p.subdistrict, p.village_no));
@@ -5116,12 +5119,22 @@
         return (parseInt(a.villageNo, 10) || 999) - (parseInt(b.villageNo, 10) || 999);
       });
 
-      const defaultLabel = limitToUnit
-        ? `ทุกหมู่บ้านในเขต (${entries.length} หมู่)`
-        : `ทุกหมู่บ้าน (${entries.length} หมู่)`;
+      let defaultLabel = 'ทุกหมู่บ้าน';
+      if (selectedSub !== 'all') {
+        defaultLabel = `ทุกหมู่บ้านใน ต.${selectedSub} (${entries.length} หมู่)`;
+      } else if (limitToUnit) {
+        defaultLabel = `ทุกหมู่บ้านในเขต (${entries.length} หมู่)`;
+      } else {
+        defaultLabel = `ทุกหมู่บ้าน (7 ตำบล ${entries.length} หมู่)`;
+      }
 
       selEl.innerHTML = `<option value="all" class="text-slate-800">${defaultLabel}</option>` +
-        entries.map(item => `<option value="${item.key}" class="text-slate-800">หมู่ที่ ${item.villageNo} (ต.${item.subdistrict})</option>`).join('');
+        entries.map(item => {
+          const optLabel = selectedSub !== 'all'
+            ? `หมู่ที่ ${item.villageNo}`
+            : `หมู่ที่ ${item.villageNo} (ต.${item.subdistrict})`;
+          return `<option value="${item.key}" class="text-slate-800">${optLabel}</option>`;
+        }).join('');
 
       const hasPrev = prevVal !== 'all' && entries.some(item => item.key === prevVal);
       selEl.value = hasPrev ? prevVal : 'all';
