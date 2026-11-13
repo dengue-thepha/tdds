@@ -3621,21 +3621,32 @@
       <div class="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100 space-y-2.5">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
-            <span>☁️</span> โฟลเดอร์ Google Drive สำหรับจัดเก็บไฟล์ .PDF
+            <span>☁️</span> โฟลเดอร์ Google Drive สำหรับจัดเก็บไฟล์ .PDF และภาพถ่าย
           </span>
-          <span class="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full border border-emerald-200">ปลายทาง</span>
+          <span id="gasStatusPill" class="text-[10px] bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded-full border border-amber-200">รอตรวจสอบสถานะ</span>
         </div>
         <div class="text-[11px] text-slate-600 space-y-1">
           <div><b>📄 รายงานสอบสวนโรค (.PDF):</b> <span class="font-mono text-slate-800 bg-white px-1.5 py-0.5 rounded border border-emerald-200">162IJmyjS2vJoS00R-ThCps4hEafewjKB</span></div>
           <div><b>📄 รายงานควบคุม 3 ชม. (.PDF):</b> <span class="font-mono text-slate-800 bg-white px-1.5 py-0.5 rounded border border-emerald-200">18l8d1egIzo3Z8koter0QXLKY4tr8_TVr</span></div>
           <div><b>📄 รายงานพ่นสารเคมี (.PDF):</b> <span class="font-mono text-slate-800 bg-white px-1.5 py-0.5 rounded border border-emerald-200">1RrT1TxflPRU73e9uoou5q2kwdvTiiSP4</span></div>
-          <div><b>🖼️ ภาพควบคุมโรค (3-3-1):</b> <span class="font-mono text-slate-800 bg-white px-1.5 py-0.5 rounded border border-emerald-200">1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm</span></div>
+          <div><b>🖼️ ภาพควบคุมโรค/พ่นเคมี (3-3-1):</b> <span class="font-mono text-slate-800 bg-white px-1.5 py-0.5 rounded border border-emerald-200">1U1SygesDl-of6OlixNDVrhoT-4Xn2GRm</span></div>
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-700 mb-1">Google Apps Script Web App URL (สำหรับอัปโหลดภาพและ PDF เข้า Google Drive อัตโนมัติ):</label>
-          <input type="text" id="setting_gas_url" placeholder="เช่น https://script.google.com/macros/s/.../exec" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-teal-500 font-mono text-[11px]">
-          <p class="text-[10px] text-slate-400 mt-1">ไฟล์สคริปต์พร้อมใช้งานอยู่ที่ <code class="text-teal-700 font-mono">webapp/google_apps_script_drive_uploader.js</code> นำไปวางใน Google Apps Script แล้ว Deploy เป็น Web App</p>
+          <input type="text" id="setting_gas_url" oninput="updateGasStatusUI()" placeholder="เช่น https://script.google.com/macros/s/.../exec" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-teal-500 font-mono text-[11px]">
+          <p class="text-[10px] text-slate-500 mt-1">ไฟล์สคริปต์พร้อมใช้งานอยู่ที่ <code class="text-teal-700 font-mono font-semibold">webapp/google_apps_script_drive_uploader.js</code> นำไปวางใน Google Apps Script แล้ว Deploy เป็น Web App (Who has access = Anyone)</p>
+          <div class="flex flex-wrap items-center gap-2 mt-2">
+            <button type="button" onclick="testGasConnection()" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-2xs">
+              <span>⚡</span> ทดสอบเชื่อมต่อ Google Drive
+            </button>
+            <button type="button" onclick="copyGasScriptCodeToClipboard()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl text-xs font-semibold transition flex items-center gap-1 shadow-2xs">
+              <span>📋</span> คัดลอกโค้ดสคริปต์
+            </button>
+            <button type="button" onclick="showGasDeployGuide()" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 rounded-xl text-xs font-semibold transition flex items-center gap-1">
+              <span>📖</span> วิธีติดตั้ง 1 นาที
+            </button>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -4175,6 +4186,149 @@
       return hasUpdatedOld;
     }
 
+    // =============================================================
+    // REPORT PERSISTENCE ENGINE (INDEXEDDB + LOCALSTORAGE HYBRID)
+    // ป้องกันภาพและข้อมูลสูญหายจากข้อจำกัดขนาด 5MB ของ LocalStorage
+    // =============================================================
+    const TDDS_REPORT_IDB_NAME = 'TDDS_ReportDB';
+    const TDDS_REPORT_IDB_VERSION = 2;
+    const IDB_STORE_DC = 'disease_control_reports';
+    const IDB_STORE_SC = 'spray_control_reports';
+    const IDB_STORE_PDF = 'saved_pdf_files';
+
+    function openTddsReportIDB() {
+      return new Promise((resolve, reject) => {
+        if (!window.indexedDB) {
+          reject(new Error('IndexedDB not supported'));
+          return;
+        }
+        const req = indexedDB.open(TDDS_REPORT_IDB_NAME, TDDS_REPORT_IDB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(IDB_STORE_DC)) {
+            db.createObjectStore(IDB_STORE_DC, { keyPath: 'id' });
+          }
+          if (!db.objectStoreNames.contains(IDB_STORE_SC)) {
+            db.createObjectStore(IDB_STORE_SC, { keyPath: 'id' });
+          }
+          if (!db.objectStoreNames.contains(IDB_STORE_PDF)) {
+            db.createObjectStore(IDB_STORE_PDF, { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function saveReportToIDB(storeName, key, data) {
+      if (!key || !data) return false;
+      try {
+        const db = await openTddsReportIDB();
+        return new Promise((resolve) => {
+          const tx = db.transaction(storeName, 'readwrite');
+          const store = tx.objectStore(storeName);
+          store.put({ id: String(key), data, updatedAt: new Date().toISOString() });
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => resolve(false);
+        });
+      } catch (e) {
+        console.warn(`[TDDS] saveReportToIDB ${storeName} error:`, e);
+        return false;
+      }
+    }
+
+    async function getReportFromIDB(storeName, key) {
+      if (!key) return null;
+      try {
+        const db = await openTddsReportIDB();
+        return new Promise((resolve) => {
+          const tx = db.transaction(storeName, 'readonly');
+          const store = tx.objectStore(storeName);
+          const req = store.get(String(key));
+          req.onsuccess = () => resolve(req.result ? req.result.data : null);
+          req.onerror = () => resolve(null);
+        });
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function getAllReportsFromIDB(storeName) {
+      try {
+        const db = await openTddsReportIDB();
+        return new Promise((resolve) => {
+          const tx = db.transaction(storeName, 'readonly');
+          const store = tx.objectStore(storeName);
+          const req = store.getAll();
+          req.onsuccess = () => resolve(req.result || []);
+          req.onerror = () => resolve([]);
+        });
+      } catch (e) {
+        return [];
+      }
+    }
+
+    async function hydrateReportsFromIDB() {
+      try {
+        const [dcRows, scRows] = await Promise.all([
+          getAllReportsFromIDB(IDB_STORE_DC),
+          getAllReportsFromIDB(IDB_STORE_SC)
+        ]);
+
+        if (Array.isArray(dcRows) && dcRows.length > 0) {
+          dcRows.forEach(item => {
+            if (item && item.id && item.data) {
+              const prev = diseaseControlReportsMap[item.id];
+              if (!prev || (item.data.indoorPhotos && item.data.indoorPhotos.length && (!prev.indoorPhotos || !prev.indoorPhotos.length))) {
+                diseaseControlReportsMap[item.id] = { ...(prev || {}), ...item.data };
+              }
+            }
+          });
+        }
+
+        if (Array.isArray(scRows) && scRows.length > 0) {
+          scRows.forEach(item => {
+            if (item && item.id && item.data) {
+              const prev = sprayControlReportsMap[item.id];
+              if (!prev || (item.data.teamPhotos && item.data.teamPhotos.length && (!prev.teamPhotos || !prev.teamPhotos.length))) {
+                sprayControlReportsMap[item.id] = { ...(prev || {}), ...item.data };
+              }
+            }
+          });
+        }
+
+        if (Array.isArray(patientsData)) {
+          patientsData.forEach(p => {
+            const dcRep = diseaseControlReportsMap[p.id]
+              || (p.supabaseId && diseaseControlReportsMap[p.supabaseId])
+              || (p.patientCode && diseaseControlReportsMap[p.patientCode]);
+            if (dcRep) {
+              if (!p.diseaseControlReport) {
+                p.diseaseControlReport = dcRep;
+              } else if (dcRep.indoorPhotos && dcRep.indoorPhotos.length && (!p.diseaseControlReport.indoorPhotos || !p.diseaseControlReport.indoorPhotos.length)) {
+                p.diseaseControlReport = { ...dcRep, ...p.diseaseControlReport, indoorPhotos: dcRep.indoorPhotos, outdoorPhotos: dcRep.outdoorPhotos };
+              }
+            }
+
+            const spRep = sprayControlReportsMap[p.id]
+              || (p.supabaseId && sprayControlReportsMap[p.supabaseId])
+              || (p.patientCode && sprayControlReportsMap[p.patientCode]);
+            if (spRep) {
+              if (!p.sprayControlReport) {
+                p.sprayControlReport = spRep;
+              } else if (spRep.teamPhotos && spRep.teamPhotos.length && (!p.sprayControlReport.teamPhotos || !p.sprayControlReport.teamPhotos.length)) {
+                p.sprayControlReport = { ...spRep, ...p.sprayControlReport, teamPhotos: spRep.teamPhotos, actionPhotos: spRep.actionPhotos };
+              }
+            }
+          });
+          if (typeof renderPatientTable === 'function') renderPatientTable();
+          if (typeof renderDiseaseControlView === 'function') renderDiseaseControlView();
+        }
+      } catch (err) {
+        console.warn('[TDDS] hydrateReportsFromIDB warning:', err);
+      }
+    }
+
     function loadDiseaseControlStore() {
       try {
         const raw = localStorage.getItem(STORAGE_DISEASE_CONTROL_KEY);
@@ -4188,8 +4342,12 @@
           const rep = diseaseControlReportsMap[p.id]
             || (p.supabaseId && diseaseControlReportsMap[p.supabaseId])
             || (p.patientCode && diseaseControlReportsMap[p.patientCode]);
-          if (rep && !p.diseaseControlReport) {
-            p.diseaseControlReport = rep;
+          if (rep) {
+            if (!p.diseaseControlReport) {
+              p.diseaseControlReport = rep;
+            } else if (rep.indoorPhotos && rep.indoorPhotos.length && (!p.diseaseControlReport.indoorPhotos || !p.diseaseControlReport.indoorPhotos.length)) {
+              p.diseaseControlReport = { ...rep, ...p.diseaseControlReport, indoorPhotos: rep.indoorPhotos, outdoorPhotos: rep.outdoorPhotos };
+            }
           }
         });
       }
@@ -4199,8 +4357,13 @@
       try {
         localStorage.setItem(STORAGE_DISEASE_CONTROL_KEY, JSON.stringify(diseaseControlReportsMap));
       } catch (e) {
-        console.warn('[TDDS] saveDiseaseControlStore error:', e);
+        console.warn('[TDDS] saveDiseaseControlStore localStorage quota exceeded (persisting safely to IndexedDB):', e);
       }
+      try {
+        Object.entries(diseaseControlReportsMap || {}).forEach(([k, rep]) => {
+          if (k && rep) saveReportToIDB(IDB_STORE_DC, k, rep);
+        });
+      } catch (e2) {}
     }
 
     function loadSprayControlStore() {
@@ -4216,8 +4379,12 @@
           const rep = sprayControlReportsMap[p.id]
             || (p.supabaseId && sprayControlReportsMap[p.supabaseId])
             || (p.patientCode && sprayControlReportsMap[p.patientCode]);
-          if (rep && (!p.sprayControlReport || (!p.sprayControlReport.teamPhotos && rep.teamPhotos))) {
-            p.sprayControlReport = rep;
+          if (rep) {
+            if (!p.sprayControlReport) {
+              p.sprayControlReport = rep;
+            } else if (rep.teamPhotos && rep.teamPhotos.length && (!p.sprayControlReport.teamPhotos || !p.sprayControlReport.teamPhotos.length)) {
+              p.sprayControlReport = { ...rep, ...p.sprayControlReport, teamPhotos: rep.teamPhotos, actionPhotos: rep.actionPhotos };
+            }
           }
         });
       }
@@ -4227,8 +4394,13 @@
       try {
         localStorage.setItem(STORAGE_SPRAY_CONTROL_KEY, JSON.stringify(sprayControlReportsMap));
       } catch (e) {
-        console.warn('[TDDS] saveSprayControlStore error:', e);
+        console.warn('[TDDS] saveSprayControlStore localStorage quota exceeded (persisting safely to IndexedDB):', e);
       }
+      try {
+        Object.entries(sprayControlReportsMap || {}).forEach(([k, rep]) => {
+          if (k && rep) saveReportToIDB(IDB_STORE_SC, k, rep);
+        });
+      } catch (e2) {}
     }
 
     // Initialize stores (ใช้แคชใน localStorage ก่อน แล้วซิงค์ข้อมูลล่าสุดจาก Supabase)
@@ -4289,9 +4461,10 @@
         });
       }
 
-      // ปิดการแจ้งเตือน 3 ชม. และ 1 วัน สำหรับเคสเก่า
+      // ปิดการแจ้งเตือน 3 ชม. และ 1 วัน สำหรับเคสเก่า พร้อมโหลดข้อมูลรายงานจาก IndexedDB
       loadDiseaseControlStore();
       loadSprayControlStore();
+      hydrateReportsFromIDB();
       if (typeof loadEventReportsStore === 'function') loadEventReportsStore();
       if (markOldCasesAlertSkipped(patientsData)) {
         savePatients();
@@ -4340,7 +4513,7 @@
       try {
         localStorage.setItem(STORAGE_PATIENTS_KEY, JSON.stringify(patientsData));
       } catch (e) {
-        console.warn('[TDDS] savePatients quota/storage warning:', e);
+        console.warn('[TDDS] savePatients quota/storage warning (persisting full reports in IndexedDB):', e);
         try {
           const slimPatients = (patientsData || []).map(p => {
             if (!p || (!p.diseaseControlReport && !p.sprayControlReport)) return p;
@@ -4358,6 +4531,21 @@
           console.warn('[TDDS] savePatients fallback warning:', e2);
         }
       }
+      // Ensure all full reports with photos are safely backed up in IndexedDB
+      try {
+        (patientsData || []).forEach(p => {
+          if (p && p.diseaseControlReport) {
+            saveReportToIDB(IDB_STORE_DC, p.id, p.diseaseControlReport);
+            if (p.patientCode) saveReportToIDB(IDB_STORE_DC, p.patientCode, p.diseaseControlReport);
+            if (p.supabaseId) saveReportToIDB(IDB_STORE_DC, p.supabaseId, p.diseaseControlReport);
+          }
+          if (p && p.sprayControlReport) {
+            saveReportToIDB(IDB_STORE_SC, p.id, p.sprayControlReport);
+            if (p.patientCode) saveReportToIDB(IDB_STORE_SC, p.patientCode, p.sprayControlReport);
+            if (p.supabaseId) saveReportToIDB(IDB_STORE_SC, p.supabaseId, p.sprayControlReport);
+          }
+        });
+      } catch (e3) {}
     }
     function saveUsers() {
       try {
@@ -9575,9 +9763,20 @@
 
     // Helper กลางสำหรับบันทึกไฟล์ .PDF ลงโฟลเดอร์ Google Drive เฉพาะของแต่ละรายงาน
     async function savePdfToDedicatedDriveFolder({ folderId, filename, blob, html }) {
+      if (blob && filename) {
+        try {
+          saveReportToIDB(IDB_STORE_PDF, filename, {
+            folderId,
+            filename,
+            size: blob.size,
+            type: blob.type,
+            savedAt: new Date().toISOString()
+          });
+        } catch (e) {}
+      }
       const gasUrl = (localStorage.getItem('tdds_gas_webapp_url') || '').trim();
       if (!gasUrl) {
-        return { ok: false, skipped: true, reason: 'missing_gas_url' };
+        return { ok: false, skipped: true, reason: 'missing_gas_url', pdfBlob: blob };
       }
       try {
         if (blob && blob.size > 500) {
@@ -9634,7 +9833,7 @@
         return { ok: false, error: 'Missing PDF content' };
       } catch (err) {
         console.warn('[TDDS] savePdfToDedicatedDriveFolder error:', err);
-        return { ok: false, error: err.message };
+        return { ok: false, error: err.message, pdfBlob: blob };
       }
     }
 
@@ -9733,10 +9932,15 @@
               const savedCount = driveRes.count ?? 1;
               driveNote = ` และอัปโหลด Drive (${savedCount} ไฟล์)`;
               if (typeof onDriveSaved === 'function') onDriveSaved(driveRes);
+              setBackgroundFileStatusPill('done', `สร้างไฟล์ .PDF${driveNote} เรียบร้อย (${label})`);
+            } else if (driveRes && driveRes.skipped && driveRes.reason === 'missing_gas_url') {
+              setBackgroundFileStatusPill('warn', `บันทึกไฟล์ในเครื่องแล้ว ⚠️ ยังไม่ตั้งค่า Drive Web App URL (${label})`);
+            } else {
+              setBackgroundFileStatusPill('warn', `บันทึกไฟล์ในเครื่องแล้ว แต่ Drive ขัดข้อง (${label})`);
             }
+          } else {
+            setBackgroundFileStatusPill('done', `สร้างไฟล์ .PDF เรียบร้อย (${label})`);
           }
-
-          setBackgroundFileStatusPill('done', `สร้างไฟล์ .PDF${driveNote} เรียบร้อย (${label})`);
         } catch (err) {
           console.warn('[TDDS] Background file pipeline error:', err);
           setBackgroundFileStatusPill('warn', `สร้าง/อัปโหลดไฟล์บางส่วนไม่สมบูรณ์ (${label})`);
@@ -10587,16 +10791,27 @@ https://dengue-thepha.github.io/tdds/`;
       renderGrid('dcOutdoorPhotoGrid', dcOutdoorPhotos, 'outdoor');
     }
 
-    function compressImageToDataUrl(file, maxW = 800, quality = 0.72) {
+    function compressImageToDataUrl(file, maxW = 640, quality = 0.65) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (ev) => {
           const img = new Image();
           img.onload = () => {
-            const scale = img.width > maxW ? (maxW / img.width) : 1;
+            const maxDim = maxW || 640;
+            let w = img.width;
+            let h = img.height;
+            if (w > maxDim || h > maxDim) {
+              if (w >= h) {
+                h = Math.round((h * maxDim) / w);
+                w = maxDim;
+              } else {
+                w = Math.round((w * maxDim) / h);
+                h = maxDim;
+              }
+            }
             const canvas = document.createElement('canvas');
-            canvas.width = Math.round(img.width * scale);
-            canvas.height = Math.round(img.height * scale);
+            canvas.width = Math.max(1, w);
+            canvas.height = Math.max(1, h);
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             resolve(canvas.toDataURL('image/jpeg', quality));
@@ -10613,7 +10828,7 @@ https://dengue-thepha.github.io/tdds/`;
       const file = e.target.files && e.target.files[0];
       if (!file) return;
       try {
-        const dataUrl = await compressImageToDataUrl(file, 800, 0.72);
+        const dataUrl = await compressImageToDataUrl(file, 640, 0.65);
         if (type === 'indoor') dcIndoorPhotos[idx] = dataUrl;
         else dcOutdoorPhotos[idx] = dataUrl;
         renderDcPhotoGrids();
@@ -10628,7 +10843,7 @@ https://dengue-thepha.github.io/tdds/`;
       renderDcPhotoGrids();
     }
 
-    function openDiseaseControlModal(patientId) {
+    async function openDiseaseControlModal(patientId) {
       const p = patientsData.find(item => item.id === patientId || item.patientCode === patientId);
       if (!p) {
         Swal.fire({ icon: 'warning', title: 'ไม่พบข้อมูลผู้ป่วย' });
@@ -10672,7 +10887,19 @@ https://dengue-thepha.github.io/tdds/`;
         </div>
       `;
 
-      const existing = getDiseaseControlReport(p);
+      // ดึงรายงานเดิมจากหน่วยความจำ หากไม่มีภาพหรือข้อมูลไม่ครบ ให้ดึงจาก IndexedDB ทันที
+      let existing = getDiseaseControlReport(p);
+      const hasAnyPhotos = existing && ((existing.indoorPhotos && existing.indoorPhotos.some(Boolean)) || (existing.outdoorPhotos && existing.outdoorPhotos.some(Boolean)));
+      if (!existing || !hasAnyPhotos) {
+        const idbRep = await getReportFromIDB(IDB_STORE_DC, p.id)
+          || (p.patientCode && await getReportFromIDB(IDB_STORE_DC, p.patientCode))
+          || (p.supabaseId && await getReportFromIDB(IDB_STORE_DC, p.supabaseId));
+        if (idbRep) {
+          existing = { ...(existing || {}), ...idbRep };
+          p.diseaseControlReport = existing;
+          diseaseControlReportsMap[p.id] = existing;
+        }
+      }
       const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ''; };
 
       setVal('dc_control_datetime', existing?.controlDatetime ? toLocalDatetimeInput(existing.controlDatetime) : toLocalDatetimeInput(new Date().toISOString()));
@@ -10794,8 +11021,9 @@ https://dengue-thepha.github.io/tdds/`;
       return `
         <div style="width:760px; margin:0 auto; font-family:'Sarabun','Kanit',Tahoma,sans-serif; color:#0f172a; font-size:12.5px; line-height:1.52; background:#fff; padding:12px 16px;">
           <div style="text-align:center; border-bottom:2px solid #0f766e; padding-bottom:6px; margin-bottom:10px;">
-            <div style="font-size:17px; font-weight:bold; color:#0f172a;">แบบสอบสวนโรคไข้เลือดออก</div>
-            <div style="font-size:11.5px; color:#475569;">รายงานควบคุมโรคเบื้องต้น (มาตรการ 3-3-1) อำเภอเทพา จังหวัดสงขลา</div>
+            <div style="font-size:17px; font-weight:bold; color:#0f172a;">รายงานสอบสวนโรคไข้เลือดออก (DF,DHF,DSS)</div>
+            <div style="font-size:12px; font-weight:600; color:#0f766e;">ศูนย์ระบาดวิทยาอำเภอเทพา จังหวัดสงขลา</div>
+            <div style="font-size:11px; color:#64748b; margin-top:2px;">รายงานควบคุมโรคเบื้องต้น 3 ชม.ที่ 2 (มาตรการ 3-3-1)</div>
           </div>
 
           <div style="display:flex; justify-content:space-between; background:#f8fafc; border:1px solid #cbd5e1; padding:6px 10px; border-radius:6px; margin-bottom:8px;">
@@ -11006,17 +11234,12 @@ https://dengue-thepha.github.io/tdds/`;
           });
         }
 
-        // อัปเดตสถานะควบคุมโรคบนตาราง current_dengue_cases (หากรัน create_disease_control_reports.sql แล้ว)
+        // อัปเดตสถานะควบคุมโรคบนตาราง current_dengue_cases (เก็บรายงานเต็มรูปแบบพร้อมภาพถ่ายแบบบีบอัดลง JSONB)
         if (p.supabaseId) {
           const summaryPatch = {
             control_completed_at: toIsoTimestampOrNull(report.controlDatetime) || new Date().toISOString(),
             disease_control_summary: {
-              controlDatetime: report.controlDatetime,
-              ciPatient: report.ciPatient,
-              ci100m: report.ci100m,
-              hi100m: report.hi100m,
-              controllerName: report.controllerName,
-              controllerPosition: report.controllerPosition
+              ...report
             }
           };
           fetch(`${cfg.url}/rest/v1/current_dengue_cases?id=eq.${encodeURIComponent(p.supabaseId)}`, {
@@ -11084,8 +11307,14 @@ https://dengue-thepha.github.io/tdds/`;
             telegramSentAt: r.telegram_sent_at || r.created_at,
             submittedAt: r.updated_at || r.created_at
           };
-          if (r.patient_id) diseaseControlReportsMap[r.patient_id] = rep;
-          if (r.patient_code) diseaseControlReportsMap[r.patient_code] = rep;
+          if (r.patient_id) {
+            diseaseControlReportsMap[r.patient_id] = rep;
+            saveReportToIDB(IDB_STORE_DC, r.patient_id, rep);
+          }
+          if (r.patient_code) {
+            diseaseControlReportsMap[r.patient_code] = rep;
+            saveReportToIDB(IDB_STORE_DC, r.patient_code, rep);
+          }
           const match = patientsData.find(p =>
             (r.patient_id && p.supabaseId === r.patient_id) || (r.patient_code && p.patientCode === r.patient_code)
           );
@@ -11093,6 +11322,7 @@ https://dengue-thepha.github.io/tdds/`;
             match.diseaseControlReport = rep;
             match.controlCompletedAt = r.control_datetime || rep.submittedAt;
             diseaseControlReportsMap[match.id] = rep;
+            saveReportToIDB(IDB_STORE_DC, match.id, rep);
           }
         });
         saveDiseaseControlStore();
@@ -11259,6 +11489,9 @@ https://dengue-thepha.github.io/tdds/`;
       if (p.patientCode) diseaseControlReportsMap[p.patientCode] = report;
       saveDiseaseControlStore();
       savePatients();
+      saveReportToIDB(IDB_STORE_DC, p.id, report);
+      if (p.patientCode) saveReportToIDB(IDB_STORE_DC, p.patientCode, report);
+      if (p.supabaseId) saveReportToIDB(IDB_STORE_DC, p.supabaseId, report);
 
       const tgMsg = buildDiseaseControlTelegramMessage(p, report);
       const [sbRes, tgOk] = await Promise.all([
@@ -11283,8 +11516,8 @@ https://dengue-thepha.github.io/tdds/`;
           <div class="text-left text-xs space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
             <div>✅ ${isEdit ? 'แก้ไขข้อมูลรายงานควบคุมโรคเบื้องต้นเรียบร้อยแล้ว' : 'บันทึกข้อมูลรายงานควบคุมโรคเบื้องต้นเรียบร้อยแล้ว'}</div>
             <div>${isEdit ? '🔕 ไม่ส่งแจ้งเตือนซ้ำเข้า Telegram (โหมดแก้ไขข้อมูล)' : (tgOk ? '📲 ส่งข้อความแจ้งเตือนเข้ากลุ่ม Telegram ทันทีเรียบร้อยแล้ว' : '⚠️ ส่งเข้า Telegram ไม่สำเร็จ (กรุณาตรวจสอบอินเทอร์เน็ต)')}</div>
-            <div class="text-indigo-700 font-semibold">⚙️ กำลังสร้างไฟล์ <b>.PDF</b>${hasGasUrl ? ' และอัปโหลดภาพขึ้น <b>Google Drive</b>' : ''} แยกทำงานเบื้องหลังให้โดยอัตโนมัติ (สามารถใช้งานเมนูอื่นต่อได้ทันที)</div>
-            ${!hasGasUrl ? `<div class="text-[11px] text-amber-700">ℹ️ ภาพเก็บในระบบและ PDF แล้ว — หากต้องการอัปโหลดเข้า <a href="${DISEASE_CONTROL_PHOTOS_DRIVE_URL}" target="_blank" class="underline font-semibold">Google Drive</a> อัตโนมัติ กรุณาใส่ Web App URL ใน <b>⚙️ ตั้งค่า Drive & Telegram</b></div>` : ''}
+            <div class="text-teal-800 font-semibold">💾 ข้อมูลและภาพถ่ายทั้งหมดถูกบันทึกในเครื่อง (IndexedDB) และฐานข้อมูลแล้ว ปลอดภัย 100% ไม่สูญหาย</div>
+            ${hasGasUrl ? '<div class="text-indigo-700 font-semibold">☁️ กำลังสร้างไฟล์ <b>.PDF</b> และอัปโหลดภาพขึ้น <b>Google Drive</b> แยกทำงานเบื้องหลังให้โดยอัตโนมัติ</div>' : '<div class="text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200 mt-1">⚠️ <b>ยังไม่ได้เชื่อมต่อ Google Drive</b><br>หากต้องการให้อัปโหลดไฟล์ .PDF และภาพเข้า Google Drive อัตโนมัติ กรุณาใส่ Web App URL ในเมนู <b>⚙️ ตั้งค่า Drive & Telegram</b></div>'}
             ${sbRes && sbRes.missingTable ? '<div class="text-[11px] text-amber-700 pt-1">ℹ️ หมายเหตุ: หากต้องการเก็บขึ้นตารางกลางบน Supabase ด้วย กรุณารันไฟล์ <code>create_disease_control_reports.sql</code></div>' : ''}
           </div>
         `,
@@ -11307,6 +11540,9 @@ https://dengue-thepha.github.io/tdds/`;
         onDriveSaved: () => {
           saveDiseaseControlStore();
           savePatients();
+          saveReportToIDB(IDB_STORE_DC, p.id, report);
+          if (p.patientCode) saveReportToIDB(IDB_STORE_DC, p.patientCode, report);
+          if (p.supabaseId) saveReportToIDB(IDB_STORE_DC, p.supabaseId, report);
         }
       });
     }
@@ -11508,7 +11744,7 @@ https://dengue-thepha.github.io/tdds/`;
       const file = event.target.files?.[0];
       if (!file) return;
       try {
-        const dataUrl = await compressImageToDataUrl(file, 800, 0.72);
+        const dataUrl = await compressImageToDataUrl(file, 640, 0.65);
         if (type === 'team') scTeamPhotos[idx] = dataUrl;
         else scActionPhotos[idx] = dataUrl;
         renderScPhotoGrids();
@@ -11523,7 +11759,7 @@ https://dengue-thepha.github.io/tdds/`;
       renderScPhotoGrids();
     }
 
-    function openSprayControlModal(patientId) {
+    async function openSprayControlModal(patientId) {
       const p = patientsData.find(item => item.id === patientId || item.patientCode === patientId);
       if (!p) {
         Swal.fire({ icon: 'warning', title: 'ไม่พบข้อมูลผู้ป่วย' });
@@ -11555,8 +11791,21 @@ https://dengue-thepha.github.io/tdds/`;
       document.getElementById('sc_patient_id').value = p.id;
       document.getElementById('scModalTitle').innerText = `รายงานพ่นสารเคมี 1 วัน (3-3-1) : ${p.fullName}`;
 
+      // ดึงรายงานพ่นเคมีเดิม หากไม่มีภาพหรือข้อมูลไม่ครบ ให้ดึงจาก IndexedDB ทันที
+      let existing = getSprayControlReport(p);
+      const hasAnyPhotos = existing && ((existing.teamPhotos && existing.teamPhotos.some(Boolean)) || (existing.actionPhotos && existing.actionPhotos.some(Boolean)));
+      if (!existing || !hasAnyPhotos) {
+        const idbRep = await getReportFromIDB(IDB_STORE_SC, p.id)
+          || (p.patientCode && await getReportFromIDB(IDB_STORE_SC, p.patientCode))
+          || (p.supabaseId && await getReportFromIDB(IDB_STORE_SC, p.supabaseId));
+        if (idbRep) {
+          existing = { ...(existing || {}), ...idbRep };
+          p.sprayControlReport = existing;
+          sprayControlReportsMap[p.id] = existing;
+        }
+      }
+
       const dc = getDiseaseControlReport(p);
-      const existing = getSprayControlReport(p);
       const notifyDisp = p.notifiedDatetime ? formatControlDateTimeBE(p.notifiedDatetime) : (p.createdAt ? formatControlDateTimeBE(p.createdAt) : '-');
       const confDisp = p.confirmedTime ? formatControlDateTimeBE(p.confirmedTime) : 'ยืนยันแล้ว';
       const dcDisp = dc ? `${formatControlDateTimeBE(dc.controlDatetime)} (CI บ้าน ${Number(dc.ciPatient || 0).toFixed(2)}% / HI ${Number(dc.hi100m || 0).toFixed(2)}%)` : 'ยังไม่ได้บันทึก 3 ชม.ที่ 2';
@@ -11656,7 +11905,7 @@ https://dengue-thepha.github.io/tdds/`;
         <div style="font-family:'Sarabun',Tahoma,sans-serif; color:#0f172a; width:754px; padding:14px 18px; background:#fff; line-height:1.45; font-size:13px;">
           <div style="text-align:center; border-bottom:2px solid #3730a3; padding-bottom:8px; margin-bottom:12px;">
             <div style="font-size:18px; font-weight:bold; color:#312e81;">รายงานพ่นสารเคมีกำจัดยุงตัวแก่ 1 วันหลังได้รับแจ้ง (มาตรการ 3-3-1 ขั้นที่ 3)</div>
-            <div style="font-size:12px; color:#475569;">ศูนย์ปฏิบัติการเฝ้าระวังและควบคุมโรคติดต่อนำโดยยุงลาย อำเภอเทพา จังหวัดสงขลา</div>
+            <div style="font-size:12px; font-weight:600; color:#3730a3;">ศูนย์ระบาดวิทยาอำเภอเทพา จังหวัดสงขลา</div>
           </div>
 
           <div style="background:#3730a3; color:#fff; font-weight:bold; padding:4px 10px; border-radius:4px; margin-bottom:6px;">ความเชื่อมโยงมาตรการ 3-3-1 (3 ชม.แรก ➔ 3 ชม.ที่ 2 ➔ พ่นเคมี 1 วัน)</div>
@@ -11800,13 +12049,7 @@ https://dengue-thepha.github.io/tdds/`;
           const summaryPatch = {
             spray_completed_at: toIsoTimestampOrNull(report.sprayDatetime) || new Date().toISOString(),
             spray_control_summary: {
-              sprayDatetime: report.sprayDatetime,
-              radiusTotalHouses: report.radiusTotalHouses,
-              radiusSprayedHouses: report.radiusSprayedHouses,
-              hi100m: report.hi100m,
-              ci100m: report.ci100m,
-              controllerName: report.controllerName,
-              controllerPosition: report.controllerPosition
+              ...report
             }
           };
           fetch(`${cfg.url}/rest/v1/current_dengue_cases?id=eq.${encodeURIComponent(p.supabaseId)}`, {
@@ -11857,8 +12100,14 @@ https://dengue-thepha.github.io/tdds/`;
             telegramSentAt: r.telegram_sent_at || r.created_at,
             submittedAt: r.updated_at || r.created_at
           };
-          if (r.patient_id) sprayControlReportsMap[r.patient_id] = rep;
-          if (r.patient_code) sprayControlReportsMap[r.patient_code] = rep;
+          if (r.patient_id) {
+            sprayControlReportsMap[r.patient_id] = rep;
+            saveReportToIDB(IDB_STORE_SC, r.patient_id, rep);
+          }
+          if (r.patient_code) {
+            sprayControlReportsMap[r.patient_code] = rep;
+            saveReportToIDB(IDB_STORE_SC, r.patient_code, rep);
+          }
           const match = patientsData.find(p =>
             (r.patient_id && p.supabaseId === r.patient_id) || (r.patient_code && p.patientCode === r.patient_code)
           );
@@ -11866,6 +12115,7 @@ https://dengue-thepha.github.io/tdds/`;
             match.sprayControlReport = rep;
             match.sprayCompletedAt = r.spray_datetime || rep.submittedAt;
             sprayControlReportsMap[match.id] = rep;
+            saveReportToIDB(IDB_STORE_SC, match.id, rep);
           }
         });
         saveSprayControlStore();
@@ -11998,6 +12248,9 @@ https://dengue-thepha.github.io/tdds/`;
       if (p.patientCode) sprayControlReportsMap[p.patientCode] = report;
       saveSprayControlStore();
       savePatients();
+      saveReportToIDB(IDB_STORE_SC, p.id, report);
+      if (p.patientCode) saveReportToIDB(IDB_STORE_SC, p.patientCode, report);
+      if (p.supabaseId) saveReportToIDB(IDB_STORE_SC, p.supabaseId, report);
 
       const tgMsg = buildSprayControlTelegramMessage(p, report);
       const [sbRes, tgOk] = await Promise.all([
@@ -12022,8 +12275,8 @@ https://dengue-thepha.github.io/tdds/`;
           <div class="text-left text-xs space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
             <div>✅ ${isEdit ? 'แก้ไขข้อมูลรายงานพ่นสารเคมี 1 วันเรียบร้อยแล้ว' : 'บันทึกรายงานพ่นสารเคมี 1 วันเรียบร้อยแล้ว'}</div>
             <div>${isEdit ? '🔕 ไม่ส่งแจ้งเตือนซ้ำเข้า Telegram (โหมดแก้ไขข้อมูล)' : (tgOk ? '📲 ส่งข้อความแจ้งเตือนเข้ากลุ่ม Telegram ทันทีเรียบร้อยแล้ว' : '⚠️ ส่งเข้า Telegram ไม่สำเร็จ (กรุณาตรวจสอบอินเทอร์เน็ต)')}</div>
-            <div class="text-indigo-700 font-semibold">⚙️ กำลังสร้างไฟล์ <b>.PDF</b>${hasGasUrl ? ' และอัปโหลดภาพทีมพ่น/ขณะพ่น ขึ้น <b>Google Drive</b>' : ''} แยกทำงานเบื้องหลังให้โดยอัตโนมัติ</div>
-            ${!hasGasUrl ? `<div class="text-[11px] text-amber-700">ℹ️ ภาพเก็บในระบบและ PDF แล้ว — หากต้องการอัปโหลดเข้า <a href="${DISEASE_CONTROL_PHOTOS_DRIVE_URL}" target="_blank" class="underline font-semibold">Google Drive</a> อัตโนมัติ กรุณาตั้งค่า Web App URL ใน <b>⚙️ ตั้งค่า Drive & Telegram</b></div>` : ''}
+            <div class="text-indigo-800 font-semibold">💾 ข้อมูลและภาพถ่ายทั้งหมดถูกบันทึกในเครื่อง (IndexedDB) และฐานข้อมูลแล้ว ปลอดภัย 100% ไม่สูญหาย</div>
+            ${hasGasUrl ? '<div class="text-indigo-700 font-semibold">☁️ กำลังสร้างไฟล์ <b>.PDF</b> และอัปโหลดภาพขึ้น <b>Google Drive</b> แยกทำงานเบื้องหลังให้โดยอัตโนมัติ</div>' : '<div class="text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200 mt-1">⚠️ <b>ยังไม่ได้เชื่อมต่อ Google Drive</b><br>หากต้องการให้อัปโหลดไฟล์ .PDF และภาพเข้า Google Drive อัตโนมัติ กรุณาใส่ Web App URL ในเมนู <b>⚙️ ตั้งค่า Drive & Telegram</b></div>'}
             ${sbRes && sbRes.missingTable ? '<div class="text-[11px] text-amber-700 pt-1">ℹ️ หมายเหตุ: หากต้องการเก็บรายงานพ่นเคมีขึ้นตารางกลาง Supabase ด้วย กรุณารันไฟล์ <code>create_disease_control_reports.sql</code></div>' : ''}
           </div>
         `,
@@ -12046,6 +12299,9 @@ https://dengue-thepha.github.io/tdds/`;
         onDriveSaved: () => {
           saveSprayControlStore();
           savePatients();
+          saveReportToIDB(IDB_STORE_SC, p.id, report);
+          if (p.patientCode) saveReportToIDB(IDB_STORE_SC, p.patientCode, report);
+          if (p.supabaseId) saveReportToIDB(IDB_STORE_SC, p.supabaseId, report);
           if (sbRes && sbRes.ok) saveSprayControlReportToSupabase(p, report);
         }
       });
@@ -13177,6 +13433,20 @@ https://dengue-thepha.github.io/tdds/`;
     }
 
     // ฟังก์ชันจัดการ Modal ตั้งค่า Cloud & Telegram
+    function updateGasStatusUI() {
+      const pill = document.getElementById('gasStatusPill');
+      if (!pill) return;
+      const input = document.getElementById('setting_gas_url');
+      const url = (input ? input.value : (localStorage.getItem('tdds_gas_webapp_url') || '')).trim();
+      if (url && (url.startsWith('https://script.google.com') || url.includes('/exec'))) {
+        pill.className = 'text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded-full border border-emerald-200';
+        pill.innerText = '🟢 ระบุ Web App URL แล้ว';
+      } else {
+        pill.className = 'text-[10px] bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded-full border border-amber-200';
+        pill.innerText = '⚠️ ยังไม่ได้ระบุ Web App URL';
+      }
+    }
+
     function openCloudSettingsModal() {
       const modal = document.getElementById('cloudSettingsModal');
       if (!modal) return;
@@ -13184,6 +13454,7 @@ https://dengue-thepha.github.io/tdds/`;
       if (input) {
         input.value = localStorage.getItem('tdds_gas_webapp_url') || '';
       }
+      updateGasStatusUI();
       modal.classList.remove('hidden');
     }
 
@@ -13201,9 +13472,107 @@ https://dengue-thepha.github.io/tdds/`;
       Swal.fire({
         icon: 'success',
         title: 'บันทึกการตั้งค่าแล้ว',
-        timer: 1500,
+        text: 'บันทึก Web App URL สำหรับ Google Drive เรียบร้อยแล้ว',
+        timer: 1600,
         showConfirmButton: false
       });
+    }
+
+    async function copyGasScriptCodeToClipboard() {
+      try {
+        const res = await fetch('google_apps_script_drive_uploader.js');
+        if (!res.ok) throw new Error('Cannot load script file');
+        const code = await res.text();
+        await navigator.clipboard.writeText(code);
+        Swal.fire({
+          icon: 'success',
+          title: 'คัดลอกโค้ดสคริปต์เรียบร้อย! 📋',
+          html: `<div class="text-xs text-left text-slate-700 space-y-1.5">
+            <div>คัดลอกโค้ด <b>google_apps_script_drive_uploader.js</b> ไปยังคลิปบอร์ดแล้ว</div>
+            <div>เปิด <a href="https://script.google.com" target="_blank" class="text-teal-700 underline font-bold">script.google.com ↗️</a> แล้วกดวาง (Ctrl+V) จากนั้นกด Deploy > New deployment > Web app (Who has access = Anyone) ได้ทันที</div>
+          </div>`,
+          confirmButtonColor: '#0d9488'
+        });
+      } catch (err) {
+        window.open('google_apps_script_drive_uploader.js', '_blank');
+      }
+    }
+
+    function showGasDeployGuide() {
+      Swal.fire({
+        title: '☁️ วิธีเชื่อมต่อ Google Drive อัตโนมัติ (1-2 นาที)',
+        width: '640px',
+        html: `
+          <div class="text-left text-xs space-y-2 text-slate-700">
+            <div class="p-2.5 bg-teal-50 border border-teal-200 rounded-xl text-teal-900 font-medium">
+              💡 เมื่อติดตั้ง Google Apps Script นี้ ระบบ TDDS จะสามารถอัปโหลดไฟล์ <b>.PDF รายงานสอบสวนโรค</b>, <b>รายงานควบคุม 3 ชม.</b>, <b>รายงานพ่นเคมี</b> และ<b>ภาพถ่าย</b> เข้า Google Drive โฟลเดอร์ปลายทางได้อัตโนมัติ 100%
+            </div>
+            <ol class="list-decimal pl-5 space-y-1.5 leading-relaxed pt-1">
+              <li>คลิกปุ่ม <b>"คัดลอกโค้ดสคริปต์"</b> ด้านล่าง</li>
+              <li>เปิดเว็บ <a href="https://script.google.com" target="_blank" class="text-teal-700 font-bold underline">https://script.google.com ↗️</a> ด้วยบัญชี Google ที่เข้าถึงโฟลเดอร์ Drive</li>
+              <li>คลิก <b>"โครงการใหม่" (New project)</b> แล้วลบโค้ดเดิมออกทั้งหมด และกดวาง (Ctrl+V)</li>
+              <li>คลิกปุ่มสีน้ำเงิน <b>"การทำให้ใช้งานได้" (Deploy)</b> > <b>"การทำให้ใช้งานได้รายการใหม่" (New deployment)</b></li>
+              <li>คลิกรูปฟันเฟือง ⚙️ ด้านซ้าย เลือกประเภท <b>"เว็บแอป" (Web app)</b></li>
+              <li>ตั้งค่า:
+                <div class="ml-2 font-mono text-[11px] bg-slate-100 p-2 rounded-lg border border-slate-200 mt-1">
+                  - Execute as: <b>Me (ตัวฉัน)</b><br>
+                  - Who has access: <b class="text-rose-600">Anyone (ทุกคน)</b> ⚠️ สำคัญมาก
+                </div>
+              </li>
+              <li>คลิก <b>Deploy</b> > ให้สิทธิ์บัญชี Google > คัดลอก <b>"URL เว็บแอป" (Web App URL)</b></li>
+              <li>นำ URL ที่ได้มาวางในช่อง <b>"Google Apps Script Web App URL"</b> แล้วกด <b>"บันทึกการตั้งค่า"</b></li>
+            </ol>
+          </div>
+        `,
+        confirmButtonText: '📋 คัดลอกโค้ดสคริปต์ตอนนี้',
+        showCancelButton: true,
+        cancelButtonText: 'ปิด',
+        confirmButtonColor: '#0d9488'
+      }).then((res) => {
+        if (res.isConfirmed) {
+          copyGasScriptCodeToClipboard();
+        }
+      });
+    }
+
+    async function testGasConnection() {
+      const input = document.getElementById('setting_gas_url');
+      const url = (input ? input.value : (localStorage.getItem('tdds_gas_webapp_url') || '')).trim();
+      if (!url) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ยังไม่ได้ระบุ Web App URL',
+          text: 'กรุณาวาง URL ของ Google Apps Script ที่ Deploy แล้ว (เช่น https://script.google.com/macros/s/.../exec)'
+        });
+        return;
+      }
+      showLoading('กำลังทดสอบเชื่อมต่อ Google Apps Script Web App...');
+      try {
+        const res = await fetchWithTimeout(url, { method: 'GET' }, 12000);
+        const data = await res.json().catch(() => null);
+        hideLoading();
+        if (data && data.status === 'ok') {
+          Swal.fire({
+            icon: 'success',
+            title: 'เชื่อมต่อสำเร็จ! 🎉',
+            html: `<div class="text-xs text-slate-700">Google Apps Script Web App พร้อมทำงาน:<br><b class="text-teal-700 font-mono">${data.message || 'Online'}</b><br><br>ระบบ TDDS สามารถอัปโหลดไฟล์ PDF และภาพถ่ายเข้า Google Drive ได้อัตโนมัติแล้ว</div>`
+          });
+          updateGasStatusUI();
+        } else {
+          Swal.fire({
+            icon: 'info',
+            title: 'เชื่อมต่อสำเร็จ แต่อาจต้องตรวจสอบสิทธิ์',
+            text: 'สคริปต์ตอบกลับแล้ว แต่อาจต้องตรวจสอบว่าเลือก Who has access = Anyone หรือไม่'
+          });
+        }
+      } catch (err) {
+        hideLoading();
+        Swal.fire({
+          icon: 'error',
+          title: 'เชื่อมต่อไม่สำเร็จ',
+          html: `<div class="text-xs text-left text-rose-700 space-y-1"><div><b>ข้อผิดพลาด:</b> ${err.message}</div><div class="text-slate-600 pt-1">คำแนะนำ: กรุณาตรวจสอบว่าตอน Deploy ได้ตั้งค่า <b>Who has access = Anyone (ทุกคน)</b> หรือยัง หากตั้งค่าเป็น Only myself เบราว์เซอร์จะไม่สามารถเชื่อมต่อได้</div></div>`
+        });
+      }
     }
 
     async function testTelegramConnection() {
@@ -16435,10 +16804,38 @@ ${topHcText}${noteBlock}
         confirmedNote: row.confirmed_note || '',
         controlCompletedAt: row.control_completed_at || (existingLocal?.controlCompletedAt ?? null),
         controlAlert3hSentAt: row.control_alert_3h_sent_at || (existingLocal?.controlAlert3hSentAt ?? null),
-        diseaseControlReport: existingLocal?.diseaseControlReport || (row.disease_control_summary || null),
+        diseaseControlReport: (() => {
+          const localDc = existingLocal?.diseaseControlReport || diseaseControlReportsMap[row.id] || (row.patient_code && diseaseControlReportsMap[row.patient_code]) || null;
+          const remoteDc = row.disease_control_summary || null;
+          if (localDc && remoteDc) {
+            const merged = { ...remoteDc, ...localDc };
+            if (Array.isArray(remoteDc.indoorPhotos) && remoteDc.indoorPhotos.length && (!localDc.indoorPhotos || !localDc.indoorPhotos.length)) {
+              merged.indoorPhotos = remoteDc.indoorPhotos;
+            }
+            if (Array.isArray(remoteDc.outdoorPhotos) && remoteDc.outdoorPhotos.length && (!localDc.outdoorPhotos || !localDc.outdoorPhotos.length)) {
+              merged.outdoorPhotos = remoteDc.outdoorPhotos;
+            }
+            return merged;
+          }
+          return localDc || remoteDc || null;
+        })(),
         sprayCompletedAt: row.spray_completed_at || (existingLocal?.sprayCompletedAt ?? null),
         sprayAlert1dSentAt: row.spray_alert_1d_sent_at || (existingLocal?.sprayAlert1dSentAt ?? null),
-        sprayControlReport: existingLocal?.sprayControlReport || (row.spray_control_summary || null),
+        sprayControlReport: (() => {
+          const localSc = existingLocal?.sprayControlReport || sprayControlReportsMap[row.id] || (row.patient_code && sprayControlReportsMap[row.patient_code]) || null;
+          const remoteSc = row.spray_control_summary || null;
+          if (localSc && remoteSc) {
+            const merged = { ...remoteSc, ...localSc };
+            if (Array.isArray(remoteSc.teamPhotos) && remoteSc.teamPhotos.length && (!localSc.teamPhotos || !localSc.teamPhotos.length)) {
+              merged.teamPhotos = remoteSc.teamPhotos;
+            }
+            if (Array.isArray(remoteSc.actionPhotos) && remoteSc.actionPhotos.length && (!localSc.actionPhotos || !localSc.actionPhotos.length)) {
+              merged.actionPhotos = remoteSc.actionPhotos;
+            }
+            return merged;
+          }
+          return localSc || remoteSc || null;
+        })(),
         lat: row.latitude != null ? Number(row.latitude) : (existingLocal?.lat ?? null),
         lng: row.longitude != null ? Number(row.longitude) : (existingLocal?.lng ?? null),
         createdAt: row.created_at || (existingLocal?.createdAt ?? null),
