@@ -4,6 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TDDS - ระบบบันทึกข้อมูลไข้เลือดออก อำเภอเทพา จังหวัดสงขลา</title>
+  <!-- ============================================================ -->
+  <!-- PWA - Progressive Web App Support                           -->
+  <!-- ============================================================ -->
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#26A69A">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TDDS เทพา">
+  <meta name="application-name" content="TDDS เทพา">
+  <link rel="apple-touch-icon" href="./icons/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="./icons/icon-192x192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192x192.png">
+  <link rel="icon" type="image/png" sizes="96x96"  href="./icons/icon-96x96.png">
   
   <!-- Google Fonts: Kanit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17135,6 +17149,160 @@ ${topHcText}${noteBlock}
         hideLoading();
       }
     });
+  </script>
+
+  <!-- ============================================================ -->
+  <!-- PWA Service Worker Registration + Update UI                 -->
+  <!-- ============================================================ -->
+  <script>
+  (function() {
+    'use strict';
+
+    // ---- ตรวจสอบว่า browser รองรับ Service Worker ----
+    if (!('serviceWorker' in navigator)) {
+      console.log('[PWA] Service Worker not supported in this browser');
+      return;
+    }
+
+    // ---- Register Service Worker ----
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('./sw.js', { scope: './' })
+        .then(function(registration) {
+          console.log('[PWA] Service Worker registered:', registration.scope);
+
+          // ตรวจจับ SW ใหม่ที่รอการติดตั้ง
+          registration.addEventListener('updatefound', function() {
+            const newWorker = registration.installing;
+            if (!newWorker) return;
+
+            newWorker.addEventListener('statechange', function() {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // มี SW ใหม่พร้อมใช้งาน → แสดง banner แจ้งเตือน
+                showUpdateBanner(registration);
+              }
+            });
+          });
+
+          // ตรวจสอบอัพเดตทุก 60 นาที
+          setInterval(function() {
+            registration.update().catch(function() {});
+          }, 60 * 60 * 1000);
+        })
+        .catch(function(err) {
+          console.error('[PWA] Service Worker registration failed:', err);
+        });
+
+      // ตรวจจับเมื่อ SW ใหม่เข้าควบคุม → reload
+      navigator.serviceWorker.addEventListener('controllerchange', function() {
+        if (window._pwaReloading) return;
+        window._pwaReloading = true;
+        window.location.reload();
+      });
+    });
+
+    // ---- แสดง Banner แจ้งอัพเดต ----
+    function showUpdateBanner(registration) {
+      // ป้องกัน banner ซ้ำ
+      if (document.getElementById('pwa-update-banner')) return;
+
+      var banner = document.createElement('div');
+      banner.id = 'pwa-update-banner';
+      banner.style.cssText = [
+        'position:fixed', 'bottom:1rem', 'left:50%', 'transform:translateX(-50%)',
+        'background:#0f172a', 'color:white', 'border:1px solid #26A69A',
+        'border-radius:14px', 'padding:0.75rem 1.25rem',
+        'display:flex', 'align-items:center', 'gap:0.75rem',
+        'box-shadow:0 8px 32px rgba(0,0,0,0.4)',
+        'z-index:99999', 'max-width:92vw', 'font-family:Kanit,sans-serif',
+        'font-size:0.875rem', 'animation:pwa-slide-up 0.3s ease'
+      ].join(';');
+
+      banner.innerHTML =
+        '<span style="font-size:1.25rem">🔄</span>' +
+        '<span>มีการอัพเดตแอปใหม่พร้อมใช้งาน</span>' +
+        '<button id="pwa-update-btn" style="' +
+          'background:#26A69A;color:white;border:none;border-radius:8px;' +
+          'padding:0.4rem 0.9rem;font-size:0.8rem;font-family:inherit;' +
+          'cursor:pointer;font-weight:600;white-space:nowrap' +
+        '">อัพเดต</button>' +
+        '<button id="pwa-dismiss-btn" style="' +
+          'background:none;color:#94a3b8;border:none;font-size:1rem;' +
+          'cursor:pointer;padding:0.25rem' +
+        '">✕</button>';
+
+      // เพิ่ม animation keyframes
+      var style = document.createElement('style');
+      style.textContent = '@keyframes pwa-slide-up{from{opacity:0;transform:translate(-50%,1rem)}to{opacity:1;transform:translate(-50%,0)}}';
+      document.head.appendChild(style);
+
+      document.body.appendChild(banner);
+
+      document.getElementById('pwa-update-btn').addEventListener('click', function() {
+        if (registration.waiting) {
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+        banner.remove();
+      });
+
+      document.getElementById('pwa-dismiss-btn').addEventListener('click', function() {
+        banner.remove();
+      });
+    }
+
+    // ---- แสดงสถานะ Offline/Online ----
+    function showNetworkStatus(isOnline) {
+      var existing = document.getElementById('pwa-network-toast');
+      if (existing) existing.remove();
+
+      var toast = document.createElement('div');
+      toast.id = 'pwa-network-toast';
+      toast.style.cssText = [
+        'position:fixed', 'top:1rem', 'right:1rem',
+        'background:' + (isOnline ? '#166534' : '#7f1d1d'),
+        'color:white', 'border-radius:10px',
+        'padding:0.5rem 1rem', 'font-size:0.8rem',
+        'font-family:Kanit,sans-serif',
+        'box-shadow:0 4px 16px rgba(0,0,0,0.3)',
+        'z-index:99999', 'display:flex', 'align-items:center', 'gap:0.5rem',
+        'animation:pwa-slide-up 0.3s ease'
+      ].join(';');
+
+      toast.innerHTML = isOnline
+        ? '<span>✅</span><span>เชื่อมต่ออินเทอร์เน็ตแล้ว</span>'
+        : '<span>📡</span><span>ไม่มีสัญญาณอินเทอร์เน็ต — ใช้งานข้อมูล cache</span>';
+
+      document.body.appendChild(toast);
+      setTimeout(function() {
+        if (toast.parentNode) toast.remove();
+      }, isOnline ? 3000 : 6000);
+    }
+
+    window.addEventListener('online',  function() { showNetworkStatus(true);  });
+    window.addEventListener('offline', function() { showNetworkStatus(false); });
+
+    // ---- ฟังก์ชัน Clear Cache (เรียกได้จาก console หรือ UI) ----
+    window.pwaUtils = {
+      clearCache: function() {
+        if (!navigator.serviceWorker.controller) {
+          console.warn('[PWA] No active Service Worker');
+          return Promise.resolve(false);
+        }
+        return new Promise(function(resolve) {
+          var channel = new MessageChannel();
+          channel.port1.onmessage = function(e) { resolve(e.data.success); };
+          navigator.serviceWorker.controller.postMessage(
+            { type: 'CLEAR_CACHE' }, [channel.port2]
+          );
+        });
+      },
+      forceUpdate: function() {
+        navigator.serviceWorker.getRegistration('./sw.js').then(function(reg) {
+          if (reg) reg.update();
+        });
+      }
+    };
+
+  })();
   </script>
 </body>
 </html>
