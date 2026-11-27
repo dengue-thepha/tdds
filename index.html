@@ -3094,7 +3094,7 @@
             </div>
           </div>
 
-          <!-- ที่อยู่: บ้านเลขที่, หมู่ที่, ตำบล, หน่วยบริการ, โซน (เชื่อมโยงอัตโนมัติตาม Sheet Location) -->
+          <!-- ที่อยู่: บ้านเลขที่, หมู่ที่ → ตำบล (cascade), PCU/โซน (auto-lock จาก location) -->
           <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
             <div>
               <label class="block text-xs font-semibold text-slate-700 mb-1">บ้านเลขที่ *</label>
@@ -3103,59 +3103,39 @@
 
             <div>
               <label class="block text-xs font-semibold text-slate-700 mb-1">หมู่ที่ *</label>
-              <select id="p_village_no" required onchange="handleLocationCascade()" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-teal-500 font-semibold text-slate-800">
-                <!-- 1-20 -->
-                <script>
-                  for (let i = 1; i <= 20; i++) {
-                    document.write(`<option value="${i}">หมู่ ${i}</option>`);
-                  }
-                </script>
+              <select id="p_village_no" required onchange="onVillageNoChange()" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-teal-500 font-semibold text-slate-800">
+                <option value="">-- เลือกหมู่ที่ --</option>
               </select>
             </div>
 
             <div>
               <label class="block text-xs font-semibold text-slate-700 mb-1">ตำบล *</label>
               <select id="p_subdistrict" required onchange="handleLocationCascade()" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-teal-500 font-semibold text-slate-800">
-                <option value="เทพา">เทพา</option>
-                <option value="ปากบาง">ปากบาง</option>
-                <option value="เกาะสะบ้า">เกาะสะบ้า</option>
-                <option value="ลำไพล">ลำไพล</option>
-                <option value="ท่าม่วง">ท่าม่วง</option>
-                <option value="วังใหญ่">วังใหญ่</option>
-                <option value="สะกอม">สะกอม</option>
+                <option value="">-- เลือกตำบล --</option>
               </select>
             </div>
 
+            <!-- PCU: locked, auto-fill จาก location -->
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">เขตพื้นที่ รพ.สต./PCU *</label>
-              <select id="p_health_center" required onchange="handleHealthCenterChange()" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-teal-500 font-semibold text-teal-800">
-                <option value="">-- เลือกหน่วยบริการ / รพ.สต. --</option>
-                <option value="รพ.สต.ตูหยง" data-hcode="09491">09491 - รพ.สต.ตูหยง</option>
-                <option value="รพ.สต.ตาแปด" data-hcode="09492">09492 - รพ.สต.ตาแปด</option>
-                <option value="รพ.สต.เกาะสะบ้า" data-hcode="09493">09493 - รพ.สต.เกาะสะบ้า</option>
-                <option value="รพ.สต.ลำไพล" data-hcode="09494">09494 - รพ.สต.ลำไพล</option>
-                <option value="รพ.สต.ท่าไทร" data-hcode="09495">09495 - รพ.สต.ท่าไทร</option>
-                <option value="รพ.สต.ท่าม่วง" data-hcode="09496">09496 - รพ.สต.ท่าม่วง</option>
-                <option value="รพ.สต.พรุชิง" data-hcode="09497">09497 - รพ.สต.พรุชิง</option>
-                <option value="รพ.สต.วังใหญ่" data-hcode="09498">09498 - รพ.สต.วังใหญ่</option>
-                <option value="รพ.สต.สะกอม" data-hcode="09499">09499 - รพ.สต.สะกอม</option>
-                <option value="รพ.สต.ท่าแมงลัก" data-hcode="09500">09500 - รพ.สต.ท่าแมงลัก</option>
-                <option value="รพ.สต.ทุ่งโดน" data-hcode="11915">11915 - รพ.สต.ทุ่งโดน</option>
-                <option value="PCU1" data-hcode="15109">15109 - PCU1</option>
-                <option value="PCU2" data-hcode="15107">15107 - PCU2</option>
-                <option value="สสอ.เทพา" data-hcode="00860">00860 - สสอ.เทพา</option>
-                <option value="รพ.เทพา" data-hcode="11390">11390 - รพ.เทพา</option>
-              </select>
+              <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                เขตพื้นที่ รพ.สต./PCU
+                <span class="text-[9px] font-normal bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">🔒 อัตโนมัติ</span>
+              </label>
+              <input type="text" id="p_health_center" readonly
+                class="w-full text-xs p-2.5 bg-amber-50 border border-amber-200 rounded-xl outline-none font-semibold text-teal-800 cursor-not-allowed"
+                placeholder="เลือกหมู่ที่+ตำบลก่อน">
+              <input type="hidden" id="p_health_center_hcode">
             </div>
 
+            <!-- โซน: locked, auto-fill จาก location -->
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">โซน *</label>
-              <select id="p_zone" required class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:border-teal-500 font-semibold text-purple-900">
-                <option value="บานชื่น">บานชื่น</option>
-                <option value="ทานตะวัน">ทานตะวัน</option>
-                <option value="ชวนชม">ชวนชม</option>
-                <option value="ศูนย์ประสานงาน">ศูนย์ประสานงาน</option>
-              </select>
+              <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                โซน
+                <span class="text-[9px] font-normal bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">🔒 อัตโนมัติ</span>
+              </label>
+              <input type="text" id="p_zone" readonly
+                class="w-full text-xs p-2.5 bg-amber-50 border border-amber-200 rounded-xl outline-none font-semibold text-purple-900 cursor-not-allowed"
+                placeholder="-">
             </div>
           </div>
 
@@ -4106,43 +4086,83 @@
     ];
 
     // ฟังก์ชันเชื่อมโยงข้อมูลอัตโนมัติจาก Sheet Location
+    // ---- ระบบ Location Cascade: หมู่ที่ → ตำบล → PCU/โซน (auto-lock) ----
+
+    /** เติม dropdown หมู่ที่จาก locationMasterData ทั้งหมด (unique, เรียงเลข) */
+    function populateVillageNoOptions(currentVal) {
+      const sel = document.getElementById('p_village_no');
+      if (!sel) return;
+      const villages = [...new Set(locationMasterData.map(l => l.villageNo))].sort((a, b) => a - b);
+      sel.innerHTML = '<option value="">-- เลือกหมู่ที่ --</option>' +
+        villages.map(v => `<option value="${v}"${v === parseInt(currentVal) ? ' selected' : ''}>หมู่ ${v}</option>`).join('');
+    }
+
+    /** เมื่อเลือกหมู่ที่ → กรองตำบลที่มีหมู่นั้น */
+    function onVillageNoChange() {
+      const village = parseInt(document.getElementById('p_village_no')?.value || '0');
+      const subSel = document.getElementById('p_subdistrict');
+      if (!subSel) return;
+
+      const prevSub = subSel.value;
+      let subdistrictList = [];
+      if (village) {
+        subdistrictList = [...new Set(
+          locationMasterData.filter(l => l.villageNo === village).map(l => l.subdistrict)
+        )].sort();
+      } else {
+        subdistrictList = [...new Set(locationMasterData.map(l => l.subdistrict))].sort();
+      }
+
+      subSel.innerHTML = '<option value="">-- เลือกตำบล --</option>' +
+        subdistrictList.map(s => `<option value="${s}"${s === prevSub ? ' selected' : ''}>${s}</option>`).join('');
+
+      // ถ้ายังไม่ได้เลือกตำบล หรือตำบลเดิมยังอยู่ในรายการ → cascade ต่อ
+      handleLocationCascade();
+    }
+
+    /** เมื่อเลือกตำบล → auto-fill PCU + โซน และล็อค */
     function handleLocationCascade() {
-      const sub = document.getElementById('p_subdistrict').value;
-      const village = parseInt(document.getElementById('p_village_no').value);
+      const sub = document.getElementById('p_subdistrict')?.value || '';
+      const village = parseInt(document.getElementById('p_village_no')?.value || '0');
+      const hcEl = document.getElementById('p_health_center');
+      const hcodeEl = document.getElementById('p_health_center_hcode');
+      const zoneEl = document.getElementById('p_zone');
       const noticeText = document.getElementById('locationLinkText');
 
-      const match = locationMasterData.find(loc => loc.subdistrict === sub && loc.villageNo === village);
+      if (!sub) {
+        if (hcEl) hcEl.value = '';
+        if (zoneEl) zoneEl.value = '';
+        if (hcodeEl) hcodeEl.value = '';
+        if (noticeText) noticeText.innerHTML = '';
+        return;
+      }
+
+      // หา match ตาม subdistrict + villageNo (exact)
+      let match = village
+        ? locationMasterData.find(loc => loc.subdistrict === sub && loc.villageNo === village)
+        : null;
+
+      // ถ้าไม่พบ exact (เช่นหมู่ที่มีหลาย PCU) ให้ใช้ตำบลเป็น fallback
+      if (!match) match = locationMasterData.find(loc => loc.subdistrict === sub);
+
       if (match) {
-        document.getElementById('p_health_center').value = match.healthCenter;
-        document.getElementById('p_zone').value = match.zone;
+        const hcode = match.hcode || getHCodeByName(match.healthCenter) || '';
+        const hcLabel = hcode ? `${hcode} - ${match.healthCenter}` : match.healthCenter;
+        if (hcEl) hcEl.value = hcLabel;
+        if (hcodeEl) hcodeEl.value = hcode;
+        if (zoneEl) zoneEl.value = match.zone;
         if (noticeText) {
-          noticeText.innerHTML = `✓ เชื่อมโยงถูกต้อง: ต.${sub} หมู่ ${village} ➔ <b>${match.healthCenter}</b> (โซน${match.zone})`;
+          noticeText.innerHTML = `✓ ต.${sub} หมู่ ${village || '?'} ➔ <b>${match.healthCenter}</b> (โซน${match.zone})`;
         }
       } else {
-        const subMatch = locationMasterData.find(loc => loc.subdistrict === sub);
-        if (subMatch) {
-          document.getElementById('p_zone').value = subMatch.zone;
-          if (noticeText) {
-            noticeText.innerHTML = `เชื่อมโยงตามตำบล: ต.${sub} ➔ โซน${subMatch.zone}`;
-          }
-        }
+        if (hcEl) hcEl.value = '';
+        if (zoneEl) zoneEl.value = '';
+        if (noticeText) noticeText.innerHTML = `ไม่พบข้อมูลตำแหน่งสำหรับ ต.${sub} หมู่ ${village}`;
       }
     }
 
-    function handleHealthCenterChange() {
-      const sel = document.getElementById('p_health_center');
-      const hc = sel.value;
-      const opt = sel.selectedOptions ? sel.selectedOptions[0] : null;
-      const hcode = opt?.getAttribute('data-hcode') || getHCodeByName(hc);
-      const match = locationMasterData.find(loc => (loc.hcode && loc.hcode === hcode) || loc.healthCenter === hc);
-      const noticeText = document.getElementById('locationLinkText');
-      if (match) {
-        document.getElementById('p_zone').value = match.zone;
-        if (noticeText) {
-          noticeText.innerHTML = `เลือกหน่วยบริการ: <b>${hc}</b> (รหัส: <span class="font-mono text-teal-700">${hcode}</span>) ➔ โซน${match.zone}`;
-        }
-      }
-    }
+    /** compat: ถ้าโค้ดเก่าเรียก handleHealthCenterChange → ไม่ทำอะไรแล้ว (PCU ล็อค) */
+    function handleHealthCenterChange() {}
 
     // Default Users & Current Dengue Cases: ดึงจากตาราง staff_accounts และ current_dengue_cases บน Supabase โดยตรง
     const defaultUsers = [];
@@ -8276,8 +8296,11 @@
         document.getElementById('p_investigator_name').value = currentUser.fullName;
         document.getElementById('p_investigator_position').value = currentUser.position;
         if (currentUser.role === 'staff') {
-          document.getElementById('p_health_center').value = currentUser.unit;
+          // p_health_center ถูกล็อคให้ auto-fill จาก location cascade แล้ว
+          // ไม่ต้อง set ที่นี่
         }
+        // เติม dropdown หมู่ที่ครั้งแรก
+        populateVillageNoOptions('');
       } else {
         document.getElementById('p_investigator_name').value = 'เจ้าหน้าที่สาธารณสุข';
         document.getElementById('p_investigator_position').value = 'นักวิชาการสาธารณสุข';
@@ -8632,14 +8655,27 @@
         document.getElementById('p_age_month').value = p.ageMonth ?? 0;
         document.getElementById('p_phone').value = p.phone || '';
         document.getElementById('p_address_no').value = p.addressNo || '';
-        document.getElementById('p_village_no').value = p.villageNo || '1';
-        document.getElementById('p_subdistrict').value = p.subdistrict || 'เทพา';
-        document.getElementById('p_health_center').value = p.healthCenter || 'สสอ.เทพา';
-        document.getElementById('p_zone').value = p.zone || 'บานชื่น';
-        const noticeText = document.getElementById('locationLinkText');
-        if (noticeText) {
-          noticeText.innerHTML = `✓ ข้อมูลพื้นที่เดิม: ต.${p.subdistrict || 'เทพา'} หมู่ ${p.villageNo || 1} ➔ <b>${p.healthCenter || 'สสอ.เทพา'}</b> (โซน${p.zone || 'บานชื่น'})`;
+        // เติม dropdown หมู่ที่ใหม่ แล้วเลือกค่าเดิม
+        populateVillageNoOptions(p.villageNo || '1');
+        // เติม dropdown ตำบลตามหมู่ที่ที่เลือก
+        const vNum = parseInt(p.villageNo || '1');
+        const subList = [...new Set(
+          locationMasterData.filter(l => l.villageNo === vNum).map(l => l.subdistrict)
+        )].sort();
+        const subSel = document.getElementById('p_subdistrict');
+        if (subSel) {
+          if (subList.length > 0) {
+            subSel.innerHTML = '<option value="">-- เลือกตำบล --</option>' +
+              subList.map(s => `<option value="${s}"${s === (p.subdistrict || '') ? ' selected' : ''}>${s}</option>`).join('');
+          } else {
+            // fallback: ทุกตำบล
+            const allSubs = [...new Set(locationMasterData.map(l => l.subdistrict))].sort();
+            subSel.innerHTML = '<option value="">-- เลือกตำบล --</option>' +
+              allSubs.map(s => `<option value="${s}"${s === (p.subdistrict || '') ? ' selected' : ''}>${s}</option>`).join('');
+          }
         }
+        // cascade → auto-fill PCU/โซน
+        handleLocationCascade();
         document.getElementById('p_occupation').value = p.occupation || 'เกษตรกร';
         document.getElementById('p_work_desc').value = p.workDesc || '';
         document.getElementById('p_workplace').value = p.workplace || '';
@@ -9003,7 +9039,13 @@
           addressNo: document.getElementById('p_address_no').value.trim(),
           villageNo: document.getElementById('p_village_no').value,
           subdistrict: document.getElementById('p_subdistrict').value,
-          healthCenter: document.getElementById('p_health_center').value,
+          healthCenter: (() => {
+            const raw = (document.getElementById('p_health_center')?.value || '').trim();
+            // รูปแบบ "11915 - รพ.สต.ทุ่งโดน" → เอาเฉพาะชื่อ
+            const m = raw.match(/^\d+\s*-\s*(.+)$/);
+            return m ? m[1].trim() : raw;
+          })(),
+          hcode: (document.getElementById('p_health_center_hcode')?.value || '').trim(),
           zone: document.getElementById('p_zone').value,
           occupation: document.getElementById('p_occupation').value,
           workDesc: document.getElementById('p_work_desc').value.trim(),
