@@ -1642,12 +1642,38 @@
         <!-- SUB-TAB 2: 100-METER RADIUS SEARCH -->
         <div id="personSubTab-radius" class="person-subtab-panel hidden space-y-4">
           <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
-            <!-- Quick Search Center House from Scoped Person Data -->
+            <!-- Quick Search Center House: บ้านเลขที่ / หมู่ที่ / ตำบล / ชื่อ-สกุล -->
             <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-2">
-              <label class="block text-xs font-bold text-slate-700">🔍 ค้นหาบ้าน/บุคคลในความรับผิดชอบเพื่อใช้เป็นจุดศูนย์กลาง (หรือเลือกจากรายชื่อผู้ป่วยด้านล่าง):</label>
-              <div class="relative">
-                <input type="text" id="radiusPersonQuickSearch" oninput="renderRadiusPersonQuickMatches()" placeholder="พิมพ์ชื่อ-สกุล หรือ บ้านเลขที่ (แสดงเฉพาะข้อมูลประชากรที่ท่านรับผิดชอบ)..." class="w-full text-xs px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-teal-500">
-                <div id="radiusPersonQuickDropdown" class="hidden mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-md divide-y divide-slate-100 text-xs"></div>
+              <label class="block text-xs font-bold text-slate-700">🔍 ค้นหาบ้าน/บุคคลเพื่อใช้เป็นจุดศูนย์กลาง — กรองด้วยบ้านเลขที่, หมู่ที่ หรือตำบล แล้วเลือกจากรายการ:</label>
+              <!-- Filter Row -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div>
+                  <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">🏠 บ้านเลขที่</label>
+                  <input type="text" id="radiusFilterHouseNo" oninput="renderRadiusPersonQuickMatches()" placeholder="เช่น 128 หรือ 128/1" class="w-full text-xs px-2.5 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">🏘️ หมู่ที่</label>
+                  <select id="radiusFilterVillageNo" onchange="renderRadiusPersonQuickMatches()" class="w-full text-xs px-2.5 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+                    <option value="">-- ทุกหมู่ --</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">🏙️ ตำบล</label>
+                  <select id="radiusFilterSubdistrict" onchange="onRadiusSubdistrictChange()" class="w-full text-xs px-2.5 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+                    <option value="">-- ทุกตำบล --</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">👤 ชื่อ-สกุล / คีย์เวิร์ด</label>
+                  <input type="text" id="radiusPersonQuickSearch" oninput="renderRadiusPersonQuickMatches()" placeholder="พิมพ์ชื่อ-สกุล..." class="w-full text-xs px-2.5 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+                </div>
+              </div>
+              <!-- Dropdown ผลค้นหา -->
+              <div id="radiusPersonQuickDropdown" class="hidden mt-1 max-h-56 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-md divide-y divide-slate-100 text-xs"></div>
+              <!-- สถานะ + ปุ่มล้าง -->
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[10px] text-slate-400" id="radiusFilterStatus"></span>
+                <button type="button" onclick="clearRadiusFilters()" class="text-[10px] text-slate-500 hover:text-rose-600 underline underline-offset-2 transition">ล้างตัวกรองทั้งหมด</button>
               </div>
             </div>
 
@@ -15923,12 +15949,14 @@ ${topHcText}${noteBlock}
         activeBtn.classList.remove('bg-slate-100', 'text-slate-700');
         activeBtn.classList.add('bg-teal-600', 'text-white', 'shadow-xs');
       }
-      if (tabName === 'radius' && personRadiusMapInstance) {
-        setTimeout(() => personRadiusMapInstance.invalidateSize(), 150);
+      if (tabName === 'radius') {
+        populateRadiusFilterDropdowns();
+        if (personRadiusMapInstance) setTimeout(() => personRadiusMapInstance.invalidateSize(), 150);
       }
     }
 
     function populatePersonFilters() {
+      populateRadiusFilterDropdowns(); // อัพเดต dropdown หมู่/ตำบล ใน radius search
       const scopedPersons = getFilteredPersonsForUser();
       const hcodes = [...new Set(scopedPersons.map(p => p.pcucodeperson).filter(Boolean))].sort();
       ['personAgeHcodeFilter', 'personDirHcodeFilter'].forEach(selId => {
@@ -16124,55 +16152,142 @@ ${topHcText}${noteBlock}
       `).join('');
     }
 
-    function renderRadiusPersonQuickMatches() {
-      const inputEl = document.getElementById('radiusPersonQuickSearch');
+    // ---- ค้นหาบ้านรัศมี: populate dropdowns หมู่ / ตำบล จากข้อมูล person ----
+    function populateRadiusFilterDropdowns() {
+      const persons = getFilteredPersonsForUser();
+      const villages = [...new Set(persons.map(p => String(p.village_no || '').trim()).filter(Boolean))]
+        .sort((a, b) => Number(a) - Number(b) || a.localeCompare(b, 'th'));
+      const subdistricts = [...new Set(persons.map(p => normalizeThaiStr(p.subdistrict || '').trim()).filter(Boolean))].sort();
+
+      const vSel = document.getElementById('radiusFilterVillageNo');
+      const sSel = document.getElementById('radiusFilterSubdistrict');
+      if (vSel) {
+        const curV = vSel.value;
+        vSel.innerHTML = '<option value="">-- ทุกหมู่ --</option>' +
+          villages.map(v => `<option value="${v}"${v === curV ? ' selected' : ''}>หมู่ ${v}</option>`).join('');
+      }
+      if (sSel) {
+        const curS = sSel.value;
+        sSel.innerHTML = '<option value="">-- ทุกตำบล --</option>' +
+          subdistricts.map(s => `<option value="${s}"${s === curS ? ' selected' : ''}>ต.${s}</option>`).join('');
+      }
+    }
+
+    // เมื่อเลือกตำบล → อัพเดตหมู่ที่ให้สอดคล้องกัน
+    function onRadiusSubdistrictChange() {
+      const sub = document.getElementById('radiusFilterSubdistrict')?.value || '';
+      const persons = getFilteredPersonsForUser();
+      const filtered = sub ? persons.filter(p => normalizeThaiStr(p.subdistrict || '') === sub) : persons;
+      const villages = [...new Set(filtered.map(p => String(p.village_no || '').trim()).filter(Boolean))]
+        .sort((a, b) => Number(a) - Number(b) || a.localeCompare(b, 'th'));
+      const vSel = document.getElementById('radiusFilterVillageNo');
+      if (vSel) {
+        vSel.innerHTML = '<option value="">-- ทุกหมู่ --</option>' +
+          villages.map(v => `<option value="${v}">หมู่ ${v}</option>`).join('');
+      }
+      renderRadiusPersonQuickMatches();
+    }
+
+    // ล้างตัวกรองทั้งหมด
+    function clearRadiusFilters() {
+      const ids = ['radiusFilterHouseNo', 'radiusPersonQuickSearch'];
+      ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+      const vSel = document.getElementById('radiusFilterVillageNo');
+      const sSel = document.getElementById('radiusFilterSubdistrict');
+      if (vSel) vSel.value = '';
+      if (sSel) sSel.value = '';
+      // Reset หมู่ dropdown ให้ครบทุกหมู่อีกครั้ง
+      populateRadiusFilterDropdowns();
       const dropEl = document.getElementById('radiusPersonQuickDropdown');
-      if (!inputEl || !dropEl) return;
-      const rawQ = normalizeThaiStr(inputEl.value);
-      if (!rawQ) {
+      if (dropEl) { dropEl.classList.add('hidden'); dropEl.innerHTML = ''; }
+      const statusEl = document.getElementById('radiusFilterStatus');
+      if (statusEl) statusEl.textContent = '';
+    }
+
+    // รวม filter ทุกช่องแล้ว query person
+    function getRadiusFilteredPersons() {
+      const houseNo = normalizeThaiStr(document.getElementById('radiusFilterHouseNo')?.value || '').toLowerCase().trim();
+      const villageNo = (document.getElementById('radiusFilterVillageNo')?.value || '').trim();
+      const subdistrict = normalizeThaiStr(document.getElementById('radiusFilterSubdistrict')?.value || '').toLowerCase().trim();
+      const nameQ = normalizeThaiStr(document.getElementById('radiusPersonQuickSearch')?.value || '').toLowerCase().trim();
+
+      let persons = getFilteredPersonsForUser().filter(p => p.lat !== null && p.lng !== null);
+
+      if (villageNo) persons = persons.filter(p => String(p.village_no || '').trim() === villageNo);
+      if (subdistrict) persons = persons.filter(p => normalizeThaiStr(p.subdistrict || '').toLowerCase().includes(subdistrict));
+      if (houseNo) {
+        // exact match ก่อน แล้ว startsWith
+        persons = persons.filter(p => normalizeThaiStr(p.house_no || '').toLowerCase().includes(houseNo));
+        persons.sort((a, b) => {
+          const aN = normalizeThaiStr(a.house_no || '').toLowerCase();
+          const bN = normalizeThaiStr(b.house_no || '').toLowerCase();
+          const aE = aN === houseNo ? 0 : (aN.startsWith(houseNo) ? 1 : 2);
+          const bE = bN === houseNo ? 0 : (bN.startsWith(houseNo) ? 1 : 2);
+          return aE - bE;
+        });
+      }
+      if (nameQ) {
+        const parsed = parsePersonSearchTokens(nameQ);
+        persons = persons.filter(p => matchesPersonSearchQuery(p, parsed));
+      }
+      return persons;
+    }
+
+    function renderRadiusPersonQuickMatches() {
+      const dropEl = document.getElementById('radiusPersonQuickDropdown');
+      if (!dropEl) return;
+
+      const houseNo = normalizeThaiStr(document.getElementById('radiusFilterHouseNo')?.value || '').trim();
+      const villageNo = (document.getElementById('radiusFilterVillageNo')?.value || '').trim();
+      const subdistrict = normalizeThaiStr(document.getElementById('radiusFilterSubdistrict')?.value || '').trim();
+      const nameQ = normalizeThaiStr(document.getElementById('radiusPersonQuickSearch')?.value || '').trim();
+
+      const hasFilter = houseNo || villageNo || subdistrict || nameQ;
+
+      // อัพเดตสถานะ
+      const statusEl = document.getElementById('radiusFilterStatus');
+      if (statusEl) {
+        const parts = [];
+        if (houseNo)    parts.push(`บ้านเลขที่ "${houseNo}"`);
+        if (villageNo)  parts.push(`หมู่ ${villageNo}`);
+        if (subdistrict) parts.push(`ต.${subdistrict}`);
+        if (nameQ)      parts.push(`"${nameQ}"`);
+        statusEl.textContent = parts.length ? `กรอง: ${parts.join(' + ')}` : '';
+      }
+
+      if (!hasFilter) {
         dropEl.classList.add('hidden');
         dropEl.innerHTML = '';
         return;
       }
-      const parsed = parsePersonSearchTokens(rawQ);
-      const scopedPersons = getFilteredPersonsForUser();
-      const matchedList = scopedPersons.filter(p =>
-        p.lat !== null && p.lng !== null && matchesPersonSearchQuery(p, parsed)
-      );
 
-      // จัดอันดับให้บ้านเลขที่ตรงตัว (exact) ขึ้นก่อนบ้านทับ เช่น 128 ก่อน 128/1
-      if (parsed.houseToken) {
-        matchedList.sort((a, b) => {
-          const aExact = normalizeThaiStr(a.house_no).toLowerCase() === parsed.houseToken ? 0 : 1;
-          const bExact = normalizeThaiStr(b.house_no).toLowerCase() === parsed.houseToken ? 0 : 1;
-          return aExact - bExact;
-        });
-      }
-
-      const matches = matchedList.slice(0, 50);
-      if (matches.length > 0) {
-        renderRadiusPersonQuickDropdownItems(dropEl, matches, rawQ);
+      const localMatches = getRadiusFilteredPersons().slice(0, 60);
+      if (localMatches.length > 0) {
+        renderRadiusPersonQuickDropdownItems(dropEl, localMatches, [houseNo, villageNo, subdistrict, nameQ].filter(Boolean).join(' '));
         return;
       }
 
-      // หากยังไม่มีในแคชเครื่อง (หรือแคชยังไม่ครบ 66,000+ แถว) ให้ค้นหาจาก Supabase person โดยตรง
+      // ค้น Supabase live ถ้าไม่พบใน local cache
       dropEl.classList.remove('hidden');
-      dropEl.innerHTML = `<div class="px-3 py-2 text-slate-400">กำลังค้นหา "${rawQ}" จากฐานข้อมูล person...</div>`;
+      dropEl.innerHTML = `<div class="px-3 py-2 text-slate-400">กำลังค้นหาจากฐานข้อมูล person...</div>`;
       clearTimeout(_radiusQuickLiveTimer);
       _radiusQuickLiveTimer = setTimeout(async () => {
-        const liveRows = await searchPersonFromSupabaseLive({ queryText: rawQ, requireCoords: true, limit: 80 });
-        const filteredLive = liveRows.filter(p => matchesPersonSearchQuery(p, parsed));
-        if (parsed.houseToken) {
-          filteredLive.sort((a, b) => {
-            const aExact = normalizeThaiStr(a.house_no).toLowerCase() === parsed.houseToken ? 0 : 1;
-            const bExact = normalizeThaiStr(b.house_no).toLowerCase() === parsed.houseToken ? 0 : 1;
-            return aExact - bExact;
-          });
-        }
-        if (normalizeThaiStr(inputEl.value) === rawQ) {
-          renderRadiusPersonQuickDropdownItems(dropEl, filteredLive.slice(0, 50), rawQ);
-        }
-      }, 280);
+        const liveRows = await searchPersonFromSupabaseLive({
+          houseNo: houseNo || '',
+          villageNo: villageNo || '',
+          subdistrict: subdistrict || '',
+          queryText: nameQ || '',
+          requireCoords: true,
+          limit: 80
+        });
+        // กรองซ้ำด้วย local filter เพื่อให้แน่ใจ
+        let filtered = liveRows.filter(p => p.lat !== null && p.lng !== null);
+        if (houseNo) filtered = filtered.filter(p => normalizeThaiStr(p.house_no || '').toLowerCase().includes(houseNo));
+        if (villageNo) filtered = filtered.filter(p => String(p.village_no || '').trim() === villageNo);
+        if (subdistrict) filtered = filtered.filter(p => normalizeThaiStr(p.subdistrict || '').toLowerCase().includes(subdistrict));
+        const qLabel = [houseNo, villageNo ? `หมู่${villageNo}` : '', subdistrict ? `ต.${subdistrict}` : '', nameQ].filter(Boolean).join(' ');
+        renderRadiusPersonQuickDropdownItems(dropEl, filtered.slice(0, 60), qLabel);
+      }, 300);
     }
 
     function selectRadiusPersonCenter(idx) {
@@ -16182,14 +16297,15 @@ ${topHcText}${noteBlock}
       const latEl = document.getElementById('radiusCenterLat');
       const lngEl = document.getElementById('radiusCenterLng');
       const dropEl = document.getElementById('radiusPersonQuickDropdown');
-      const inputEl = document.getElementById('radiusPersonQuickSearch');
       const pSel = document.getElementById('radiusPatientSelect');
       if (latEl) latEl.value = m.lat;
       if (lngEl) lngEl.value = m.lng;
-      if (inputEl) inputEl.value = `${m.fullname} (บ้านเลขที่ ${m.house_no || '-'})`;
       if (dropEl) dropEl.classList.add('hidden');
       if (pSel) pSel.value = '';
-      lastRadiusCenterInfo = { fullName: `${m.fullname} (บ้านเลขที่ ${m.house_no || '-'})` };
+      // อัพเดต nameSearch ด้วยข้อมูลที่เลือก
+      const nameEl = document.getElementById('radiusPersonQuickSearch');
+      if (nameEl) nameEl.value = m.fullname || '';
+      lastRadiusCenterInfo = { fullName: `${m.fullname} (บ้านเลขที่ ${m.house_no || '-'} ม.${m.village_no || '-'} ต.${m.subdistrict || '-'})` };
       runPersonRadiusSearch();
     }
 
