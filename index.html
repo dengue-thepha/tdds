@@ -163,6 +163,26 @@
       font-family: 'Kanit', sans-serif !important;
       border-radius: 1rem !important;
     }
+
+    /* Mobile App-Like Experience */
+    html, body {
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: contain;
+    }
+    @media (max-width: 640px) {
+      input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+      select,
+      textarea {
+        font-size: 16px !important;
+      }
+    }
+    .mobile-nav-item.active-tab {
+      color: #0f766e;
+    }
+    .mobile-nav-item.active-tab .mnav-pill {
+      background-color: #ccfbf1;
+      color: #0f766e;
+    }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col selection:bg-teal-500 selection:text-white">
@@ -188,7 +208,7 @@
   <!-- ============================================================== -->
   <header class="sticky top-0 z-40 bg-white border-b border-slate-200/80 shadow-xs backdrop-blur-md bg-white/95">
     <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
+      <div class="flex items-center justify-between h-14 sm:h-16">
         
         <!-- Left: Brand + Hamburger (Mobile) -->
         <div class="flex items-center gap-3">
@@ -224,9 +244,10 @@
           
           <!-- Not Logged In: Login Button -->
           <div id="unauthHeaderActions" class="flex items-center gap-2">
-            <button onclick="openLoginModal()" class="flex items-center gap-2 bg-[#26A69A] hover:bg-[#00897B] text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-xl shadow-md shadow-teal-500/20 transition active:scale-95">
+            <button onclick="openLoginModal()" class="flex items-center gap-1.5 bg-[#26A69A] hover:bg-[#00897B] text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-xl shadow-md shadow-teal-500/20 transition active:scale-95">
               <span>🔑</span>
-              <span>เข้าสู่ระบบ (Login)</span>
+              <span class="sm:hidden">เข้าสู่ระบบ</span>
+              <span class="hidden sm:inline">เข้าสู่ระบบ (Login)</span>
             </button>
           </div>
 
@@ -270,7 +291,7 @@
     <!-- ============================================================ -->
     <!-- MODERN LEFT SIDEBAR                                          -->
     <!-- ============================================================ -->
-    <aside id="appSidebar" class="fixed lg:static top-16 bottom-0 left-0 z-30 w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out shadow-lg lg:shadow-none">
+    <aside id="appSidebar" class="fixed lg:static top-14 sm:top-16 bottom-0 left-0 z-30 w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out shadow-lg lg:shadow-none pb-20 lg:pb-0">
       
       <div class="p-4 space-y-6 overflow-y-auto flex-1">
         
@@ -425,15 +446,15 @@
     <!-- ============================================================ -->
     <!-- CONTENT MAIN CONTAINER                                       -->
     <!-- ============================================================ -->
-    <main class="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
+    <main class="flex-1 p-3 pb-24 sm:p-6 lg:p-8 lg:pb-8 max-w-7xl mx-auto w-full space-y-5 sm:space-y-6">
 
       <!-- ======================================================== -->
       <!-- VIEW 1: DASHBOARD                                       -->
       <!-- ======================================================== -->
-      <section id="view-dashboard" class="view-panel space-y-6">
+      <section id="view-dashboard" class="view-panel space-y-4 sm:space-y-6">
 
         <!-- Banner Greeting / Scope -->
-        <div class="bg-gradient-to-r from-teal-700 via-[#26A69A] to-[#4A2C6D] rounded-3xl p-5 sm:p-7 text-white shadow-lg shadow-teal-700/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="bg-gradient-to-r from-teal-700 via-[#26A69A] to-[#4A2C6D] rounded-2xl sm:rounded-3xl p-4 sm:p-7 text-white shadow-lg shadow-teal-700/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 sm:gap-4">
           <div>
             <div class="inline-flex items-center gap-2 bg-white/20 text-teal-50 text-xs font-semibold px-3 py-1 rounded-full mb-3 backdrop-blur-xs">
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
@@ -487,6 +508,26 @@
               <span>ส่งรายงาน Telegram (Admin)</span>
             </button>
           </div>
+        </div>
+
+        <!-- MOBILE APP QUICK LAUNCHER (แสดงเฉพาะจอมือถือ) -->
+        <div class="grid grid-cols-4 gap-2 sm:hidden">
+          <button type="button" onclick="navigateTo('house-gps')" class="bg-white rounded-2xl p-2.5 border border-amber-200 shadow-xs flex flex-col items-center justify-center gap-1.5 active:scale-95 transition">
+            <span class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl">📍</span>
+            <span class="text-[11px] font-bold text-slate-800 leading-tight text-center">จับพิกัดบ้าน</span>
+          </button>
+          <button type="button" onclick="navigateTo('map')" class="bg-white rounded-2xl p-2.5 border border-teal-100 shadow-xs flex flex-col items-center justify-center gap-1.5 active:scale-95 transition">
+            <span class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-xl">🗺️</span>
+            <span class="text-[11px] font-bold text-slate-800 leading-tight text-center">แผนที่ผู้ป่วย</span>
+          </button>
+          <button type="button" onclick="openPublicEventModal()" class="bg-white rounded-2xl p-2.5 border border-rose-100 shadow-xs flex flex-col items-center justify-center gap-1.5 active:scale-95 transition">
+            <span class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl">🚨</span>
+            <span class="text-[11px] font-bold text-slate-800 leading-tight text-center">แจ้งเหตุ/โรค</span>
+          </button>
+          <a href="https://docs.google.com/spreadsheets/d/1iHRWKus950yhxL7DpU1p2jvY78s94-_ROzecrAGZ2tE/edit?gid=114043581#gid=114043581" target="_blank" rel="noopener noreferrer" class="bg-white rounded-2xl p-2.5 border border-emerald-100 shadow-xs flex flex-col items-center justify-center gap-1.5 active:scale-95 transition">
+            <span class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-xl">🧪</span>
+            <span class="text-[11px] font-bold text-slate-800 leading-tight text-center">ผลตรวจ NS1</span>
+          </a>
         </div>
 
         <!-- 6 KPI CARDS (INCLUDING MORBIDITY RATE PER 100K) -->
@@ -1783,45 +1824,44 @@
       <!-- ======================================================== -->
       <!-- VIEW 7: PUBLIC HOUSE GPS CAPTURE (จับพิกัดบ้าน Public)   -->
       <!-- ======================================================== -->
-      <section id="view-house-gps" class="view-panel hidden space-y-5">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-          <div>
-            <h2 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
-              <span>📍</span>
-              <span>จับพิกัดบ้าน (Public Dashboard)</span>
-            </h2>
-            <p class="text-xs text-slate-500 mt-0.5">ค้นหาบ้านที่มีในฐานข้อมูลเพื่ออัปเดตพิกัดให้ทุกคนในบ้าน หรือเพิ่มบ้านใหม่หากยังไม่มีในระบบ</p>
+      <section id="view-house-gps" class="view-panel hidden space-y-4 sm:space-y-5">
+        <div class="flex items-center justify-between gap-3 bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+          <div class="flex items-center gap-3 min-w-0">
+            <button type="button" onclick="navigateTo('dashboard')" class="w-10 h-10 shrink-0 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center active:scale-95 transition" title="กลับหน้าแรก">
+              ←
+            </button>
+            <div class="min-w-0">
+              <h2 class="text-base sm:text-lg font-extrabold text-slate-900 flex items-center gap-1.5 truncate">
+                <span>📍</span>
+                <span class="truncate">จับพิกัดบ้าน</span>
+              </h2>
+              <p class="text-[11px] sm:text-xs text-slate-500 truncate">ค้นหาบ้านเพื่ออัปเดตพิกัด หรือเพิ่มบ้านใหม่</p>
+            </div>
           </div>
-          <button type="button" onclick="navigateTo('dashboard')" class="self-start sm:self-auto px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition flex items-center gap-1.5">
-            <span>←</span>
-            <span>กลับหน้า Dashboard</span>
+          <button type="button" onclick="switchHouseGpsNewMode(false)" class="shrink-0 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold rounded-xl active:scale-95 transition">
+            ➕ บ้านใหม่
           </button>
         </div>
 
         <!-- Step 1: Search Existing House -->
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-              <span>🔍</span>
-              <span>1. ค้นหาบ้านที่มีในฐานข้อมูล</span>
-            </h3>
-            <button type="button" onclick="switchHouseGpsNewMode(true)" class="self-start sm:self-auto text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold px-3 py-1.5 rounded-xl transition">
-              ➕ เพิ่มบ้านใหม่ (เว้นว่างช่องอื่น)
-            </button>
-          </div>
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3.5">
+          <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <span>🔍</span>
+            <span>1. ค้นหาบ้านที่มีในฐานข้อมูล</span>
+          </h3>
 
-          <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-            <div class="sm:col-span-4">
+          <div class="grid grid-cols-2 sm:grid-cols-12 gap-2.5 sm:gap-3 items-end">
+            <div class="col-span-1 sm:col-span-4">
               <label class="block text-xs font-semibold text-slate-700 mb-1">บ้านเลขที่</label>
-              <input type="text" id="hg_searchHouseNo" onkeydown="if(event.key==='Enter'){event.preventDefault();searchHouseGpsDatabase();}" placeholder="เช่น 140 หรือ 164/1" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500">
+              <input type="text" id="hg_searchHouseNo" onkeydown="if(event.key==='Enter'){event.preventDefault();searchHouseGpsDatabase();}" placeholder="เช่น 140" class="w-full text-sm sm:text-xs px-3 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500">
             </div>
-            <div class="sm:col-span-2">
+            <div class="col-span-1 sm:col-span-2">
               <label class="block text-xs font-semibold text-slate-700 mb-1">หมู่ที่</label>
-              <input type="text" id="hg_searchVillageNo" onkeydown="if(event.key==='Enter'){event.preventDefault();searchHouseGpsDatabase();}" placeholder="เช่น 14" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500">
+              <input type="text" id="hg_searchVillageNo" inputmode="numeric" onkeydown="if(event.key==='Enter'){event.preventDefault();searchHouseGpsDatabase();}" placeholder="เช่น 14" class="w-full text-sm sm:text-xs px-3 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500">
             </div>
-            <div class="sm:col-span-3">
+            <div class="col-span-2 sm:col-span-3">
               <label class="block text-xs font-semibold text-slate-700 mb-1">ตำบล</label>
-              <select id="hg_searchSubdistrict" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500">
+              <select id="hg_searchSubdistrict" class="w-full text-sm sm:text-xs px-3 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500">
                 <option value="">-- ทุกตำบล --</option>
                 <option value="เทพา">ต.เทพา</option>
                 <option value="ปากบาง">ต.ปากบาง</option>
@@ -1833,31 +1873,47 @@
                 <option value="ตาแปด">ต.ตาแปด</option>
               </select>
             </div>
-            <div class="sm:col-span-3 flex gap-2">
-              <button type="button" onclick="searchHouseGpsDatabase()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-3 rounded-xl shadow-xs transition active:scale-95">
+            <div class="col-span-2 sm:col-span-3 flex gap-2">
+              <button type="button" onclick="searchHouseGpsDatabase()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm sm:text-xs font-bold py-3 sm:py-2.5 px-4 rounded-xl shadow-xs transition active:scale-95">
                 🔍 ค้นหาบ้าน
               </button>
-              <button type="button" onclick="clearHouseGpsSearch()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold py-2.5 px-3 rounded-xl transition">
+              <button type="button" onclick="clearHouseGpsSearch()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm sm:text-xs font-semibold py-3 sm:py-2.5 px-3.5 rounded-xl transition active:scale-95">
                 ล้าง
               </button>
             </div>
           </div>
 
-          <div id="hg_searchResultsBox" class="hidden space-y-2">
+          <div id="hg_searchResultsBox" class="hidden space-y-2 pt-1">
             <div class="flex items-center justify-between text-xs text-slate-500">
               <span id="hg_searchResultsSummary"></span>
             </div>
-            <div class="max-h-56 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100" id="hg_searchResultsList"></div>
+            <div class="max-h-64 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100" id="hg_searchResultsList"></div>
           </div>
         </div>
 
-        <!-- Step 2: Form & Interactive Map -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          <!-- Form -->
-          <div class="lg:col-span-5 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+        <!-- Step 2: Map (Top on Mobile) & Form -->
+        <div id="hg_formSection" class="flex flex-col lg:grid lg:grid-cols-12 gap-4 sm:gap-5">
+          <!-- Map (order-1 on mobile so user sees map & GPS first, order-2 on desktop) -->
+          <div class="order-1 lg:order-2 lg:col-span-7 bg-white p-3.5 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <span>🛰️</span>
+                <span>2. แผนที่ปักหมุดพิกัดบ้าน</span>
+              </h3>
+              <span class="text-[11px] text-slate-500">แตะบนแผนที่หรือลากหมุดเพื่อปรับตำแหน่งหลังคาบ้าน</span>
+            </div>
+            <div id="houseGpsMap" class="w-full h-64 sm:h-96 rounded-xl border border-slate-200 bg-slate-100 z-10"></div>
+            <button type="button" onclick="getHouseGpsCurrentLocation()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm font-bold py-3.5 px-4 rounded-xl shadow-md transition active:scale-95 flex items-center justify-center gap-2">
+              <span class="text-base">📡</span>
+              <span>จับพิกัด GPS ปัจจุบันจากอุปกรณ์</span>
+            </button>
+          </div>
+
+          <!-- Form (order-2 on mobile, order-1 on desktop) -->
+          <div class="order-2 lg:order-1 lg:col-span-5 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3.5">
             <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
               <span>📝</span>
-              <span>2. ข้อมูลบ้านและพิกัด GPS</span>
+              <span>3. ข้อมูลบ้านและบันทึกพิกัด</span>
             </h3>
 
             <div id="hg_modeBanner" class="p-3 rounded-xl border border-indigo-200 bg-indigo-50/70 text-xs text-indigo-900">
@@ -1867,18 +1923,18 @@
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">บ้านเลขที่ <span class="text-rose-500">*</span></label>
-                <input type="text" id="hg_houseNo" placeholder="เช่น 140 หรือ 164/1" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+                <input type="text" id="hg_houseNo" placeholder="เช่น 140 หรือ 164/1" class="w-full text-sm sm:text-xs px-3 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
               </div>
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">หมู่ที่ <span class="text-rose-500">*</span></label>
-                <input type="text" id="hg_villageNo" placeholder="เช่น 14" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+                <input type="text" id="hg_villageNo" inputmode="numeric" placeholder="เช่น 14" class="w-full text-sm sm:text-xs px-3 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
               </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block text-xs font-semibold text-slate-700 mb-1">ตำบล <span class="text-rose-500">*</span></label>
-                <select id="hg_subdistrict" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+                <select id="hg_subdistrict" class="w-full text-sm sm:text-xs px-3 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
                   <option value="">-- เลือกตำบล --</option>
                   <option value="เทพา">ต.เทพา</option>
                   <option value="ปากบาง">ต.ปากบาง</option>
@@ -1891,8 +1947,8 @@
                 </select>
               </div>
               <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">หน่วยบริการ (ไม่บังคับ)</label>
-                <select id="hg_hcode" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+                <label class="block text-xs font-semibold text-slate-700 mb-1">หน่วยบริการ (เว้นว่างได้)</label>
+                <select id="hg_hcode" class="w-full text-sm sm:text-xs px-3 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
                   <option value="">-- ไม่ระบุ / เว้นว่าง --</option>
                 </select>
               </div>
@@ -1900,43 +1956,24 @@
 
             <div>
               <label class="block text-xs font-semibold text-slate-700 mb-1">อสม.รับผิดชอบ (ไม่บังคับ — เว้นว่างได้)</label>
-              <input type="text" id="hg_osmName" placeholder="ระบุชื่อ อสม. หรือเว้นว่างไว้" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+              <input type="text" id="hg_osmName" placeholder="ระบุชื่อ อสม. หรือเว้นว่างไว้" class="w-full text-sm sm:text-xs px-3 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
             </div>
 
-            <div class="pt-2 border-t border-slate-100 space-y-3">
-              <button type="button" onclick="getHouseGpsCurrentLocation()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center gap-2">
-                <span>📡</span>
-                <span>จับพิกัด GPS ปัจจุบันจากอุปกรณ์</span>
-              </button>
-
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">ละติจูด (Lat) <span class="text-rose-500">*</span></label>
-                  <input type="text" id="hg_lat" oninput="syncHouseGpsMarkerFromInputs()" placeholder="6.820000" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono outline-none focus:border-teal-500">
-                </div>
-                <div>
-                  <label class="block text-xs font-semibold text-slate-700 mb-1">ลองจิจูด (Lng) <span class="text-rose-500">*</span></label>
-                  <input type="text" id="hg_lng" oninput="syncHouseGpsMarkerFromInputs()" placeholder="100.910000" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono outline-none focus:border-teal-500">
-                </div>
+            <div class="grid grid-cols-2 gap-3 pt-1">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ละติจูด (Lat) <span class="text-rose-500">*</span></label>
+                <input type="text" id="hg_lat" inputmode="decimal" oninput="syncHouseGpsMarkerFromInputs()" placeholder="6.820000" class="w-full text-sm sm:text-xs px-3 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono outline-none focus:border-teal-500">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ลองจิจูด (Lng) <span class="text-rose-500">*</span></label>
+                <input type="text" id="hg_lng" inputmode="decimal" oninput="syncHouseGpsMarkerFromInputs()" placeholder="100.910000" class="w-full text-sm sm:text-xs px-3 py-3 sm:py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono outline-none focus:border-teal-500">
               </div>
             </div>
 
-            <button type="button" onclick="saveHouseGpsRecord()" class="w-full bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold py-3 px-4 rounded-xl shadow-md transition active:scale-95 flex items-center justify-center gap-2">
+            <button type="button" onclick="saveHouseGpsRecord()" class="w-full bg-teal-600 hover:bg-teal-700 text-white text-base sm:text-sm font-bold py-3.5 px-4 rounded-xl shadow-md transition active:scale-95 flex items-center justify-center gap-2">
               <span>💾</span>
               <span>บันทึกพิกัดบ้าน</span>
             </button>
-          </div>
-
-          <!-- Map -->
-          <div class="lg:col-span-7 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-                <span>🛰️</span>
-                <span>แผนที่ปักหมุดพิกัดบ้าน</span>
-              </h3>
-              <span class="text-[11px] text-slate-500">คลิกบนแผนที่หรือลากหมุดสีแดงเพื่อปรับตำแหน่งหลังคาบ้าน</span>
-            </div>
-            <div id="houseGpsMap" class="w-full h-96 rounded-xl border border-slate-200 bg-slate-100 z-10"></div>
           </div>
         </div>
       </section>
@@ -1947,7 +1984,7 @@
   <!-- ============================================================== -->
   <!-- FOOTER                                                         -->
   <!-- ============================================================== -->
-  <footer class="bg-white border-t border-slate-200 py-4 px-4 text-center text-xs text-slate-600 mt-auto">
+  <footer class="bg-white border-t border-slate-200 py-4 pb-20 lg:pb-4 px-4 text-center text-xs text-slate-600 mt-auto">
     <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
       <p class="font-medium text-slate-700">@ 2026|ระบบสารสนเทศงานระบาดอำเภอเทพา จังหวัดสงขลา</p>
       <div class="flex items-center gap-3 text-slate-400 text-[11px]">
@@ -1957,6 +1994,34 @@
       </div>
     </div>
   </footer>
+
+  <!-- ============================================================== -->
+  <!-- MOBILE APP BOTTOM NAVIGATION BAR (lg:hidden)                   -->
+  <!-- ============================================================== -->
+  <nav id="mobileBottomNav" class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]" style="padding-bottom: env(safe-area-inset-bottom);">
+    <div class="grid grid-cols-5 items-center h-16 px-1">
+      <button type="button" onclick="navigateTo('dashboard')" id="bnav-dashboard" class="mobile-nav-item active-tab flex flex-col items-center justify-center gap-0.5 py-1 text-slate-500 active:scale-95 transition">
+        <span class="mnav-pill px-3 py-0.5 rounded-full text-lg leading-none transition">📊</span>
+        <span class="text-[10px] font-bold">ภาพรวม</span>
+      </button>
+      <button type="button" onclick="navigateTo('map')" id="bnav-map" class="mobile-nav-item flex flex-col items-center justify-center gap-0.5 py-1 text-slate-500 active:scale-95 transition">
+        <span class="mnav-pill px-3 py-0.5 rounded-full text-lg leading-none transition">🗺️</span>
+        <span class="text-[10px] font-bold">แผนที่</span>
+      </button>
+      <button type="button" onclick="navigateTo('house-gps')" id="bnav-house-gps" class="mobile-nav-item flex flex-col items-center justify-center gap-0.5 -mt-3 active:scale-95 transition">
+        <span class="mnav-pill w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md shadow-amber-500/30 flex items-center justify-center text-xl">📍</span>
+        <span class="text-[10px] font-extrabold text-slate-800">จับพิกัด</span>
+      </button>
+      <button type="button" onclick="openPublicEventModal()" id="bnav-event" class="mobile-nav-item flex flex-col items-center justify-center gap-0.5 py-1 text-slate-500 active:scale-95 transition">
+        <span class="mnav-pill px-3 py-0.5 rounded-full text-lg leading-none transition">🚨</span>
+        <span class="text-[10px] font-bold">แจ้งเหตุ</span>
+      </button>
+      <button type="button" onclick="toggleSidebar()" id="bnav-menu" class="mobile-nav-item flex flex-col items-center justify-center gap-0.5 py-1 text-slate-500 active:scale-95 transition">
+        <span class="mnav-pill px-3 py-0.5 rounded-full text-lg leading-none transition">☰</span>
+        <span class="text-[10px] font-bold">เมนู</span>
+      </button>
+    </div>
+  </nav>
 
   <!-- ============================================================== -->
   <!-- MODAL 1: LOGIN & REGISTRATION MODAL                            -->
@@ -4868,6 +4933,13 @@
         const activeBtn = document.getElementById(`menu-${viewId}`);
         if (activeBtn) {
           activeBtn.classList.add('bg-teal-50', 'text-teal-700', 'font-bold');
+        }
+
+        // Highlight mobile bottom navigation tab
+        document.querySelectorAll('.mobile-nav-item').forEach(btn => btn.classList.remove('active-tab'));
+        const activeBottomBtn = document.getElementById(`bnav-${viewId}`);
+        if (activeBottomBtn) {
+          activeBottomBtn.classList.add('active-tab');
         }
 
         // Invalidate map sizes if maps are in view
@@ -17787,6 +17859,10 @@ ${topHcText}${noteBlock}
       } else {
         document.getElementById('hg_lat').value = '';
         document.getElementById('hg_lng').value = '';
+      }
+
+      if (window.innerWidth < 1024) {
+        document.getElementById('hg_formSection')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
 
