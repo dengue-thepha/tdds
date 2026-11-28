@@ -1726,14 +1726,13 @@
                   <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 sticky top-0">
                     <tr>
                       <th class="px-3 py-2.5">ระยะทาง</th>
-                      <th class="px-3 py-2.5">บ้านเลขที่/หมู่</th>
-                      <th class="px-3 py-2.5">ชื่อ-สกุล</th>
-                      <th class="px-3 py-2.5">เพศ/อายุ</th>
+                      <th class="px-3 py-2.5">บ้านเลขที่</th>
+                      <th class="px-3 py-2.5">จำนวนหลังคาเรือน</th>
                       <th class="px-3 py-2.5">อสม.รับผิดชอบ</th>
                     </tr>
                   </thead>
                   <tbody id="personRadiusResultTbody" class="divide-y divide-slate-100">
-                    <tr><td colspan="5" class="px-4 py-8 text-center text-slate-400">กรุณาเลือกผู้ป่วยหรือระบุพิกัด แล้วกดปุ่มค้นหารัศมี 100 เมตร</td></tr>
+                    <tr><td colspan="4" class="px-4 py-8 text-center text-slate-400">กรุณาเลือกผู้ป่วยหรือระบุพิกัด แล้วกดปุ่มค้นหารัศมี 100 เมตร</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -16411,17 +16410,36 @@ ${topHcText}${noteBlock}
       if (tbody) {
         tbody.innerHTML = '';
         if (matches.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-slate-400">ไม่พบบ้าน/ประชากรในรัศมี ${radiusM} เมตร (ตรวจสอบว่านำเข้าข้อมูลตาราง person ของพื้นที่นี้แล้ว)</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-8 text-center text-slate-400">ไม่พบบ้าน/ประชากรในรัศมี ${radiusM} เมตร (ตรวจสอบว่านำเข้าข้อมูลตาราง person ของพื้นที่นี้แล้ว)</td></tr>`;
         } else {
-          matches.slice(0, 300).forEach(m => {
+          const houseMap = new Map();
+          matches.forEach(m => {
+            const key = `${m.house_no || '-'}_${m.village_no || '-'}_${m.subdistrict || '-'}`;
+            if (!houseMap.has(key)) {
+              houseMap.set(key, {
+                distance_m: m.distance_m,
+                house_no: m.house_no || '-',
+                village_no: m.village_no || '-',
+                subdistrict: m.subdistrict || '-',
+                peopleCount: 0,
+                osmNames: new Set()
+              });
+            }
+            const h = houseMap.get(key);
+            if (m.distance_m < h.distance_m) h.distance_m = m.distance_m;
+            h.peopleCount += 1;
+            if (m.osm_name) h.osmNames.add(m.osm_name);
+          });
+
+          Array.from(houseMap.values()).slice(0, 300).forEach(h => {
             const tr = document.createElement('tr');
             tr.className = 'hover:bg-slate-50';
+            const osmText = h.osmNames.size > 0 ? Array.from(h.osmNames).join(', ') : '-';
             tr.innerHTML = `
-              <td class="px-3 py-2 font-bold text-rose-700 whitespace-nowrap">${m.distance_m.toFixed(1)} ม.</td>
-              <td class="px-3 py-2 whitespace-nowrap">${m.house_no || '-'} ม.${m.village_no || '-'} ต.${m.subdistrict || '-'}</td>
-              <td class="px-3 py-2 font-semibold text-slate-800">${m.fullname || '-'}</td>
-              <td class="px-3 py-2 whitespace-nowrap">${m.gender || '-'} / ${m.age_year ?? '-'} ปี</td>
-              <td class="px-3 py-2">${m.osm_name || '-'}</td>
+              <td class="px-3 py-2 font-bold text-rose-700 whitespace-nowrap">${h.distance_m.toFixed(1)} ม.</td>
+              <td class="px-3 py-2 whitespace-nowrap font-semibold text-slate-800">${h.house_no} ม.${h.village_no} ต.${h.subdistrict}</td>
+              <td class="px-3 py-2 whitespace-nowrap text-slate-700">${h.peopleCount.toLocaleString()} คน</td>
+              <td class="px-3 py-2">${osmText}</td>
             `;
             tbody.appendChild(tr);
           });
