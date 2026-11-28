@@ -1461,6 +1461,10 @@
               </p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
+              <button type="button" onclick="exportEventRegistryExcel()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition active:scale-95 flex items-center gap-1.5">
+                <span>📥</span>
+                <span>ส่งออก Excel</span>
+              </button>
               <button type="button" onclick="openEventAnalysisModal()" class="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition active:scale-95 flex items-center gap-1.5">
                 <span>📊</span>
                 <span>วิเคราะห์สรุปเหตุการณ์</span>
@@ -1499,8 +1503,8 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-4 gap-2">
-            <input type="text" id="evtSearchInput" oninput="renderEventRegistryView()" placeholder="🔍 ค้นหา ID, ชื่อผู้แจ้ง, ผู้ป่วย, โรค/อาการ, ตำบล..." class="sm:col-span-2 text-xs bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-700 outline-none focus:border-cyan-500">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
+            <input type="text" id="evtSearchInput" oninput="renderEventRegistryView()" placeholder="🔍 ค้นหา ID, ชื่อผู้แจ้ง, ผู้ป่วย, โรค/อาการ..." class="sm:col-span-2 text-xs bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-700 outline-none focus:border-cyan-500">
             <select id="evtStatusFilter" onchange="renderEventRegistryView()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-cyan-500 font-medium">
               <option value="all">📋 สถานะทั้งหมด</option>
               <option value="pending">⏳ รอตรวจสอบ</option>
@@ -1509,7 +1513,7 @@
               <option value="confirmed">🚨 ยืนยันการเกิดเหตุการณ์จริง</option>
               <option value="closed">✅ ปิดเหตุการณ์ / ไม่พบเหตุ</option>
             </select>
-            <select id="evtSubdistrictFilter" onchange="renderEventRegistryView()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-cyan-500 font-medium">
+            <select id="evtSubdistrictFilter" onchange="onEvtSubdistrictFilterChange()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-cyan-500 font-medium">
               <option value="all">📍 ทุกตำบล (อ.เทพา)</option>
               <option value="เทพา">ต.เทพา</option>
               <option value="ปากบาง">ต.ปากบาง</option>
@@ -1518,6 +1522,13 @@
               <option value="ท่าม่วง">ต.ท่าม่วง</option>
               <option value="วังใหญ่">ต.วังใหญ่</option>
               <option value="สะกอม">ต.สะกอม</option>
+              <option value="ตาแปด">ต.ตาแปด</option>
+            </select>
+            <select id="evtVillageFilter" onchange="renderEventRegistryView()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-cyan-500 font-medium">
+              <option value="all">🏘️ ทุกหมู่บ้าน</option>
+            </select>
+            <select id="evtHealthCenterFilter" onchange="renderEventRegistryView()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-cyan-500 font-medium">
+              <option value="all">🏥 ทุกสถานพยาบาล</option>
             </select>
           </div>
         </div>
@@ -12827,6 +12838,10 @@ https://dengue-thepha.github.io/tdds/`;
 
     function openPublicEventModal() {
       if (typeof toggleSidebar === 'function') toggleSidebar(false);
+      if (currentUser && currentUser.role === 'admin') {
+        navigateTo('event-registry');
+        return;
+      }
       document.getElementById('publicEventForm')?.reset();
       const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ''; };
       setVal('pe_event_code', generateNextEventCode());
@@ -13120,11 +13135,111 @@ https://dengue-thepha.github.io/tdds/`;
       });
     }
 
+    let lastFilteredEventReports = [];
+
+    function syncEventRegistryFilterOptions(list) {
+      const hcSel = document.getElementById('evtHealthCenterFilter');
+      if (hcSel && hcSel.options.length <= 1 && typeof HEALTH_CENTERS_MASTER !== 'undefined') {
+        HEALTH_CENTERS_MASTER.forEach(h => {
+          const opt = document.createElement('option');
+          opt.value = h.hcode;
+          opt.textContent = `🏥 ${h.name}`;
+          hcSel.appendChild(opt);
+        });
+      }
+
+      const vSel = document.getElementById('evtVillageFilter');
+      if (vSel) {
+        const currentV = vSel.value || 'all';
+        const subFilter = document.getElementById('evtSubdistrictFilter')?.value || 'all';
+        const villages = new Set();
+        (list || []).forEach(ev => {
+          if (subFilter !== 'all' && normalizeThaiStr(stripSubdistrictPrefix(ev.subdistrict || '')) !== normalizeThaiStr(subFilter)) return;
+          const v = String(ev.villageNo || '').trim();
+          if (v) villages.add(v);
+        });
+        const sortedV = Array.from(villages).sort((a, b) => (parseInt(a, 10) || 999) - (parseInt(b, 10) || 999) || a.localeCompare(b, 'th'));
+        vSel.innerHTML = '<option value="all">🏘️ ทุกหมู่บ้าน</option>';
+        sortedV.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v;
+          opt.textContent = `หมู่ที่ ${v}`;
+          vSel.appendChild(opt);
+        });
+        if (sortedV.includes(currentV)) {
+          vSel.value = currentV;
+        } else {
+          vSel.value = 'all';
+        }
+      }
+    }
+
+    function onEvtSubdistrictFilterChange() {
+      const vSel = document.getElementById('evtVillageFilter');
+      if (vSel) vSel.value = 'all';
+      renderEventRegistryView();
+    }
+
+    function exportEventRegistryExcel() {
+      const rows = (lastFilteredEventReports && lastFilteredEventReports.length > 0)
+        ? lastFilteredEventReports
+        : (Array.isArray(eventReportsData) ? eventReportsData : []);
+      if (rows.length === 0) {
+        Swal.fire({ icon: 'info', title: 'ไม่มีข้อมูลสำหรับส่งออก', text: 'ไม่พบรายการทะเบียนรายงานเหตุการณ์ตามตัวกรองที่เลือก' });
+        return;
+      }
+
+      const exportData = rows.map((ev, idx) => ({
+        'ลำดับ': idx + 1,
+        'รหัสเหตุการณ์': ev.eventCode || '-',
+        'วันที่รับแจ้ง': formatBEDateOnlySlash(ev.reportDate) || '-',
+        'เวลาที่รับแจ้ง': ev.receiveTime || '-',
+        'แหล่งที่มา': ev.sourceRole === 'admin' ? 'Admin' : 'ประชาชน',
+        'ประเภทข่าว': ev.newsType || '-',
+        'ผู้แจ้งเหตุ/ข้อมูลติดต่อ': ev.reporterInfo || '-',
+        'ชื่อผู้ป่วย': ev.patientName || '-',
+        'อายุ (ปี)': ev.patientAge ?? '',
+        'โรค/ชื่อเหตุการณ์': ev.diseaseName || '-',
+        'อาการสำคัญ/รายละเอียด': ev.symptomsEvent || '-',
+        'ตำบล': ev.subdistrict ? stripSubdistrictPrefix(ev.subdistrict) : '-',
+        'หมู่ที่': ev.villageNo || '-',
+        'สถานพยาบาลรับผิดชอบ': ev.healthCenter || '-',
+        'สถานะ/ยืนยันการเกิด': ev.confirmOccurrence || (ev.status || 'pending'),
+        'จำนวนป่วย': Number(ev.verifiedCases || 0),
+        'จำนวนตาย': Number(ev.verifiedDeaths || 0),
+        'จำนวนสงสัย': Number(ev.verifiedSuspects || 0),
+        'นำเรียนพื้นที่': ev.escalatedAt ? (ev.escalatedToUnit || ev.healthCenter || 'นำเรียนแล้ว') : 'ยังไม่นำเรียน',
+        'วันเวลานำเรียน': ev.escalatedAt ? formatControlDateTimeBE(ev.escalatedAt) : '-'
+      }));
+
+      const filename = `event_registry_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      if (typeof XLSX !== 'undefined') {
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'ทะเบียนรายงานเหตุการณ์');
+        XLSX.writeFile(wb, filename);
+      } else {
+        const headers = Object.keys(exportData[0]);
+        const csvLines = [headers.join(',')];
+        exportData.forEach(r => {
+          csvLines.push(headers.map(h => `"${String(r[h] ?? '').replace(/"/g, '""')}"`).join(','));
+        });
+        const blob = new Blob(['\uFEFF' + csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename.replace(/\.xlsx$/, '.csv');
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    }
+
     function renderEventRegistryView() {
       const tbody = document.getElementById('eventRegistryTbody');
       if (!tbody) return;
 
       const list = Array.isArray(eventReportsData) ? eventReportsData : [];
+      syncEventRegistryFilterOptions(list);
       let pending = 0, confirmed = 0, escalated = 0;
       let sumCases = 0, sumDeaths = 0, sumSuspects = 0;
 
@@ -13148,6 +13263,9 @@ https://dengue-thepha.github.io/tdds/`;
       const q = normalizeThaiStr(document.getElementById('evtSearchInput')?.value || '').toLowerCase();
       const statusFilter = document.getElementById('evtStatusFilter')?.value || 'all';
       const subFilter = document.getElementById('evtSubdistrictFilter')?.value || 'all';
+      const villageFilter = document.getElementById('evtVillageFilter')?.value || 'all';
+      const hcFilter = document.getElementById('evtHealthCenterFilter')?.value || 'all';
+      const hcFilterName = hcFilter !== 'all' ? normalizeThaiStr(getHNameByCode(hcFilter) || '') : '';
 
       const filtered = list.filter(ev => {
         if (statusFilter === 'pending' && ev.status && ev.status !== 'pending') return false;
@@ -13155,13 +13273,20 @@ https://dengue-thepha.github.io/tdds/`;
         if (statusFilter === 'escalated' && !ev.escalatedAt && ev.status !== 'escalated') return false;
         if (statusFilter === 'confirmed' && ev.confirmOccurrence !== 'ยืนยันการเกิดเหตุการณ์จริง') return false;
         if (statusFilter === 'closed' && ev.status !== 'closed' && ev.confirmOccurrence !== 'ไม่พบเหตุการณ์/ข่าวลือ') return false;
-        if (subFilter !== 'all' && normalizeThaiStr(ev.subdistrict) !== normalizeThaiStr(subFilter)) return false;
+        if (subFilter !== 'all' && normalizeThaiStr(stripSubdistrictPrefix(ev.subdistrict || '')) !== normalizeThaiStr(subFilter)) return false;
+        if (villageFilter !== 'all' && String(ev.villageNo || '').trim() !== villageFilter) return false;
+        if (hcFilter !== 'all') {
+          const evHcName = normalizeThaiStr(ev.healthCenter || '');
+          const evHcCode = getHCodeByName(ev.healthCenter || '');
+          if (evHcCode !== hcFilter && evHcName !== hcFilterName) return false;
+        }
         if (q) {
           const hay = `${ev.eventCode || ''} ${ev.reporterInfo || ''} ${ev.patientName || ''} ${ev.symptomsEvent || ''} ${ev.diseaseName || ''} ${ev.subdistrict || ''} ${ev.healthCenter || ''}`.toLowerCase();
           if (!hay.includes(q)) return false;
         }
         return true;
       });
+      lastFilteredEventReports = filtered;
 
       tbody.innerHTML = '';
       if (filtered.length === 0) {
