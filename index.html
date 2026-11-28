@@ -304,6 +304,12 @@
             <span>แผนที่พิกัดบ้านผู้ป่วย</span>
           </button>
 
+          <!-- Menu: Public House GPS Capture -->
+          <button onclick="navigateTo('house-gps')" id="menu-house-gps" class="sidebar-menu-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-700 hover:text-indigo-700 hover:bg-indigo-50/70 transition">
+            <span class="w-5 text-center text-base">📍</span>
+            <span>จับพิกัดบ้าน</span>
+          </button>
+
           <!-- Menu: Public Event & Disease Report (Hidden in Sidebar for Clean Dashboard) -->
           <button onclick="openPublicEventModal()" id="menu-event-report" class="sidebar-menu-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-700 hover:text-rose-700 hover:bg-rose-50/70 transition">
             <span class="w-5 text-center text-base">🚨</span>
@@ -461,6 +467,11 @@
             <button onclick="refreshData()" class="text-xs bg-white text-teal-800 hover:bg-teal-50 font-bold px-3.5 py-2 rounded-xl shadow-sm transition active:scale-95 flex items-center gap-1.5">
               <span>🔄</span>
               <span>อัปเดตข้อมูล</span>
+            </button>
+
+            <button onclick="navigateTo('house-gps')" class="text-xs bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-3.5 py-2 rounded-xl shadow-sm transition active:scale-95 flex items-center gap-1.5" title="ค้นหาบ้านหรือจับพิกัด GPS บ้านใหม่">
+              <span>📍</span>
+              <span>จับพิกัดบ้าน</span>
             </button>
 
             <!-- Daily Auto-Report Status Badge (ADMIN ONLY) -->
@@ -1767,6 +1778,167 @@
           </div>
         </div>
 
+      </section>
+
+      <!-- ======================================================== -->
+      <!-- VIEW 7: PUBLIC HOUSE GPS CAPTURE (จับพิกัดบ้าน Public)   -->
+      <!-- ======================================================== -->
+      <section id="view-house-gps" class="view-panel hidden space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+          <div>
+            <h2 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+              <span>📍</span>
+              <span>จับพิกัดบ้าน (Public Dashboard)</span>
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">ค้นหาบ้านที่มีในฐานข้อมูลเพื่ออัปเดตพิกัดให้ทุกคนในบ้าน หรือเพิ่มบ้านใหม่หากยังไม่มีในระบบ</p>
+          </div>
+          <button type="button" onclick="navigateTo('dashboard')" class="self-start sm:self-auto px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition flex items-center gap-1.5">
+            <span>←</span>
+            <span>กลับหน้า Dashboard</span>
+          </button>
+        </div>
+
+        <!-- Step 1: Search Existing House -->
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <span>🔍</span>
+              <span>1. ค้นหาบ้านที่มีในฐานข้อมูล</span>
+            </h3>
+            <button type="button" onclick="switchHouseGpsNewMode(true)" class="self-start sm:self-auto text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold px-3 py-1.5 rounded-xl transition">
+              ➕ เพิ่มบ้านใหม่ (เว้นว่างช่องอื่น)
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+            <div class="sm:col-span-4">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">บ้านเลขที่</label>
+              <input type="text" id="hg_searchHouseNo" onkeydown="if(event.key==='Enter'){event.preventDefault();searchHouseGpsDatabase();}" placeholder="เช่น 140 หรือ 164/1" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">หมู่ที่</label>
+              <input type="text" id="hg_searchVillageNo" onkeydown="if(event.key==='Enter'){event.preventDefault();searchHouseGpsDatabase();}" placeholder="เช่น 14" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500">
+            </div>
+            <div class="sm:col-span-3">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">ตำบล</label>
+              <select id="hg_searchSubdistrict" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-indigo-500">
+                <option value="">-- ทุกตำบล --</option>
+                <option value="เทพา">ต.เทพา</option>
+                <option value="ปากบาง">ต.ปากบาง</option>
+                <option value="เกาะสะบ้า">ต.เกาะสะบ้า</option>
+                <option value="ลำไพล">ต.ลำไพล</option>
+                <option value="ท่าม่วง">ต.ท่าม่วง</option>
+                <option value="วังใหญ่">ต.วังใหญ่</option>
+                <option value="สะกอม">ต.สะกอม</option>
+                <option value="ตาแปด">ต.ตาแปด</option>
+              </select>
+            </div>
+            <div class="sm:col-span-3 flex gap-2">
+              <button type="button" onclick="searchHouseGpsDatabase()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-3 rounded-xl shadow-xs transition active:scale-95">
+                🔍 ค้นหาบ้าน
+              </button>
+              <button type="button" onclick="clearHouseGpsSearch()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold py-2.5 px-3 rounded-xl transition">
+                ล้าง
+              </button>
+            </div>
+          </div>
+
+          <div id="hg_searchResultsBox" class="hidden space-y-2">
+            <div class="flex items-center justify-between text-xs text-slate-500">
+              <span id="hg_searchResultsSummary"></span>
+            </div>
+            <div class="max-h-56 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100" id="hg_searchResultsList"></div>
+          </div>
+        </div>
+
+        <!-- Step 2: Form & Interactive Map -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          <!-- Form -->
+          <div class="lg:col-span-5 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <span>📝</span>
+              <span>2. ข้อมูลบ้านและพิกัด GPS</span>
+            </h3>
+
+            <div id="hg_modeBanner" class="p-3 rounded-xl border border-indigo-200 bg-indigo-50/70 text-xs text-indigo-900">
+              ➕ <b>โหมดเพิ่มบ้านใหม่:</b> ค้นหาบ้านด้านบนเพื่ออัปเดตพิกัดเดิม หรือกรอกบ้านเลขที่ใหม่และจับพิกัดได้ทันที (ช่องอื่นเว้นว่างได้)
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">บ้านเลขที่ <span class="text-rose-500">*</span></label>
+                <input type="text" id="hg_houseNo" placeholder="เช่น 140 หรือ 164/1" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">หมู่ที่ <span class="text-rose-500">*</span></label>
+                <input type="text" id="hg_villageNo" placeholder="เช่น 14" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">ตำบล <span class="text-rose-500">*</span></label>
+                <select id="hg_subdistrict" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+                  <option value="">-- เลือกตำบล --</option>
+                  <option value="เทพา">ต.เทพา</option>
+                  <option value="ปากบาง">ต.ปากบาง</option>
+                  <option value="เกาะสะบ้า">ต.เกาะสะบ้า</option>
+                  <option value="ลำไพล">ต.ลำไพล</option>
+                  <option value="ท่าม่วง">ต.ท่าม่วง</option>
+                  <option value="วังใหญ่">ต.วังใหญ่</option>
+                  <option value="สะกอม">ต.สะกอม</option>
+                  <option value="ตาแปด">ต.ตาแปด</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">หน่วยบริการ (ไม่บังคับ)</label>
+                <select id="hg_hcode" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+                  <option value="">-- ไม่ระบุ / เว้นว่าง --</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">อสม.รับผิดชอบ (ไม่บังคับ — เว้นว่างได้)</label>
+              <input type="text" id="hg_osmName" placeholder="ระบุชื่อ อสม. หรือเว้นว่างไว้" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-teal-500">
+            </div>
+
+            <div class="pt-2 border-t border-slate-100 space-y-3">
+              <button type="button" onclick="getHouseGpsCurrentLocation()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-sm transition active:scale-95 flex items-center justify-center gap-2">
+                <span>📡</span>
+                <span>จับพิกัด GPS ปัจจุบันจากอุปกรณ์</span>
+              </button>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">ละติจูด (Lat) <span class="text-rose-500">*</span></label>
+                  <input type="text" id="hg_lat" oninput="syncHouseGpsMarkerFromInputs()" placeholder="6.820000" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono outline-none focus:border-teal-500">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">ลองจิจูด (Lng) <span class="text-rose-500">*</span></label>
+                  <input type="text" id="hg_lng" oninput="syncHouseGpsMarkerFromInputs()" placeholder="100.910000" class="w-full text-xs px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono outline-none focus:border-teal-500">
+                </div>
+              </div>
+            </div>
+
+            <button type="button" onclick="saveHouseGpsRecord()" class="w-full bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold py-3 px-4 rounded-xl shadow-md transition active:scale-95 flex items-center justify-center gap-2">
+              <span>💾</span>
+              <span>บันทึกพิกัดบ้าน</span>
+            </button>
+          </div>
+
+          <!-- Map -->
+          <div class="lg:col-span-7 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <span>🛰️</span>
+                <span>แผนที่ปักหมุดพิกัดบ้าน</span>
+              </h3>
+              <span class="text-[11px] text-slate-500">คลิกบนแผนที่หรือลากหมุดสีแดงเพื่อปรับตำแหน่งหลังคาบ้าน</span>
+            </div>
+            <div id="houseGpsMap" class="w-full h-96 rounded-xl border border-slate-200 bg-slate-100 z-10"></div>
+          </div>
+        </div>
       </section>
 
     </main>
@@ -4711,6 +4883,8 @@
           if (typeof renderEventRegistryView === 'function') renderEventRegistryView();
         } else if (viewId === 'person-import' || viewId === 'radius-search') {
           initPersonView(viewId === 'radius-search');
+        } else if (viewId === 'house-gps') {
+          if (typeof initHouseGpsView === 'function') initHouseGpsView();
         }
 
         toggleSidebar(false); // Close mobile sidebar if open
@@ -17325,6 +17499,524 @@ ${topHcText}${noteBlock}
         hideLoading();
       }
     });
+
+    // =========================================================================
+    // PUBLIC HOUSE GPS CAPTURE (จับพิกัดบ้านหน้าแรก Public Dashboard)
+    // =========================================================================
+    let houseGpsMapInstance = null;
+    let houseGpsMarker = null;
+    let hgCurrentHouseGroups = [];
+    let hgSelectedGroup = null;
+
+    function initHouseGpsView() {
+      const hcodeSel = document.getElementById('hg_hcode');
+      if (hcodeSel && hcodeSel.options.length <= 1 && typeof HEALTH_CENTERS_MASTER !== 'undefined') {
+        HEALTH_CENTERS_MASTER.forEach(h => {
+          const opt = document.createElement('option');
+          opt.value = h.hcode;
+          opt.textContent = `${h.name} (${h.hcode})`;
+          hcodeSel.appendChild(opt);
+        });
+      }
+
+      const mapEl = document.getElementById('houseGpsMap');
+      if (mapEl && typeof L !== 'undefined') {
+        if (!houseGpsMapInstance) {
+          const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            maxZoom: 21, maxNativeZoom: 20, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '© Google Maps Satellite | TDDS Thepha'
+          });
+          const googleRoadmap = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            maxZoom: 21, maxNativeZoom: 20, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '© Google Maps | TDDS Thepha'
+          });
+          houseGpsMapInstance = L.map('houseGpsMap', {
+            center: [6.8200, 100.9100],
+            zoom: 13,
+            layers: [googleHybrid]
+          });
+          L.control.layers({
+            '🛰️ ภาพถ่ายดาวเทียม (Satellite)': googleHybrid,
+            '🗺️ แผนที่ปกติ (Roadmap)': googleRoadmap
+          }, null, { position: 'topright' }).addTo(houseGpsMapInstance);
+
+          houseGpsMapInstance.on('click', function(e) {
+            setHouseGpsPin(e.latlng.lat, e.latlng.lng, false);
+          });
+        }
+        setTimeout(() => {
+          houseGpsMapInstance.invalidateSize();
+        }, 250);
+      }
+    }
+
+    function setHouseGpsPin(lat, lng, pan = true) {
+      if (isNaN(lat) || isNaN(lng)) return;
+      const latEl = document.getElementById('hg_lat');
+      const lngEl = document.getElementById('hg_lng');
+      if (latEl) latEl.value = Number(lat).toFixed(6);
+      if (lngEl) lngEl.value = Number(lng).toFixed(6);
+
+      if (!houseGpsMapInstance || typeof L === 'undefined') return;
+      if (!houseGpsMarker) {
+        houseGpsMarker = L.marker([lat, lng], { draggable: true }).addTo(houseGpsMapInstance);
+        houseGpsMarker.on('dragend', function(ev) {
+          const pos = ev.target.getLatLng();
+          if (latEl) latEl.value = pos.lat.toFixed(6);
+          if (lngEl) lngEl.value = pos.lng.toFixed(6);
+        });
+      } else {
+        houseGpsMarker.setLatLng([lat, lng]);
+      }
+      if (pan) {
+        houseGpsMapInstance.setView([lat, lng], 19);
+      }
+    }
+
+    function syncHouseGpsMarkerFromInputs() {
+      const lat = parseFloat(document.getElementById('hg_lat')?.value);
+      const lng = parseFloat(document.getElementById('hg_lng')?.value);
+      if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        if (houseGpsMapInstance && typeof L !== 'undefined') {
+          if (!houseGpsMarker) {
+            setHouseGpsPin(lat, lng, true);
+          } else {
+            houseGpsMarker.setLatLng([lat, lng]);
+            houseGpsMapInstance.panTo([lat, lng]);
+          }
+        }
+      }
+    }
+
+    function getHouseGpsCurrentLocation() {
+      if (!navigator.geolocation) {
+        Swal.fire({ icon: 'warning', title: 'เบราว์เซอร์ไม่รองรับ GPS' });
+        return;
+      }
+      showLoading('กำลังค้นหาพิกัด GPS จากอุปกรณ์...');
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          hideLoading();
+          setHouseGpsPin(pos.coords.latitude, pos.coords.longitude, true);
+          Swal.fire({
+            icon: 'success',
+            title: 'จับพิกัด GPS สำเร็จ',
+            text: `Lat: ${pos.coords.latitude.toFixed(6)}, Lng: ${pos.coords.longitude.toFixed(6)}`,
+            timer: 1500,
+            showConfirmButton: false
+          });
+        },
+        (err) => {
+          hideLoading();
+          Swal.fire({
+            icon: 'warning',
+            title: 'ไม่สามารถดึง GPS อัตโนมัติได้',
+            text: 'กรุณาเปิดสิทธิ์ Location บนอุปกรณ์ หรือคลิกเลือกตำแหน่งบนแผนที่โดยตรง'
+          });
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+
+    function normalizeHouseNoKey(val) {
+      return normalizeThaiStr(val || '').replace(/^(บ้านเลขที่|เลขที่)\s*/g, '').replace(/\s+/g, '').toLowerCase();
+    }
+
+    function buildHouseGroupsFromRows(rows) {
+      const map = new Map();
+      rows.forEach(r => {
+        const hNo = normalizeThaiStr(r.house_no || '');
+        const vNo = normalizeThaiStr(r.village_no || '');
+        const sub = normalizeThaiStr(r.subdistrict || '');
+        if (!hNo && !vNo && !sub) return;
+        const key = `${normalizeHouseNoKey(hNo)}|${vNo}|${sub}`;
+        if (!map.has(key)) {
+          map.set(key, {
+            key,
+            house_no: hNo,
+            village_no: vNo,
+            subdistrict: sub,
+            pcucodeperson: String(r.pcucodeperson || '').trim(),
+            lat: r.lat != null && r.lat !== '' ? Number(r.lat) : null,
+            lng: r.lng != null && r.lng !== '' ? Number(r.lng) : null,
+            osmNames: new Set(),
+            members: []
+          });
+        }
+        const g = map.get(key);
+        g.members.push(r);
+        if ((g.lat === null || isNaN(g.lat)) && r.lat != null && r.lat !== '') g.lat = Number(r.lat);
+        if ((g.lng === null || isNaN(g.lng)) && r.lng != null && r.lng !== '') g.lng = Number(r.lng);
+        if (!g.pcucodeperson && r.pcucodeperson) g.pcucodeperson = String(r.pcucodeperson).trim();
+        if (r.osm_name) g.osmNames.add(normalizeThaiStr(r.osm_name));
+      });
+      return Array.from(map.values());
+    }
+
+    async function searchHouseGpsDatabase() {
+      const qHouse = normalizeThaiStr(document.getElementById('hg_searchHouseNo')?.value || '');
+      const qVillage = normalizeThaiStr(document.getElementById('hg_searchVillageNo')?.value || '');
+      const qSub = normalizeThaiStr(document.getElementById('hg_searchSubdistrict')?.value || '');
+
+      if (!qHouse && !qVillage && !qSub) {
+        Swal.fire({ icon: 'info', title: 'กรุณาระบุคำค้นหา', text: 'กรอกบ้านเลขที่ หมู่ที่ หรือเลือกตำบลอย่างน้อย 1 ช่อง' });
+        return;
+      }
+
+      const normQHouse = normalizeHouseNoKey(qHouse);
+      let matchedRows = (personsData || []).filter(p => {
+        if (normQHouse && !normalizeHouseNoKey(p.house_no).includes(normQHouse)) return false;
+        if (qVillage && normalizeThaiStr(p.village_no || '') !== qVillage) return false;
+        if (qSub && normalizeThaiStr(p.subdistrict || '') !== qSub) return false;
+        return true;
+      });
+
+      // Query Supabase directly as well (in case local cache isn't complete)
+      const cfg = typeof getSupabasePersonConfig === 'function' ? getSupabasePersonConfig() : null;
+      if (cfg && cfg.url && cfg.key) {
+        try {
+          const params = ['select=id,pcucodeperson,pid,house_no,village_no,subdistrict,district,province,lat,lng,osm_name'];
+          if (qHouse) params.push(`house_no=ilike.${encodeURIComponent('*' + qHouse.replace(/^(บ้านเลขที่|เลขที่)\s*/g, '').trim() + '*')}`);
+          if (qVillage) params.push(`village_no=eq.${encodeURIComponent(qVillage)}`);
+          if (qSub) params.push(`subdistrict=eq.${encodeURIComponent(qSub)}`);
+          params.push('limit=500');
+          const res = await fetch(`${cfg.url}/rest/v1/person?${params.join('&')}`, {
+            headers: buildSupabaseHeaders(cfg.key)
+          });
+          if (res.ok) {
+            const sbRows = await res.json();
+            if (Array.isArray(sbRows) && sbRows.length > 0) {
+              const seenUid = new Set(matchedRows.map(r => `${r.pcucodeperson}_${r.pid}`));
+              sbRows.forEach(r => {
+                const uid = `${r.pcucodeperson || ''}_${r.pid || r.id}`;
+                if (!seenUid.has(uid)) {
+                  seenUid.add(uid);
+                  matchedRows.push({
+                    uid,
+                    pcucodeperson: String(r.pcucodeperson || '').trim(),
+                    pid: String(r.pid || '').trim(),
+                    house_no: normalizeThaiStr(r.house_no || ''),
+                    village_no: normalizeThaiStr(r.village_no || ''),
+                    subdistrict: normalizeThaiStr(r.subdistrict || ''),
+                    lat: r.lat != null ? Number(r.lat) : null,
+                    lng: r.lng != null ? Number(r.lng) : null,
+                    osm_name: normalizeThaiStr(r.osm_name || ''),
+                    _rawHouseNo: r.house_no,
+                    _rawVillageNo: r.village_no,
+                    _rawSubdistrict: r.subdistrict
+                  });
+                }
+              });
+            }
+          }
+        } catch (e) {
+          console.warn('[TDDS] searchHouseGpsDatabase Supabase error:', e);
+        }
+      }
+
+      hgCurrentHouseGroups = buildHouseGroupsFromRows(matchedRows);
+      const box = document.getElementById('hg_searchResultsBox');
+      const sumEl = document.getElementById('hg_searchResultsSummary');
+      const listEl = document.getElementById('hg_searchResultsList');
+      if (!box || !listEl) return;
+
+      box.classList.remove('hidden');
+      if (hgCurrentHouseGroups.length === 0) {
+        if (sumEl) sumEl.innerHTML = 'ไม่พบบ้านในฐานข้อมูล';
+        listEl.innerHTML = `
+          <div class="p-4 text-center space-y-2">
+            <div class="text-xs text-slate-500">ไม่พบบ้านเลขที่ตรงกับเงื่อนไขในฐานข้อมูล</div>
+            <button type="button" onclick="switchHouseGpsNewMode(true)" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition">
+              ➕ เพิ่มบ้านใหม่ (${qHouse || '-'} ม.${qVillage || '-'} ต.${qSub || '-'})
+            </button>
+          </div>`;
+        return;
+      }
+
+      if (sumEl) sumEl.innerHTML = `พบ <b class="text-indigo-700">${hgCurrentHouseGroups.length.toLocaleString()} หลังคาเรือน</b> (คลิกเลือกบ้านเพื่อจับ/อัปเดตพิกัด)`;
+      listEl.innerHTML = hgCurrentHouseGroups.slice(0, 100).map((g, idx) => {
+        const hasCoord = g.lat !== null && g.lng !== null && !isNaN(g.lat) && !isNaN(g.lng);
+        const hName = g.pcucodeperson ? (getHNameByCode(g.pcucodeperson) || g.pcucodeperson) : '-';
+        const osmTxt = g.osmNames.size > 0 ? Array.from(g.osmNames).join(', ') : '-';
+        return `
+          <button type="button" onclick="selectHouseGpsGroup(${idx})" class="w-full text-left px-3.5 py-2.5 hover:bg-indigo-50/70 transition flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div class="space-y-0.5">
+              <div class="text-xs font-bold text-slate-900">
+                🏡 บ้านเลขที่ ${g.house_no || '-'} ม.${g.village_no || '-'} ต.${g.subdistrict || '-'}
+                <span class="ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700">สมาชิก ${g.members.length} คน</span>
+              </div>
+              <div class="text-[11px] text-slate-500">หน่วยบริการ: ${hName} • อสม.: ${osmTxt}</div>
+            </div>
+            <div class="shrink-0">
+              ${hasCoord
+                ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-mono font-semibold">✅ ${g.lat.toFixed(5)}, ${g.lng.toFixed(5)}</span>`
+                : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-semibold">⚠️ ยังไม่มีพิกัด</span>`}
+            </div>
+          </button>`;
+      }).join('');
+    }
+
+    function clearHouseGpsSearch() {
+      ['hg_searchHouseNo', 'hg_searchVillageNo', 'hg_searchSubdistrict'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      document.getElementById('hg_searchResultsBox')?.classList.add('hidden');
+      hgCurrentHouseGroups = [];
+    }
+
+    function selectHouseGpsGroup(idx) {
+      const g = hgCurrentHouseGroups[idx];
+      if (!g) return;
+      hgSelectedGroup = g;
+
+      document.getElementById('hg_houseNo').value = g.house_no || '';
+      document.getElementById('hg_villageNo').value = g.village_no || '';
+      document.getElementById('hg_subdistrict').value = g.subdistrict || '';
+      document.getElementById('hg_hcode').value = g.pcucodeperson || '';
+      document.getElementById('hg_osmName').value = g.osmNames.size > 0 ? Array.from(g.osmNames).join(', ') : '';
+
+      const banner = document.getElementById('hg_modeBanner');
+      if (banner) {
+        banner.className = 'p-3 rounded-xl border border-amber-300 bg-amber-50 text-xs text-amber-950';
+        banner.innerHTML = `🏠 <b>โหมดอัปเดตพิกัดบ้านเดิม:</b> บ้านเลขที่ <b>${g.house_no || '-'} ม.${g.village_no || '-'} ต.${g.subdistrict || '-'}</b> — เมื่อบันทึก ระบบจะอัปเดตพิกัดทับข้อมูลเดิมให้สมาชิกทุกคนในบ้าน (<b>${g.members.length} คน</b>)`;
+      }
+
+      if (g.lat !== null && g.lng !== null && !isNaN(g.lat) && !isNaN(g.lng)) {
+        setHouseGpsPin(g.lat, g.lng, true);
+      } else {
+        document.getElementById('hg_lat').value = '';
+        document.getElementById('hg_lng').value = '';
+      }
+    }
+
+    function switchHouseGpsNewMode(prefillFromSearch = false) {
+      hgSelectedGroup = null;
+      if (prefillFromSearch) {
+        document.getElementById('hg_houseNo').value = document.getElementById('hg_searchHouseNo')?.value.trim() || '';
+        document.getElementById('hg_villageNo').value = document.getElementById('hg_searchVillageNo')?.value.trim() || '';
+        document.getElementById('hg_subdistrict').value = document.getElementById('hg_searchSubdistrict')?.value.trim() || '';
+      } else {
+        document.getElementById('hg_houseNo').value = '';
+        document.getElementById('hg_villageNo').value = '';
+        document.getElementById('hg_subdistrict').value = '';
+      }
+      document.getElementById('hg_hcode').value = '';
+      document.getElementById('hg_osmName').value = '';
+
+      const banner = document.getElementById('hg_modeBanner');
+      if (banner) {
+        banner.className = 'p-3 rounded-xl border border-indigo-200 bg-indigo-50/70 text-xs text-indigo-900';
+        banner.innerHTML = '➕ <b>โหมดเพิ่มบ้านใหม่:</b> หากไม่พบบ้านในฐานข้อมูล สามารถบันทึกเฉพาะที่อยู่และพิกัดได้เลย (ช่องอื่นๆ เว้นว่างได้)';
+      }
+    }
+
+    async function saveHouseGpsRecord() {
+      const houseNo = normalizeThaiStr(document.getElementById('hg_houseNo')?.value || '');
+      const villageNo = normalizeThaiStr(document.getElementById('hg_villageNo')?.value || '');
+      const subdistrict = normalizeThaiStr(document.getElementById('hg_subdistrict')?.value || '');
+      const hcode = (document.getElementById('hg_hcode')?.value || '').trim();
+      const osmName = normalizeThaiStr(document.getElementById('hg_osmName')?.value || '');
+      const latNum = parseFloat(document.getElementById('hg_lat')?.value);
+      const lngNum = parseFloat(document.getElementById('hg_lng')?.value);
+
+      if (!houseNo || !villageNo || !subdistrict) {
+        Swal.fire({ icon: 'warning', title: 'กรุณากรอกข้อมูลที่อยู่', text: 'ระบุ บ้านเลขที่, หมู่ที่ และตำบล ให้ครบถ้วน' });
+        return;
+      }
+      if (isNaN(latNum) || isNaN(lngNum)) {
+        Swal.fire({ icon: 'warning', title: 'กรุณาระบุพิกัด Lat / Lng', text: 'กดปุ่มจับพิกัด GPS หรือคลิกเลือกตำแหน่งบนแผนที่' });
+        return;
+      }
+
+      const normTargetHouse = normalizeHouseNoKey(houseNo);
+
+      // Find all matching members in local personsData
+      const matchingLocalIndices = [];
+      (personsData || []).forEach((p, idx) => {
+        if (
+          normalizeHouseNoKey(p.house_no) === normTargetHouse &&
+          normalizeThaiStr(p.village_no || '') === villageNo &&
+          normalizeThaiStr(p.subdistrict || '') === subdistrict
+        ) {
+          matchingLocalIndices.push(idx);
+        }
+      });
+
+      // Also check if user selected an existing group (which may include rows fetched live from Supabase)
+      const isExistingInSelected = hgSelectedGroup &&
+        normalizeHouseNoKey(hgSelectedGroup.house_no) === normTargetHouse &&
+        normalizeThaiStr(hgSelectedGroup.village_no || '') === villageNo &&
+        normalizeThaiStr(hgSelectedGroup.subdistrict || '') === subdistrict;
+
+      const cfg = typeof getSupabasePersonConfig === 'function' ? getSupabasePersonConfig() : null;
+      let sbExistingCount = 0;
+
+      // Check Supabase for existing rows in this house if not already matched
+      let sbMatchedKeys = [];
+      if (cfg && cfg.url && cfg.key) {
+        try {
+          const checkRes = await fetch(
+            `${cfg.url}/rest/v1/person?select=pcucodeperson,pid,house_no,village_no,subdistrict&village_no=eq.${encodeURIComponent(villageNo)}&subdistrict=eq.${encodeURIComponent(subdistrict)}&limit=500`,
+            { headers: buildSupabaseHeaders(cfg.key) }
+          );
+          if (checkRes.ok) {
+            const rows = await checkRes.json();
+            if (Array.isArray(rows)) {
+              sbMatchedKeys = rows.filter(r => normalizeHouseNoKey(r.house_no) === normTargetHouse);
+              sbExistingCount = sbMatchedKeys.length;
+            }
+          }
+        } catch (e) {}
+      }
+
+      const isExistingHouse = matchingLocalIndices.length > 0 || isExistingInSelected || sbExistingCount > 0;
+
+      showLoading(isExistingHouse ? 'กำลังอัปเดตพิกัดให้ทุกคนในบ้าน...' : 'กำลังเพิ่มบ้านใหม่และบันทึกพิกัด...');
+      try {
+        if (isExistingHouse) {
+          // Update all local matching records
+          matchingLocalIndices.forEach(idx => {
+            personsData[idx].lat = latNum;
+            personsData[idx].lng = lngNum;
+            if (osmName) personsData[idx].osm_name = osmName;
+          });
+          if (typeof savePersonsToIDB === 'function') {
+            await savePersonsToIDB(personsData);
+          }
+
+          // Update all matching records in Supabase (PATCH only lat, lng, and optional osm_name)
+          if (cfg && cfg.url && cfg.key) {
+            const patchBody = { lat: latNum, lng: lngNum };
+            if (osmName) patchBody.osm_name = osmName;
+
+            // Collect distinct raw house_no strings so whitespace differences are all updated
+            const rawHouseVariants = new Set([houseNo]);
+            sbMatchedKeys.forEach(r => { if (r.house_no) rawHouseVariants.add(r.house_no); });
+            if (isExistingInSelected) {
+              hgSelectedGroup.members.forEach(m => {
+                if (m._rawHouseNo) rawHouseVariants.add(m._rawHouseNo);
+                if (m.house_no) rawHouseVariants.add(m.house_no);
+              });
+            }
+
+            for (const rawH of rawHouseVariants) {
+              const patchRes = await fetch(
+                `${cfg.url}/rest/v1/person?house_no=eq.${encodeURIComponent(rawH)}&village_no=eq.${encodeURIComponent(villageNo)}&subdistrict=eq.${encodeURIComponent(subdistrict)}`,
+                {
+                  method: 'PATCH',
+                  headers: buildSupabaseHeaders(cfg.key, {
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=minimal'
+                  }),
+                  body: JSON.stringify(patchBody)
+                }
+              );
+              if (!patchRes.ok) {
+                const errTxt = await patchRes.text();
+                throw new Error(`Supabase PATCH HTTP ${patchRes.status}: ${errTxt}`);
+              }
+            }
+          }
+
+          const updatedCount = Math.max(matchingLocalIndices.length, sbExistingCount, isExistingInSelected ? hgSelectedGroup.members.length : 1);
+          if (typeof addAuditLog === 'function') {
+            addAuditLog('HOUSE_GPS_UPDATE', `อัปเดตพิกัดบ้านเลขที่ ${houseNo} ม.${villageNo} ต.${subdistrict} (${updatedCount} คน) -> ${latNum.toFixed(6)}, ${lngNum.toFixed(6)}`);
+          }
+          hideLoading();
+          Swal.fire({
+            icon: 'success',
+            title: 'อัปเดตพิกัดบ้านสำเร็จ',
+            text: `บันทึกพิกัดทับข้อมูลเดิมให้สมาชิกทุกคนในบ้านเลขที่ ${houseNo} ม.${villageNo} ต.${subdistrict} จำนวน ${updatedCount} คนเรียบร้อยแล้ว`
+          });
+        } else {
+          // Insert new house record (all other personal fields left blank/null)
+          const newPid = 'H' + Date.now() + Math.floor(Math.random() * 100);
+          const newHcode = hcode || '00000';
+          const newRow = {
+            uid: `${newHcode}_${newPid}`,
+            pcucodeperson: newHcode,
+            pid: newPid,
+            cid: '',
+            fullname: '',
+            gender: '',
+            dob: null,
+            age_year: null,
+            age_group: '',
+            occupation: '',
+            residence_type: '',
+            house_no: houseNo,
+            village_no: villageNo,
+            subdistrict: subdistrict,
+            district: 'เทพา',
+            province: 'สงขลา',
+            lat: latNum,
+            lng: lngNum,
+            osm_name: osmName || ''
+          };
+
+          personsData.push(newRow);
+          if (typeof savePersonsToIDB === 'function') {
+            await savePersonsToIDB(personsData);
+          }
+          if (typeof updatePersonTotalBadge === 'function') {
+            updatePersonTotalBadge();
+          }
+
+          if (cfg && cfg.url && cfg.key) {
+            const postRes = await fetch(`${cfg.url}/rest/v1/person`, {
+              method: 'POST',
+              headers: buildSupabaseHeaders(cfg.key, {
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+              }),
+              body: JSON.stringify([{
+                pcucodeperson: newHcode,
+                pid: newPid,
+                cid: null,
+                fullname: null,
+                gender: null,
+                dob: null,
+                age_year: null,
+                age_group: null,
+                occupation: null,
+                residence_type: null,
+                house_no: houseNo,
+                village_no: villageNo,
+                subdistrict: subdistrict,
+                district: 'เทพา',
+                province: 'สงขลา',
+                lat: latNum,
+                lng: lngNum,
+                osm_name: osmName || null
+              }])
+            });
+            if (!postRes.ok) {
+              const errTxt = await postRes.text();
+              throw new Error(`Supabase POST HTTP ${postRes.status}: ${errTxt}`);
+            }
+          }
+
+          if (typeof addAuditLog === 'function') {
+            addAuditLog('HOUSE_GPS_CREATE', `เพิ่มบ้านใหม่ ${houseNo} ม.${villageNo} ต.${subdistrict} พิกัด ${latNum.toFixed(6)}, ${lngNum.toFixed(6)}`);
+          }
+          hideLoading();
+          Swal.fire({
+            icon: 'success',
+            title: 'เพิ่มบ้านใหม่สำเร็จ',
+            text: `บันทึกบ้านเลขที่ ${houseNo} ม.${villageNo} ต.${subdistrict} และพิกัดเรียบร้อยแล้ว`
+          });
+        }
+
+        // Refresh search results if visible
+        if (document.getElementById('hg_searchHouseNo')?.value || document.getElementById('hg_searchVillageNo')?.value || document.getElementById('hg_searchSubdistrict')?.value) {
+          searchHouseGpsDatabase();
+        }
+      } catch (err) {
+        hideLoading();
+        Swal.fire({ icon: 'error', title: 'บันทึกพิกัดไม่สำเร็จ', text: err.message });
+      }
+    }
   </script>
 
   <!-- ============================================================ -->
