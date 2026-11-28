@@ -164,16 +164,28 @@
       border-radius: 1rem !important;
     }
 
-    /* Mobile App-Like Experience */
+    /* Mobile App-Like Experience & Responsive Scale */
     html, body {
       -webkit-tap-highlight-color: transparent;
       overscroll-behavior-y: contain;
     }
-    @media (max-width: 640px) {
+    @media (max-width: 639px) {
+      html {
+        font-size: clamp(16.5px, 4.3vw, 18.5px);
+      }
       input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
       select,
       textarea {
         font-size: 16px !important;
+        min-height: 46px;
+      }
+      button, a.mobile-nav-item {
+        touch-action: manipulation;
+      }
+    }
+    @media (min-width: 640px) and (max-width: 1023px) {
+      html {
+        font-size: 16.5px;
       }
     }
     .mobile-nav-item.active-tab {
@@ -185,7 +197,7 @@
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col selection:bg-teal-500 selection:text-white">
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col overflow-x-hidden selection:bg-teal-500 selection:text-white">
 
   <!-- ============================================================== -->
   <!-- GLOBAL LOADING SPINNER OVERLAY                                 -->
@@ -511,22 +523,22 @@
         </div>
 
         <!-- MOBILE APP QUICK LAUNCHER (แสดงเฉพาะจอมือถือ) -->
-        <div class="grid grid-cols-4 gap-2 sm:hidden">
-          <button type="button" onclick="navigateTo('house-gps')" class="bg-white rounded-2xl p-2.5 border border-amber-200 shadow-xs flex flex-col items-center justify-center gap-1.5 active:scale-95 transition">
-            <span class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl">📍</span>
-            <span class="text-[11px] font-bold text-slate-800 leading-tight text-center">จับพิกัดบ้าน</span>
+        <div class="grid grid-cols-4 gap-2.5 sm:hidden">
+          <button type="button" onclick="navigateTo('house-gps')" class="bg-white rounded-2xl p-3 border border-amber-200 shadow-xs flex flex-col items-center justify-center gap-1.5 active:scale-95 transition">
+            <span class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-2xl">📍</span>
+            <span class="text-xs font-bold text-slate-800 leading-tight text-center">จับพิกัดบ้าน</span>
           </button>
-          <button type="button" onclick="navigateTo('map')" class="bg-white rounded-2xl p-2.5 border border-teal-100 shadow-xs flex flex-col items-center justify-center gap-1.5 active:scale-95 transition">
-            <span class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-xl">🗺️</span>
-            <span class="text-[11px] font-bold text-slate-800 leading-tight text-center">แผนที่ผู้ป่วย</span>
+          <button type="button" onclick="navigateTo('map')" class="bg-white rounded-2xl p-3 border border-teal-100 shadow-xs flex flex-col items-center justify-center gap-1.5 active:scale-95 transition">
+            <span class="w-12 h-12 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-2xl">🗺️</span>
+            <span class="text-xs font-bold text-slate-800 leading-tight text-center">แผนที่ผู้ป่วย</span>
           </button>
-          <button type="button" onclick="openPublicEventModal()" class="bg-white rounded-2xl p-2.5 border border-rose-100 shadow-xs flex flex-col items-center justify-center gap-1.5 active:scale-95 transition">
-            <span class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl">🚨</span>
-            <span class="text-[11px] font-bold text-slate-800 leading-tight text-center">แจ้งเหตุ/โรค</span>
+          <button type="button" onclick="openPublicEventModal()" class="bg-white rounded-2xl p-3 border border-rose-100 shadow-xs flex flex-col items-center justify-center gap-1.5 active:scale-95 transition">
+            <span class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-2xl">🚨</span>
+            <span class="text-xs font-bold text-slate-800 leading-tight text-center">แจ้งเหตุ/โรค</span>
           </button>
-          <a href="https://docs.google.com/spreadsheets/d/1iHRWKus950yhxL7DpU1p2jvY78s94-_ROzecrAGZ2tE/edit?gid=114043581#gid=114043581" target="_blank" rel="noopener noreferrer" class="bg-white rounded-2xl p-2.5 border border-emerald-100 shadow-xs flex flex-col items-center justify-center gap-1.5 active:scale-95 transition">
-            <span class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-xl">🧪</span>
-            <span class="text-[11px] font-bold text-slate-800 leading-tight text-center">ผลตรวจ NS1</span>
+          <a href="https://docs.google.com/spreadsheets/d/1iHRWKus950yhxL7DpU1p2jvY78s94-_ROzecrAGZ2tE/edit?gid=114043581#gid=114043581" target="_blank" rel="noopener noreferrer" class="bg-white rounded-2xl p-3 border border-emerald-100 shadow-xs flex flex-col items-center justify-center gap-1.5 active:scale-95 transition">
+            <span class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-2xl">🧪</span>
+            <span class="text-xs font-bold text-slate-800 leading-tight text-center">ผลตรวจ NS1</span>
           </a>
         </div>
 
@@ -1902,7 +1914,7 @@
               </h3>
               <span class="text-[11px] text-slate-500">แตะบนแผนที่หรือลากหมุดเพื่อปรับตำแหน่งหลังคาบ้าน</span>
             </div>
-            <div id="houseGpsMap" class="w-full h-64 sm:h-96 rounded-xl border border-slate-200 bg-slate-100 z-10"></div>
+            <div id="houseGpsMap" class="w-full h-72 sm:h-96 rounded-xl border border-slate-200 bg-slate-100 z-10"></div>
             <button type="button" onclick="getHouseGpsCurrentLocation()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm font-bold py-3.5 px-4 rounded-xl shadow-md transition active:scale-95 flex items-center justify-center gap-2">
               <span class="text-base">📡</span>
               <span>จับพิกัด GPS ปัจจุบันจากอุปกรณ์</span>
@@ -1999,26 +2011,26 @@
   <!-- MOBILE APP BOTTOM NAVIGATION BAR (lg:hidden)                   -->
   <!-- ============================================================== -->
   <nav id="mobileBottomNav" class="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]" style="padding-bottom: env(safe-area-inset-bottom);">
-    <div class="grid grid-cols-5 items-center h-16 px-1">
-      <button type="button" onclick="navigateTo('dashboard')" id="bnav-dashboard" class="mobile-nav-item active-tab flex flex-col items-center justify-center gap-0.5 py-1 text-slate-500 active:scale-95 transition">
-        <span class="mnav-pill px-3 py-0.5 rounded-full text-lg leading-none transition">📊</span>
-        <span class="text-[10px] font-bold">ภาพรวม</span>
+    <div class="grid grid-cols-5 items-center h-[4.5rem] px-1">
+      <button type="button" onclick="navigateTo('dashboard')" id="bnav-dashboard" class="mobile-nav-item active-tab flex flex-col items-center justify-center gap-0.5 py-1.5 text-slate-500 active:scale-95 transition">
+        <span class="mnav-pill px-3.5 py-1 rounded-full text-xl leading-none transition">📊</span>
+        <span class="text-[11px] font-bold">ภาพรวม</span>
       </button>
-      <button type="button" onclick="navigateTo('map')" id="bnav-map" class="mobile-nav-item flex flex-col items-center justify-center gap-0.5 py-1 text-slate-500 active:scale-95 transition">
-        <span class="mnav-pill px-3 py-0.5 rounded-full text-lg leading-none transition">🗺️</span>
-        <span class="text-[10px] font-bold">แผนที่</span>
+      <button type="button" onclick="navigateTo('map')" id="bnav-map" class="mobile-nav-item flex flex-col items-center justify-center gap-0.5 py-1.5 text-slate-500 active:scale-95 transition">
+        <span class="mnav-pill px-3.5 py-1 rounded-full text-xl leading-none transition">🗺️</span>
+        <span class="text-[11px] font-bold">แผนที่</span>
       </button>
-      <button type="button" onclick="navigateTo('house-gps')" id="bnav-house-gps" class="mobile-nav-item flex flex-col items-center justify-center gap-0.5 -mt-3 active:scale-95 transition">
-        <span class="mnav-pill w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md shadow-amber-500/30 flex items-center justify-center text-xl">📍</span>
-        <span class="text-[10px] font-extrabold text-slate-800">จับพิกัด</span>
+      <button type="button" onclick="navigateTo('house-gps')" id="bnav-house-gps" class="mobile-nav-item flex flex-col items-center justify-center gap-0.5 -mt-3.5 active:scale-95 transition">
+        <span class="mnav-pill w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md shadow-amber-500/30 flex items-center justify-center text-2xl">📍</span>
+        <span class="text-[11px] font-extrabold text-slate-800">จับพิกัด</span>
       </button>
-      <button type="button" onclick="openPublicEventModal()" id="bnav-event" class="mobile-nav-item flex flex-col items-center justify-center gap-0.5 py-1 text-slate-500 active:scale-95 transition">
-        <span class="mnav-pill px-3 py-0.5 rounded-full text-lg leading-none transition">🚨</span>
-        <span class="text-[10px] font-bold">แจ้งเหตุ</span>
+      <button type="button" onclick="openPublicEventModal()" id="bnav-event" class="mobile-nav-item flex flex-col items-center justify-center gap-0.5 py-1.5 text-slate-500 active:scale-95 transition">
+        <span class="mnav-pill px-3.5 py-1 rounded-full text-xl leading-none transition">🚨</span>
+        <span class="text-[11px] font-bold">แจ้งเหตุ</span>
       </button>
-      <button type="button" onclick="toggleSidebar()" id="bnav-menu" class="mobile-nav-item flex flex-col items-center justify-center gap-0.5 py-1 text-slate-500 active:scale-95 transition">
-        <span class="mnav-pill px-3 py-0.5 rounded-full text-lg leading-none transition">☰</span>
-        <span class="text-[10px] font-bold">เมนู</span>
+      <button type="button" onclick="toggleSidebar()" id="bnav-menu" class="mobile-nav-item flex flex-col items-center justify-center gap-0.5 py-1.5 text-slate-500 active:scale-95 transition">
+        <span class="mnav-pill px-3.5 py-1 rounded-full text-xl leading-none transition">☰</span>
+        <span class="text-[11px] font-bold">เมนู</span>
       </button>
     </div>
   </nav>
